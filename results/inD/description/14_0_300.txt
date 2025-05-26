@@ -1,0 +1,5 @@
+Ego agent (car 7):
+- Enters the scenario at t=1.20, starting at Road 0, lane 1.
+- Enters the intersection at t=3.84, turn right towards Road 4, lane -1. Leaves the intersection at t=9.28.
+- Starts slowing down at t=1.68 for cautious driving.
+- Starts speeding up at t=6.64 since the path is clear.

@@ -1,0 +1,123 @@
+junctions:
+  Junction 10:
+    connections:
+    - Connection_road: 11
+      Entry_road: 5
+      Entry_lanes:
+      - 1
+      Exit_road: 0
+      Exit_lanes:
+      - -1
+    - Connection_road: 13
+      Entry_road: 0
+      Entry_lanes:
+      - 1
+      Exit_road: 5
+      Exit_lanes:
+      - -1
+    - Connection_road: 15
+      Entry_road: 5
+      Entry_lanes:
+      - 2
+      - 3
+      Exit_road: 0
+      Exit_lanes:
+      - -2
+      - -3
+    - Connection_road: 19
+      Entry_road: 5
+      Entry_lanes:
+      - 1
+      Exit_road: 2
+      Exit_lanes:
+      - -1
+    - Connection_road: 21
+      Entry_road: 2
+      Entry_lanes:
+      - 1
+      Exit_road: 5
+      Exit_lanes:
+      - -1
+    - Connection_road: 23
+      Entry_road: 5
+      Entry_lanes:
+      - 1
+      Exit_road: 6
+      Exit_lanes:
+      - -1
+    - Connection_road: 25
+      Entry_road: 5
+      Entry_lanes:
+      - -3
+      - -2
+      Exit_road: 6
+      Exit_lanes:
+      - 4
+      - 3
+    - Connection_road: 29
+      Entry_road: 6
+      Entry_lanes:
+      - 1
+      Exit_road: 5
+      Exit_lanes:
+      - -1
+    - Connection_road: 31
+      Entry_road: 2
+      Entry_lanes:
+      - 1
+      Exit_road: 0
+      Exit_lanes:
+      - -1
+    - Connection_road: 34
+      Entry_road: 0
+      Entry_lanes:
+      - 1
+      Exit_road: 2
+      Exit_lanes:
+      - -1
+    - Connection_road: 37
+      Entry_road: 0
+      Entry_lanes:
+      - 3
+      - 4
+      Exit_road: 2
+      Exit_lanes:
+      - -3
+      - -4
+    - Connection_road: 40
+      Entry_road: 0
+      Entry_lanes:
+      - 1
+      Exit_road: 6
+      Exit_lanes:
+      - -1
+    - Connection_road: 43
+      Entry_road: 6
+      Entry_lanes:
+      - 1
+      Exit_road: 0
+      Exit_lanes:
+      - -1
+    - Connection_road: 46
+      Entry_road: 2
+      Entry_lanes:
+      - 1
+      Exit_road: 6
+      Exit_lanes:
+      - -1
+    - Connection_road: 49
+      Entry_road: 6
+      Entry_lanes:
+      - 1
+      Exit_road: 2
+      Exit_lanes:
+      - -1
+    - Connection_road: 52
+      Entry_road: 2
+      Entry_lanes:
+      - 3
+      - 4
+      Exit_road: 6
+      Exit_lanes:
+      - -3
+      - -4

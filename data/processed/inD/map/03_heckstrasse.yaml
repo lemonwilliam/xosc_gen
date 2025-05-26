@@ -1,0 +1,117 @@
+junctions:
+  Junction 4:
+    connections:
+    - Connection_road: 5
+      Entry_road: 3
+      Entry_lanes:
+      - -1
+      Exit_road: 1
+      Exit_lanes:
+      - 1
+    - Connection_road: 7
+      Entry_road: 1
+      Entry_lanes:
+      - -1
+      Exit_road: 3
+      Exit_lanes:
+      - 1
+    - Connection_road: 10
+      Entry_road: 1
+      Entry_lanes:
+      - 5
+      Exit_road: 3
+      Exit_lanes:
+      - -4
+    - Connection_road: 17
+      Entry_road: 1
+      Entry_lanes:
+      - -2
+      Exit_road: 0
+      Exit_lanes:
+      - 4
+    - Connection_road: 20
+      Entry_road: 1
+      Entry_lanes:
+      - -6
+      - -7
+      Exit_road: 0
+      Exit_lanes:
+      - 6
+      - 7
+    - Connection_road: 44
+      Entry_road: 1
+      Entry_lanes:
+      - 3
+      - 2
+      Exit_road: 2
+      Exit_lanes:
+      - 4
+      - 3
+    - Connection_road: 44
+      Entry_road: 2
+      Entry_lanes:
+      - 4
+      - 3
+      - 2
+      Exit_road: 1
+      Exit_lanes:
+      - 3
+      - 2
+      - 1
+    - Connection_road: 45
+      Entry_road: 1
+      Entry_lanes:
+      - -2
+      - -3
+      - -5
+      Exit_road: 2
+      Exit_lanes:
+      - -1
+      - -2
+      - -4
+    - Connection_road: 46
+      Entry_road: 3
+      Entry_lanes:
+      - -1
+      Exit_road: 0
+      Exit_lanes:
+      - 4
+    - Connection_road: 51
+      Entry_road: 3
+      Entry_lanes:
+      - 4
+      - 3
+      Exit_road: 2
+      Exit_lanes:
+      - 6
+      - 5
+    - Connection_road: 56
+      Entry_road: 2
+      Entry_lanes:
+      - 2
+      Exit_road: 3
+      Exit_lanes:
+      - 1
+    - Connection_road: 60
+      Entry_road: 3
+      Entry_lanes:
+      - -1
+      Exit_road: 2
+      Exit_lanes:
+      - -1
+    - Connection_road: 66
+      Entry_road: 0
+      Entry_lanes:
+      - 4
+      Exit_road: 2
+      Exit_lanes:
+      - -1
+    - Connection_road: 72
+      Entry_road: 0
+      Entry_lanes:
+      - 2
+      - 1
+      Exit_road: 2
+      Exit_lanes:
+      - -5
+      - -6

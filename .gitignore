@@ -1,0 +1,10 @@
+raw/
+/esmini/
+/memos/
+scenariogeneration/
+*.csv
+*.h5
+*.zip
+*.tar.gz
+.vscode/
+/__pycache__/

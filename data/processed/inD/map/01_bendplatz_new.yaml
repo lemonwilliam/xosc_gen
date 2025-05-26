@@ -1,0 +1,194 @@
+map:
+  id: "01_bendplatz"
+  description: "4-way cross intersection at Bendplatz"
+
+  # ==================================================================================
+  # 1. Define each connected road and its lanes (inbound: toward intersection, outbound: away from intersection)
+  # ==================================================================================
+  roads:
+    - id: 0
+      lanes:
+        - id: 1
+          direction: inbound
+        - id: 2
+          direction: inbound
+        - id: -1
+          direction: outbound
+
+    - id: 1
+      lanes:
+        - id: 1
+          direction: inbound
+        - id: -1
+          direction: outbound
+
+    - id: 3
+      lanes:
+        - id: 1
+          direction: inbound
+        - id: 2
+          direction: inbound
+        - id: -1
+          direction: outbound
+
+    - id: 4
+      lanes:
+        - id: 1
+          direction: inbound
+        - id: -1
+          direction: outbound
+
+  # ==================================================================================
+  # 2. High-level road-to-road connectivity
+  # ==================================================================================
+  road_relations:
+    - from_road: 0   # Entering the intersection from Road 0
+      movements:
+        turn_left:   1   # turning left leads to Road 1
+        go_straight: 3   # going straight leads to Road 3
+        turn_right:  4   # turning right leads to Road 4
+
+    - from_road: 1
+      movements:
+        turn_left:   3
+        go_straight: 4
+        turn_right:  0
+
+    - from_road: 3
+      movements:
+        turn_left:   4
+        go_straight: 0
+        turn_right:  1
+
+    - from_road: 4
+      movements:
+        turn_left:   0
+        go_straight: 1
+        turn_right:  3
+
+  # ==================================================================================
+  # 3. Lane-level connections at the intersection
+  # ==================================================================================
+  intersection:
+    # In the intersection, Road 6 connects Road 0, Lane 1 to Road 1, Lane -1
+    - Connection_road: 6
+      Entry_road: 0
+      Entry_lanes:
+      - 1
+      Exit_road: 1
+      Exit_lanes:
+      - -1
+    - Connection_road: 10
+      Entry_road: 1
+      Entry_lanes:
+      - 1
+      Exit_road: 0
+      Exit_lanes:
+      - -1
+    # In the intersection, Road 11 connects Road 0, Lane -4 to Road 1, Lane 5, and Road 1, Lane -3 to Road 1, Lane 4
+    - Connection_road: 11
+      Entry_road: 0
+      Entry_lanes:
+      - -4
+      - -3
+      Exit_road: 1
+      Exit_lanes:
+      - 5
+      - 4
+    - Connection_road: 13
+      Entry_road: 4
+      Entry_lanes:
+      - 1
+      Exit_road: 0
+      Exit_lanes:
+      - -1
+    - Connection_road: 17
+      Entry_road: 0
+      Entry_lanes:
+      - 4
+      - 5
+      Exit_road: 4
+      Exit_lanes:
+      - -4
+      - -5
+    - Connection_road: 21
+      Entry_road: 0
+      Entry_lanes:
+      - 2
+      Exit_road: 4
+      Exit_lanes:
+      - -1
+    - Connection_road: 24
+      Entry_road: 3
+      Entry_lanes:
+      - 2
+      Exit_road: 0
+      Exit_lanes:
+      - -1
+    - Connection_road: 29
+      Entry_road: 0
+      Entry_lanes:
+      - 2
+      Exit_road: 3
+      Exit_lanes:
+      - -1
+    - Connection_road: 34
+      Entry_road: 1
+      Entry_lanes:
+      - 1
+      Exit_road: 4
+      Exit_lanes:
+      - -1
+    - Connection_road: 36
+      Entry_road: 4
+      Entry_lanes:
+      - 1
+      Exit_road: 1
+      Exit_lanes:
+      - -1
+    - Connection_road: 38
+      Entry_road: 1
+      Entry_lanes:
+      - -5
+      - -4
+      Exit_road: 3
+      Exit_lanes:
+      - 5
+      - 4
+    - Connection_road: 42
+      Entry_road: 3
+      Entry_lanes:
+      - 2
+      Exit_road: 1
+      Exit_lanes:
+      - -1
+    - Connection_road: 44
+      Entry_road: 1
+      Entry_lanes:
+      - 1
+      Exit_road: 3
+      Exit_lanes:
+      - -1
+    - Connection_road: 47
+      Entry_road: 4
+      Entry_lanes:
+      - 1
+      Exit_road: 3
+      Exit_lanes:
+      - -1
+    - Connection_road: 48
+      Entry_road: 4
+      Entry_lanes:
+      - 3
+      - 4
+      Exit_road: 3
+      Exit_lanes:
+      - -3
+      - -4
+    - Connection_road: 49
+      Entry_road: 3
+      Entry_lanes:
+      - 1
+      Exit_road: 4
+      Exit_lanes:
+      - -1

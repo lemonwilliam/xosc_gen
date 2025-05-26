@@ -1,0 +1,44 @@
+dataset: inD
+location: 01_bendplatz
+duration: 13.0
+agents:
+- track_id: 0
+  class: car
+  width: 1.85109
+  length: 4.13805
+- track_id: 1
+  class: bicycle
+  width: 0.0
+  length: 0.0
+- track_id: 2
+  class: car
+  width: 1.79259
+  length: 3.84555
+- track_id: 3
+  class: car
+  width: 2.1335
+  length: 5.12024
+- track_id: 4
+  class: car
+  width: 2.13899
+  length: 3.88992
+- track_id: 5
+  class: car
+  width: 2.0731
+  length: 4.17333
+- track_id: 6
+  class: car
+  width: 1.70259
+  length: 3.13074
+- track_id: 7
+  class: car
+  width: 1.81451
+  length: 4.35885
+- track_id: 8
+  class: car
+  width: 1.70978
+  length: 4.10858
+- track_id: 9
+  class: pedestrian
+  width: 0.0
+  length: 0.0
