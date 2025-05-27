@@ -11,3 +11,5 @@ scenariogeneration/
 *.tar.gz
 .vscode/
 __pycache__/
+esminiRM_log.txt
+log.txt
