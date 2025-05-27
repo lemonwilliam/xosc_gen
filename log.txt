@@ -3,10 +3,10 @@ esmini GIT TAG: v2.45.3
 esmini GIT BRANCH: tags/v2.45.3^0
 esmini BUILD VERSION: N/A - client build
 [] [info] Loaded esmini/resources/xosc/inD/07_600_1100_gen.xosc
-[2025-05-27 11:59:17]
+[2025-05-27 12:45:38]
 [] [info] Player options: --osc esmini/resources/xosc/inD/07_600_1100_gen.xosc --camera_mode orbit --follow_object 0 --info_text 1 --logfile_path log.txt --log_level info --record ./results/inD/trajectory/07_600_1100_gen.dat --text_scale 1.0 --traj_filter 0.1 
 [] [info] No fixed timestep specified - running in realtime speed
-[] [info] Generated seed 831061203
+[] [info] Generated seed 2179966959
 [] [info] Loading esmini/resources/xosc/inD/07_600_1100_gen.xosc (v1.0)
 [] [info] 0 variables
 [] [error] Unsupported geo reference attr: +no_defs
@@ -332,627 +332,623 @@ esmini BUILD VERSION: N/A - client build
 [0.001] [info] Agent24_SpeedEvent0 initState -> initToStandbyTransition -> standbyState
 [0.001] [info] Agent24_SpeedEvent1 initState -> initToStandbyTransition -> standbyState
 [0.001] [info] Despawn_Agent24_Event initState -> initToStandbyTransition -> standbyState
-[0.220] [info] ReachPositionCondition: true, delay: 0.00, distance 2.99 < tolerance (3.00), edge: rising
-[0.220] [info] Trigger /------------------------------------------------
-[0.220] [info] Group 0:
-[0.220] [info] ReachPositionCondition: true
-[0.220] [info] Triggering entity 0: Agent18
-[0.220] [info] Trigger  ------------------------------------------------/
-[0.220] [info] Agent18_RouteEvent0 standbyState -> startTransition -> runningState
-[0.220] [info] SetRoute initState -> startTransition -> runningState
-[0.220] [info] SetRoute runningState -> endTransition -> completeState
-[0.220] [info] Agent18_RouteEvent0 completed run 1 (of max 3)
-[0.220] [info] Agent18_RouteEvent0 runningState -> endTransition -> standbyState
-[0.553] [info] ReachPositionCondition: true, delay: 0.00, distance 2.93 < tolerance (3.00), edge: rising
-[0.553] [info] Trigger /------------------------------------------------
-[0.553] [info] Group 0:
-[0.553] [info] ReachPositionCondition: true
-[0.553] [info] Triggering entity 0: Agent17
-[0.553] [info] Trigger  ------------------------------------------------/
-[0.553] [info] Agent17_RouteEvent0 standbyState -> startTransition -> runningState
-[0.553] [info] SetRoute initState -> startTransition -> runningState
-[0.553] [info] SetRoute runningState -> endTransition -> completeState
-[0.553] [info] Agent17_RouteEvent0 completed run 1 (of max 3)
-[0.553] [info] Agent17_RouteEvent0 runningState -> endTransition -> standbyState
-[0.620] [info] Entity Agent18 on route at roadId=0, s=0.26
-[0.803] [info] SpawnTrigger: true, delay: 0.00, 0.8030 > 0.8000, edge: rising
-[0.803] [info] Trigger /------------------------------------------------
-[0.803] [info] Group 0:
-[0.803] [info] SpawnTrigger: true
-[0.803] [info] Trigger  ------------------------------------------------/
-[0.803] [info] Spawn_Agent19 standbyState -> startTransition -> runningState
-[0.803] [info] Added entity Agent19
-[0.803] [info] SpawnAgent initState -> startTransition -> runningState
-[0.803] [info] SetSpeed initState -> startTransition -> runningState
-[0.803] [info] SimulationTimeCondition: true, delay: 0.00, 0.8030 > 0.8000, edge: rising
-[0.803] [info] Trigger /------------------------------------------------
-[0.803] [info] Group 0:
-[0.803] [info] SimulationTimeCondition: true
-[0.803] [info] Trigger  ------------------------------------------------/
-[0.803] [info] Other events ongoing, Agent19_SpeedEvent0 will run in parallel
-[0.803] [info] Agent19_SpeedEvent0 standbyState -> startTransition -> runningState
-[0.803] [warn] Stopping object Agent19 SetSpeed on conflicting Longitudinal domain(s)
-[0.803] [info] SetSpeed runningState -> endTransition -> completeState
-[0.803] [info] slow_down initState -> startTransition -> runningState
-[0.803] [info] SpawnAgent runningState -> stopTransition -> completeState
-[0.803] [info] Spawn_Agent19 complete after 1 execution
-[0.803] [info] Spawn_Agent19 runningState -> endTransition -> completeState
-[1.170] [info] Entity Agent17 on route at roadId=3, s=0.14
-[1.270] [info] ReachPositionCondition: true, delay: 0.00, distance 2.99 < tolerance (3.00), edge: rising
-[1.270] [info] Trigger /------------------------------------------------
-[1.270] [info] Group 0:
-[1.270] [info] ReachPositionCondition: true
-[1.270] [info] Triggering entity 0: Agent19
-[1.270] [info] Trigger  ------------------------------------------------/
-[1.270] [info] Other events ongoing, Agent19_RouteEvent0 will run in parallel
-[1.270] [info] Agent19_RouteEvent0 standbyState -> startTransition -> runningState
-[1.270] [info] SetRoute initState -> startTransition -> runningState
-[1.270] [info] SetRoute runningState -> endTransition -> completeState
-[1.270] [info] Agent19_RouteEvent0 completed run 1 (of max 3)
-[1.270] [info] Agent19_RouteEvent0 runningState -> endTransition -> standbyState
-[1.853] [info] SpawnTrigger: true, delay: 0.00, 1.8530 > 1.8400, edge: rising
-[1.853] [info] Trigger /------------------------------------------------
-[1.853] [info] Group 0:
-[1.853] [info] SpawnTrigger: true
-[1.853] [info] Trigger  ------------------------------------------------/
-[1.853] [info] Spawn_Agent20 standbyState -> startTransition -> runningState
-[1.853] [info] Added entity Agent20
-[1.853] [info] SpawnAgent initState -> startTransition -> runningState
-[1.853] [info] SetSpeed initState -> startTransition -> runningState
-[1.853] [info] SimulationTimeCondition: true, delay: 0.00, 1.8530 > 1.8400, edge: rising
-[1.853] [info] Trigger /------------------------------------------------
-[1.853] [info] Group 0:
-[1.853] [info] SimulationTimeCondition: true
-[1.853] [info] Trigger  ------------------------------------------------/
-[1.853] [info] Other events ongoing, Agent20_SpeedEvent0 will run in parallel
-[1.853] [info] Agent20_SpeedEvent0 standbyState -> startTransition -> runningState
-[1.853] [warn] Stopping object Agent20 SetSpeed on conflicting Longitudinal domain(s)
-[1.853] [info] SetSpeed runningState -> endTransition -> completeState
-[1.853] [info] slow_down initState -> startTransition -> runningState
-[1.853] [info] ReachPositionCondition: true, delay: 0.00, distance 1.27 < tolerance (3.00), edge: rising
-[1.853] [info] Trigger /------------------------------------------------
-[1.853] [info] Group 0:
-[1.853] [info] ReachPositionCondition: true
-[1.853] [info] Triggering entity 0: Agent20
-[1.853] [info] Trigger  ------------------------------------------------/
-[1.853] [info] Other events ongoing, Agent20_RouteEvent0 will run in parallel
-[1.853] [info] Agent20_RouteEvent0 standbyState -> startTransition -> runningState
-[1.853] [info] SetRoute initState -> startTransition -> runningState
-[1.853] [info] SpawnAgent runningState -> stopTransition -> completeState
-[1.853] [info] Spawn_Agent20 complete after 1 execution
-[1.853] [info] Spawn_Agent20 runningState -> endTransition -> completeState
-[1.853] [info] SetRoute runningState -> endTransition -> completeState
-[1.853] [info] Agent20_RouteEvent0 completed run 1 (of max 3)
-[1.853] [info] Agent20_RouteEvent0 runningState -> endTransition -> standbyState
-[2.003] [info] SimulationTimeCondition: true, delay: 0.20, 2.0030 > 2.0000, edge: rising
-[2.020] [info] SimulationTimeCondition: false, delay: 0.20, 2.0200 > 2.0000, edge: rising
-[2.120] [info] Entity Agent19 on route at roadId=34, s=27.95
-[2.120] [info] Entity Agent20 on route at roadId=4, s=0.16
-[2.203] [info] Trigger /------------------------------------------------
-[2.203] [info] Group 0:
-[2.203] [info] SimulationTimeCondition: true
-[2.203] [info] Trigger  ------------------------------------------------/
-[2.203] [info] Despawn_Agent16_Event standbyState -> startTransition -> runningState
-[2.203] [info] Deleted entity Agent16
-[2.203] [info] Despawn_Agent16_Action initState -> startTransition -> runningState
-[2.203] [info] Despawn_Agent16_Action runningState -> stopTransition -> completeState
-[2.203] [info] Despawn_Agent16_Event complete after 1 execution
-[2.203] [info] Despawn_Agent16_Event runningState -> endTransition -> completeState
-[3.137] [info] SimulationTimeCondition: true, delay: 0.00, 3.1370 > 3.1200, edge: rising
-[3.137] [info] Trigger /------------------------------------------------
-[3.137] [info] Group 0:
-[3.137] [info] SimulationTimeCondition: true
-[3.137] [info] Trigger  ------------------------------------------------/
-[3.137] [info] Agent18_SpeedEvent1 standbyState -> startTransition -> runningState
-[3.137] [info] speed_up initState -> startTransition -> runningState
-[3.370] [info] SimulationTimeCondition: true, delay: 0.00, 3.3700 > 3.3600, edge: rising
-[3.370] [info] Trigger /------------------------------------------------
-[3.370] [info] Group 0:
-[3.370] [info] SimulationTimeCondition: true
-[3.370] [info] Trigger  ------------------------------------------------/
-[3.370] [info] Agent17_SpeedEvent1 standbyState -> startTransition -> runningState
-[3.370] [info] speed_up initState -> startTransition -> runningState
-[3.637] [info] Entity Agent18 moved out of route at roadId=4, s=0.50 (SetPathS())
-[3.637] [info] End of route at road_id=4, lane_id=-1, s=0.39
-[3.922] [info] speed_up runningState -> endTransition -> completeState
-[3.922] [info] Agent18_SpeedEvent1 completed run 1 (of max 3)
-[3.922] [info] Agent18_SpeedEvent1 runningState -> endTransition -> standbyState
-[4.007] [info] SimulationTimeCondition: true, delay: 0.20, 4.0070 > 4.0000, edge: rising
-[4.020] [info] SimulationTimeCondition: false, delay: 0.20, 4.0200 > 4.0000, edge: rising
-[4.220] [info] Trigger /------------------------------------------------
-[4.220] [info] Group 0:
-[4.220] [info] SimulationTimeCondition: true
-[4.220] [info] Trigger  ------------------------------------------------/
-[4.220] [info] Despawn_Agent18_Event standbyState -> startTransition -> runningState
-[4.220] [info] Deleted entity Agent18
-[4.220] [info] Despawn_Agent18_Action initState -> startTransition -> runningState
-[4.220] [info] Despawn_Agent18_Action runningState -> stopTransition -> completeState
-[4.220] [info] Despawn_Agent18_Event complete after 1 execution
-[4.220] [info] Despawn_Agent18_Event runningState -> endTransition -> completeState
-[4.954] [info] slow_down runningState -> endTransition -> completeState
-[4.954] [info] Agent19_SpeedEvent0 completed run 1 (of max 3)
-[4.954] [info] Agent19_SpeedEvent0 runningState -> endTransition -> standbyState
-[5.054] [info] SimulationTimeCondition: true, delay: 0.00, 5.0540 > 5.0400, edge: rising
-[5.054] [info] Trigger /------------------------------------------------
-[5.054] [info] Group 0:
-[5.054] [info] SimulationTimeCondition: true
-[5.054] [info] Trigger  ------------------------------------------------/
-[5.054] [info] Agent19_SpeedEvent1 standbyState -> startTransition -> runningState
-[5.054] [info] speed_up initState -> startTransition -> runningState
-[5.771] [info] SpawnTrigger: true, delay: 0.00, 5.7710 > 5.7600, edge: rising
-[5.771] [info] Trigger /------------------------------------------------
-[5.771] [info] Group 0:
-[5.771] [info] SpawnTrigger: true
-[5.771] [info] Trigger  ------------------------------------------------/
-[5.771] [info] Spawn_Agent21 standbyState -> startTransition -> runningState
-[5.771] [info] Added entity Agent21
-[5.771] [info] SpawnAgent initState -> startTransition -> runningState
-[5.771] [info] SetSpeed initState -> startTransition -> runningState
-[5.771] [info] ReachPositionCondition: true, delay: 0.00, distance 1.09 < tolerance (3.00), edge: rising
-[5.771] [info] Trigger /------------------------------------------------
-[5.771] [info] Group 0:
-[5.771] [info] ReachPositionCondition: true
-[5.771] [info] Triggering entity 0: Agent21
-[5.771] [info] Trigger  ------------------------------------------------/
-[5.771] [info] Other events ongoing, Agent21_RouteEvent0 will run in parallel
-[5.771] [info] Agent21_RouteEvent0 standbyState -> startTransition -> runningState
-[5.771] [info] SetRoute initState -> startTransition -> runningState
-[5.771] [info] SpawnAgent runningState -> stopTransition -> completeState
-[5.771] [info] SetSpeed runningState -> endTransition -> completeState
-[5.771] [info] Spawn_Agent21 complete after 1 execution
-[5.771] [info] Spawn_Agent21 runningState -> endTransition -> completeState
-[5.771] [info] SetRoute runningState -> endTransition -> completeState
-[5.771] [info] Agent21_RouteEvent0 completed run 1 (of max 3)
-[5.771] [info] Agent21_RouteEvent0 runningState -> endTransition -> standbyState
-[5.988] [info] Entity Agent21 on route at roadId=4, s=0.16
-[6.088] [info] SimulationTimeCondition: true, delay: 0.00, 6.0880 > 6.0800, edge: rising
-[6.088] [info] Trigger /------------------------------------------------
-[6.088] [info] Group 0:
-[6.088] [info] SimulationTimeCondition: true
-[6.088] [info] Trigger  ------------------------------------------------/
-[6.088] [info] Agent21_SpeedEvent0 standbyState -> startTransition -> runningState
-[6.088] [info] slow_down initState -> startTransition -> runningState
-[6.238] [info] slow_down runningState -> endTransition -> completeState
-[6.238] [info] Agent20_SpeedEvent0 completed run 1 (of max 3)
-[6.238] [info] Agent20_SpeedEvent0 runningState -> endTransition -> standbyState
-[6.639] [info] Entity Agent17 moved out of route at roadId=4, s=0.35 (SetPathS())
-[6.639] [info] End of route at road_id=4, lane_id=-1, s=0.25
-[7.038] [info] speed_up runningState -> endTransition -> completeState
-[7.038] [info] Agent19_SpeedEvent1 completed run 1 (of max 3)
-[7.038] [info] Agent19_SpeedEvent1 runningState -> endTransition -> standbyState
-[7.122] [info] SimulationTimeCondition: true, delay: 0.00, 7.1220 > 7.1200, edge: rising
-[7.122] [info] Trigger /------------------------------------------------
-[7.122] [info] Group 0:
-[7.122] [info] SimulationTimeCondition: true
-[7.122] [info] Trigger  ------------------------------------------------/
-[7.122] [info] Agent19_SpeedEvent2 standbyState -> startTransition -> runningState
-[7.122] [info] slow_down initState -> startTransition -> runningState
-[7.205] [info] SpawnTrigger: true, delay: 0.00, 7.2050 > 7.2000, edge: rising
-[7.205] [info] Trigger /------------------------------------------------
-[7.205] [info] Group 0:
-[7.205] [info] SpawnTrigger: true
-[7.205] [info] Trigger  ------------------------------------------------/
-[7.205] [info] Spawn_Agent22 standbyState -> startTransition -> runningState
-[7.205] [info] Added entity Agent22
-[7.205] [info] SpawnAgent initState -> startTransition -> runningState
-[7.205] [info] SetSpeed initState -> startTransition -> runningState
-[7.205] [info] SimulationTimeCondition: true, delay: 0.00, 7.2050 > 7.2000, edge: rising
-[7.205] [info] Trigger /------------------------------------------------
-[7.205] [info] Group 0:
-[7.205] [info] SimulationTimeCondition: true
-[7.205] [info] Trigger  ------------------------------------------------/
-[7.205] [info] Other events ongoing, Agent22_SpeedEvent0 will run in parallel
-[7.205] [info] Agent22_SpeedEvent0 standbyState -> startTransition -> runningState
-[7.205] [warn] Stopping object Agent22 SetSpeed on conflicting Longitudinal domain(s)
-[7.205] [info] SetSpeed runningState -> endTransition -> completeState
-[7.205] [info] speed_up initState -> startTransition -> runningState
-[7.205] [info] SpawnAgent runningState -> stopTransition -> completeState
-[7.205] [info] Spawn_Agent22 complete after 1 execution
-[7.205] [info] Spawn_Agent22 runningState -> endTransition -> completeState
-[8.154] [info] speed_up runningState -> endTransition -> completeState
-[8.154] [info] Agent17_SpeedEvent1 completed run 1 (of max 3)
-[8.154] [info] Agent17_SpeedEvent1 runningState -> endTransition -> standbyState
-[8.154] [info] slow_down runningState -> endTransition -> completeState
-[8.154] [info] Agent19_SpeedEvent2 completed run 1 (of max 3)
-[8.154] [info] Agent19_SpeedEvent2 runningState -> endTransition -> standbyState
-[8.255] [info] SimulationTimeCondition: true, delay: 0.20, 8.2550 > 8.2400, edge: rising
-[8.255] [info] SimulationTimeCondition: true, delay: 0.00, 8.2550 > 8.2400, edge: rising
-[8.255] [info] Trigger /------------------------------------------------
-[8.255] [info] Group 0:
-[8.255] [info] SimulationTimeCondition: true
-[8.255] [info] Trigger  ------------------------------------------------/
-[8.255] [info] Agent19_SpeedEvent3 standbyState -> startTransition -> runningState
-[8.255] [info] speed_up initState -> startTransition -> runningState
-[8.271] [info] SimulationTimeCondition: false, delay: 0.20, 8.2710 > 8.2400, edge: rising
-[8.471] [info] Trigger /------------------------------------------------
-[8.471] [info] Group 0:
-[8.471] [info] SimulationTimeCondition: true
-[8.471] [info] Trigger  ------------------------------------------------/
-[8.471] [info] Despawn_Agent17_Event standbyState -> startTransition -> runningState
-[8.471] [info] Deleted entity Agent17
-[8.471] [info] Despawn_Agent17_Action initState -> startTransition -> runningState
-[8.471] [info] Despawn_Agent17_Action runningState -> stopTransition -> completeState
-[8.471] [info] Despawn_Agent17_Event complete after 1 execution
-[8.471] [info] Despawn_Agent17_Event runningState -> endTransition -> completeState
-[8.721] [info] SimulationTimeCondition: true, delay: 0.00, 8.7210 > 8.7200, edge: rising
-[8.721] [info] Trigger /------------------------------------------------
-[8.721] [info] Group 0:
-[8.721] [info] SimulationTimeCondition: true
-[8.721] [info] Trigger  ------------------------------------------------/
-[8.721] [info] Other events ongoing, Agent21_SpeedEvent1 will run in parallel
-[8.721] [info] Agent21_SpeedEvent1 standbyState -> startTransition -> runningState
-[8.721] [warn] Stopping object Agent21 slow_down on conflicting Longitudinal domain(s)
-[8.721] [info] slow_down runningState -> endTransition -> completeState
-[8.721] [info] Agent21_SpeedEvent0 completed run 1 (of max 3)
-[8.721] [info] Agent21_SpeedEvent0 runningState -> endTransition -> standbyState
-[8.721] [info] speed_up initState -> startTransition -> runningState
-[8.805] [info] ReachPositionCondition: true, delay: 0.00, distance 3.00 < tolerance (3.00), edge: rising
-[8.805] [info] Trigger /------------------------------------------------
-[8.805] [info] Group 0:
-[8.805] [info] ReachPositionCondition: true
-[8.805] [info] Triggering entity 0: Agent22
-[8.805] [info] Trigger  ------------------------------------------------/
-[8.805] [info] Other events ongoing, Agent22_RouteEvent0 will run in parallel
-[8.805] [info] Agent22_RouteEvent0 standbyState -> startTransition -> runningState
-[8.805] [info] SetRoute initState -> startTransition -> runningState
-[8.805] [info] SetRoute runningState -> endTransition -> completeState
-[8.805] [info] Agent22_RouteEvent0 completed run 1 (of max 3)
-[8.805] [info] Agent22_RouteEvent0 runningState -> endTransition -> standbyState
-[8.954] [info] speed_up runningState -> endTransition -> completeState
-[8.954] [info] Agent22_SpeedEvent0 completed run 1 (of max 3)
-[8.954] [info] Agent22_SpeedEvent0 runningState -> endTransition -> standbyState
-[9.038] [info] Entity Agent22 on route at roadId=3, s=0.36
-[9.121] [info] SimulationTimeCondition: true, delay: 0.00, 9.1210 > 9.1200, edge: rising
-[9.121] [info] Trigger /------------------------------------------------
-[9.121] [info] Group 0:
-[9.121] [info] SimulationTimeCondition: true
-[9.121] [info] Trigger  ------------------------------------------------/
-[9.121] [info] Agent22_SpeedEvent1 standbyState -> startTransition -> runningState
-[9.121] [info] slow_down initState -> startTransition -> runningState
-[9.854] [info] SpawnTrigger: true, delay: 0.00, 9.8540 > 9.8400, edge: rising
-[9.854] [info] Trigger /------------------------------------------------
-[9.854] [info] Group 0:
-[9.854] [info] SpawnTrigger: true
-[9.854] [info] Trigger  ------------------------------------------------/
-[9.854] [info] Spawn_Agent23 standbyState -> startTransition -> runningState
-[9.854] [info] Added entity Agent23
-[9.854] [info] SpawnAgent initState -> startTransition -> runningState
-[9.854] [info] SetSpeed initState -> startTransition -> runningState
-[9.854] [info] SimulationTimeCondition: true, delay: 0.00, 9.8540 > 9.8400, edge: rising
-[9.854] [info] Trigger /------------------------------------------------
-[9.854] [info] Group 0:
-[9.854] [info] SimulationTimeCondition: true
-[9.854] [info] Trigger  ------------------------------------------------/
-[9.854] [info] Other events ongoing, Agent23_SpeedEvent0 will run in parallel
-[9.854] [info] Agent23_SpeedEvent0 standbyState -> startTransition -> runningState
-[9.854] [warn] Stopping object Agent23 SetSpeed on conflicting Longitudinal domain(s)
-[9.854] [info] SetSpeed runningState -> endTransition -> completeState
-[9.854] [info] speed_up initState -> startTransition -> runningState
-[9.854] [info] ReachPositionCondition: true, delay: 0.00, distance 1.58 < tolerance (3.00), edge: rising
-[9.854] [info] Trigger /------------------------------------------------
-[9.854] [info] Group 0:
-[9.854] [info] ReachPositionCondition: true
-[9.854] [info] Triggering entity 0: Agent23
-[9.854] [info] Trigger  ------------------------------------------------/
-[9.854] [info] Other events ongoing, Agent23_RouteEvent0 will run in parallel
-[9.854] [info] Agent23_RouteEvent0 standbyState -> startTransition -> runningState
-[9.854] [info] SetRoute initState -> startTransition -> runningState
-[9.854] [info] SpawnAgent runningState -> stopTransition -> completeState
-[9.854] [info] Spawn_Agent23 complete after 1 execution
-[9.854] [info] Spawn_Agent23 runningState -> endTransition -> completeState
-[9.854] [info] SetRoute runningState -> endTransition -> completeState
-[9.854] [info] Agent23_RouteEvent0 completed run 1 (of max 3)
-[9.854] [info] Agent23_RouteEvent0 runningState -> endTransition -> standbyState
-[10.671] [info] Entity Agent23 on route at roadId=4, s=0.02
-[11.138] [info] Entity Agent22 moved out of route at roadId=0, s=0.51 (SetPathS())
-[11.138] [info] End of route at road_id=0, lane_id=-1, s=0.30
-[11.738] [info] Entity Agent21 moved out of route at roadId=3, s=0.19 (SetPathS())
-[11.738] [info] End of route at road_id=3, lane_id=-1, s=0.11
-[11.921] [info] SimulationTimeCondition: true, delay: 0.00, 11.9210 > 11.9200, edge: rising
-[11.921] [info] Trigger /------------------------------------------------
-[11.921] [info] Group 0:
-[11.921] [info] SimulationTimeCondition: true
-[11.921] [info] Trigger  ------------------------------------------------/
-[11.921] [info] Other events ongoing, Agent23_SpeedEvent1 will run in parallel
-[11.921] [info] Agent23_SpeedEvent1 standbyState -> startTransition -> runningState
-[11.921] [warn] Stopping object Agent23 speed_up on conflicting Longitudinal domain(s)
-[11.921] [info] speed_up runningState -> endTransition -> completeState
-[11.921] [info] Agent23_SpeedEvent0 completed run 1 (of max 3)
-[11.921] [info] Agent23_SpeedEvent0 runningState -> endTransition -> standbyState
-[11.921] [info] slow_down initState -> startTransition -> runningState
-[12.255] [info] SimulationTimeCondition: true, delay: 0.00, 12.2550 > 12.2400, edge: rising
-[12.255] [info] Trigger /------------------------------------------------
-[12.255] [info] Group 0:
-[12.255] [info] SimulationTimeCondition: true
-[12.255] [info] Trigger  ------------------------------------------------/
-[12.255] [info] Agent20_SpeedEvent1 standbyState -> startTransition -> runningState
-[12.255] [info] speed_up initState -> startTransition -> runningState
-[12.554] [info] slow_down runningState -> endTransition -> completeState
-[12.554] [info] Agent22_SpeedEvent1 completed run 1 (of max 3)
-[12.554] [info] Agent22_SpeedEvent1 runningState -> endTransition -> standbyState
-[12.655] [info] SimulationTimeCondition: true, delay: 0.20, 12.6550 > 12.6400, edge: rising
-[12.671] [info] SimulationTimeCondition: false, delay: 0.20, 12.6710 > 12.6400, edge: rising
-[12.873] [info] Trigger /------------------------------------------------
-[12.873] [info] Group 0:
-[12.873] [info] SimulationTimeCondition: true
-[12.873] [info] Trigger  ------------------------------------------------/
-[12.873] [info] Despawn_Agent22_Event standbyState -> startTransition -> runningState
-[12.873] [info] Deleted entity Agent22
-[12.873] [info] Despawn_Agent22_Action initState -> startTransition -> runningState
-[12.873] [info] Despawn_Agent22_Action runningState -> stopTransition -> completeState
-[12.873] [info] Despawn_Agent22_Event complete after 1 execution
-[12.873] [info] Despawn_Agent22_Event runningState -> endTransition -> completeState
-[13.671] [info] slow_down runningState -> endTransition -> completeState
-[13.671] [info] Agent23_SpeedEvent1 completed run 1 (of max 3)
-[13.671] [info] Agent23_SpeedEvent1 runningState -> endTransition -> standbyState
-[13.688] [info] SimulationTimeCondition: true, delay: 0.00, 13.6880 > 13.6800, edge: rising
-[13.688] [info] Trigger /------------------------------------------------
-[13.688] [info] Group 0:
-[13.688] [info] SimulationTimeCondition: true
-[13.688] [info] Trigger  ------------------------------------------------/
-[13.688] [info] Agent23_SpeedEvent2 standbyState -> startTransition -> runningState
-[13.688] [info] speed_up initState -> startTransition -> runningState
-[14.321] [info] speed_up runningState -> endTransition -> completeState
-[14.321] [info] Agent19_SpeedEvent3 completed run 1 (of max 3)
-[14.321] [info] Agent19_SpeedEvent3 runningState -> endTransition -> standbyState
-[14.888] [info] SimulationTimeCondition: true, delay: 0.00, 14.8880 > 14.8800, edge: rising
-[14.888] [info] Trigger /------------------------------------------------
-[14.888] [info] Group 0:
-[14.888] [info] SimulationTimeCondition: true
-[14.888] [info] Trigger  ------------------------------------------------/
-[14.888] [info] Agent19_SpeedEvent4 standbyState -> startTransition -> runningState
-[14.888] [info] speed_up initState -> startTransition -> runningState
-[15.105] [info] Entity Agent19 moved out of route at roadId=4, s=0.21 (SetPathS())
-[15.105] [info] End of route at road_id=4, lane_id=-1, s=0.11
-[15.105] [info] speed_up runningState -> endTransition -> completeState
-[15.105] [info] Agent21_SpeedEvent1 completed run 1 (of max 3)
-[15.105] [info] Agent21_SpeedEvent1 runningState -> endTransition -> standbyState
-[15.205] [info] SimulationTimeCondition: true, delay: 0.20, 15.2050 > 15.2000, edge: rising
-[15.222] [info] SimulationTimeCondition: false, delay: 0.20, 15.2220 > 15.2000, edge: rising
-[15.406] [info] Trigger /------------------------------------------------
-[15.406] [info] Group 0:
-[15.406] [info] SimulationTimeCondition: true
-[15.406] [info] Trigger  ------------------------------------------------/
-[15.406] [info] Despawn_Agent21_Event standbyState -> startTransition -> runningState
-[15.406] [info] Deleted entity Agent21
-[15.406] [info] Despawn_Agent21_Action initState -> startTransition -> runningState
-[15.406] [info] Despawn_Agent21_Action runningState -> stopTransition -> completeState
-[15.406] [info] Despawn_Agent21_Event complete after 1 execution
-[15.406] [info] Despawn_Agent21_Event runningState -> endTransition -> completeState
-[15.921] [info] speed_up runningState -> endTransition -> completeState
-[15.921] [info] Agent19_SpeedEvent4 completed run 1 (of max 3)
-[15.921] [info] Agent19_SpeedEvent4 runningState -> endTransition -> standbyState
-[16.005] [info] SimulationTimeCondition: true, delay: 0.20, 16.0050 > 16.0000, edge: rising
-[16.025] [info] SimulationTimeCondition: false, delay: 0.20, 16.0250 > 16.0000, edge: rising
-[16.205] [info] Trigger /------------------------------------------------
-[16.205] [info] Group 0:
-[16.205] [info] SimulationTimeCondition: true
-[16.205] [info] Trigger  ------------------------------------------------/
-[16.205] [info] Despawn_Agent19_Event standbyState -> startTransition -> runningState
-[16.205] [info] Deleted entity Agent19
-[16.205] [info] Despawn_Agent19_Action initState -> startTransition -> runningState
-[16.205] [info] Despawn_Agent19_Action runningState -> stopTransition -> completeState
-[16.205] [info] Despawn_Agent19_Event complete after 1 execution
-[16.205] [info] Despawn_Agent19_Event runningState -> endTransition -> completeState
-[16.554] [info] Entity Agent23 moved out of route at roadId=3, s=0.56 (SetPathS())
-[16.554] [info] End of route at road_id=3, lane_id=-1, s=0.47
-[16.654] [info] SpawnTrigger: true, delay: 0.00, 16.6540 > 16.6400, edge: rising
-[16.654] [info] Trigger /------------------------------------------------
-[16.654] [info] Group 0:
-[16.654] [info] SpawnTrigger: true
-[16.654] [info] Trigger  ------------------------------------------------/
-[16.654] [info] Spawn_Agent24 standbyState -> startTransition -> runningState
-[16.654] [info] Added entity Agent24
-[16.654] [info] SpawnAgent initState -> startTransition -> runningState
-[16.654] [info] SetSpeed initState -> startTransition -> runningState
-[16.654] [info] SpawnAgent runningState -> stopTransition -> completeState
-[16.654] [info] SetSpeed runningState -> endTransition -> completeState
-[16.654] [info] Spawn_Agent24 complete after 1 execution
-[16.654] [info] Spawn_Agent24 runningState -> endTransition -> completeState
-[16.671] [info] Adjusted Agent24 bounding box to model walkman.osgb - xyz: -0.04, 0.00, 0.91 lwh: 1.05, 0.25, 1.78
-[17.371] [info] SimulationTimeCondition: true, delay: 0.00, 17.3710 > 17.3600, edge: rising
-[17.371] [info] Trigger /------------------------------------------------
-[17.371] [info] Group 0:
-[17.371] [info] SimulationTimeCondition: true
-[17.371] [info] Trigger  ------------------------------------------------/
-[17.371] [info] Agent24_SpeedEvent0 standbyState -> startTransition -> runningState
-[17.371] [info] speed_up initState -> startTransition -> runningState
-[17.772] [info] Entity Agent20 moved out of route at roadId=13, s=0.11 (SetPathS())
-[17.772] [info] End of route at road_id=13, lane_id=1, s=0.01
-[17.772] [info] Entity Agent20 on route at roadId=0, s=0.00
-[17.772] [info] Entity Agent20 moved out of route at roadId=0, s=0.11 (SetTrackS())
-[18.005] [info] speed_up runningState -> endTransition -> completeState
-[18.005] [info] Agent24_SpeedEvent0 completed run 1 (of max 3)
-[18.005] [info] Agent24_SpeedEvent0 runningState -> endTransition -> standbyState
-[18.088] [info] SimulationTimeCondition: true, delay: 0.00, 18.0880 > 18.0800, edge: rising
-[18.088] [info] Trigger /------------------------------------------------
-[18.088] [info] Group 0:
-[18.088] [info] SimulationTimeCondition: true
-[18.088] [info] Trigger  ------------------------------------------------/
-[18.088] [info] Agent24_SpeedEvent1 standbyState -> startTransition -> runningState
-[18.088] [info] slow_down initState -> startTransition -> runningState
-[18.721] [info] slow_down runningState -> endTransition -> completeState
-[18.721] [info] Agent24_SpeedEvent1 completed run 1 (of max 3)
-[18.721] [info] Agent24_SpeedEvent1 runningState -> endTransition -> standbyState
-[19.525] [info] speed_up runningState -> endTransition -> completeState
-[19.525] [info] Agent23_SpeedEvent2 completed run 1 (of max 3)
-[19.525] [info] Agent23_SpeedEvent2 runningState -> endTransition -> standbyState
-[19.607] [info] SimulationTimeCondition: true, delay: 0.20, 19.6070 > 19.6000, edge: rising
-[19.623] [info] SimulationTimeCondition: false, delay: 0.20, 19.6230 > 19.6000, edge: rising
-[19.821] [info] Trigger /------------------------------------------------
-[19.821] [info] Group 0:
-[19.821] [info] SimulationTimeCondition: true
-[19.821] [info] Trigger  ------------------------------------------------/
-[19.821] [info] Despawn_Agent23_Event standbyState -> startTransition -> runningState
-[19.821] [info] Deleted entity Agent23
-[19.821] [info] Despawn_Agent23_Action initState -> startTransition -> runningState
-[19.821] [info] Despawn_Agent23_Action runningState -> stopTransition -> completeState
-[19.821] [info] Despawn_Agent23_Event complete after 1 execution
-[19.821] [info] Despawn_Agent23_Event runningState -> endTransition -> completeState
-[19.922] [info] speed_up runningState -> endTransition -> completeState
-[19.922] [info] Agent20_SpeedEvent1 completed run 1 (of max 3)
-[19.922] [info] Agent20_SpeedEvent1 runningState -> endTransition -> standbyState
-[20.005] [info] SimulationTimeCondition: true, delay: 0.20, 20.0050 > 20.0000, edge: rising
-[20.005] [info] SimulationTimeCondition: true, delay: 0.20, 20.0050 > 20.0000, edge: rising
-[20.005] [info] SimulationTimeCondition: true, delay: 0.20, 20.0050 > 20.0000, edge: rising
-[20.005] [info] SimulationTimeCondition: true, delay: 0.20, 20.0050 > 20.0000, edge: rising
-[20.005] [info] SimulationTimeCondition: true, delay: 0.20, 20.0050 > 20.0000, edge: rising
-[20.005] [info] SimulationTimeCondition: true, delay: 0.20, 20.0050 > 20.0000, edge: rising
-[20.005] [info] SimulationTimeCondition: true, delay: 0.20, 20.0050 > 20.0000, edge: rising
-[20.022] [info] SimulationTimeCondition: false, delay: 0.20, 20.0220 > 20.0000, edge: rising
-[20.022] [info] SimulationTimeCondition: false, delay: 0.20, 20.0220 > 20.0000, edge: rising
-[20.022] [info] SimulationTimeCondition: false, delay: 0.20, 20.0220 > 20.0000, edge: rising
-[20.022] [info] SimulationTimeCondition: false, delay: 0.20, 20.0220 > 20.0000, edge: rising
-[20.022] [info] SimulationTimeCondition: false, delay: 0.20, 20.0220 > 20.0000, edge: rising
-[20.022] [info] SimulationTimeCondition: false, delay: 0.20, 20.0220 > 20.0000, edge: rising
-[20.022] [info] SimulationTimeCondition: false, delay: 0.20, 20.0220 > 20.0000, edge: rising
-[20.205] [info] Trigger /------------------------------------------------
-[20.205] [info] Group 0:
-[20.205] [info] SimulationTimeCondition: true
-[20.205] [info] Trigger  ------------------------------------------------/
-[20.205] [info] Despawn_Agent3_Event standbyState -> startTransition -> runningState
-[20.205] [info] Deleted entity Agent3
-[20.205] [info] Despawn_Agent3_Action initState -> startTransition -> runningState
-[20.205] [info] Trigger /------------------------------------------------
-[20.205] [info] Group 0:
-[20.205] [info] SimulationTimeCondition: true
-[20.205] [info] Trigger  ------------------------------------------------/
-[20.205] [info] Despawn_Agent4_Event standbyState -> startTransition -> runningState
-[20.205] [info] Deleted entity Agent4
-[20.205] [info] Despawn_Agent4_Action initState -> startTransition -> runningState
-[20.205] [info] Trigger /------------------------------------------------
-[20.205] [info] Group 0:
-[20.205] [info] SimulationTimeCondition: true
-[20.205] [info] Trigger  ------------------------------------------------/
-[20.205] [info] Despawn_Agent5_Event standbyState -> startTransition -> runningState
-[20.205] [info] Deleted entity Agent5
-[20.205] [info] Despawn_Agent5_Action initState -> startTransition -> runningState
-[20.205] [info] Trigger /------------------------------------------------
-[20.205] [info] Group 0:
-[20.205] [info] SimulationTimeCondition: true
-[20.205] [info] Trigger  ------------------------------------------------/
-[20.205] [info] Despawn_Agent6_Event standbyState -> startTransition -> runningState
-[20.205] [info] Deleted entity Agent6
-[20.205] [info] Despawn_Agent6_Action initState -> startTransition -> runningState
-[20.205] [info] Trigger /------------------------------------------------
-[20.205] [info] Group 0:
-[20.205] [info] SimulationTimeCondition: true
-[20.205] [info] Trigger  ------------------------------------------------/
-[20.205] [info] Despawn_Agent7_Event standbyState -> startTransition -> runningState
-[20.205] [info] Deleted entity Agent7
-[20.205] [info] Despawn_Agent7_Action initState -> startTransition -> runningState
-[20.205] [info] Trigger /------------------------------------------------
-[20.205] [info] Group 0:
-[20.205] [info] SimulationTimeCondition: true
-[20.205] [info] Trigger  ------------------------------------------------/
-[20.205] [info] Despawn_Agent20_Event standbyState -> startTransition -> runningState
-[20.205] [info] Deleted entity Agent20
-[20.205] [info] Despawn_Agent20_Action initState -> startTransition -> runningState
-[20.205] [info] Trigger /------------------------------------------------
-[20.205] [info] Group 0:
-[20.205] [info] SimulationTimeCondition: true
-[20.205] [info] Trigger  ------------------------------------------------/
-[20.205] [info] Despawn_Agent24_Event standbyState -> startTransition -> runningState
-[20.205] [info] Deleted entity Agent24
-[20.205] [info] Despawn_Agent24_Action initState -> startTransition -> runningState
-[20.205] [info] Despawn_Agent3_Action runningState -> stopTransition -> completeState
-[20.205] [info] Despawn_Agent3_Event complete after 1 execution
-[20.205] [info] Despawn_Agent3_Event runningState -> endTransition -> completeState
-[20.205] [info] Maneuver_3 runningState -> endTransition -> completeState
-[20.205] [info] MG_3 complete after 1 execution
-[20.205] [info] MG_3 runningState -> endTransition -> completeState
-[20.205] [info] Despawn_Agent4_Action runningState -> stopTransition -> completeState
-[20.205] [info] Despawn_Agent4_Event complete after 1 execution
-[20.205] [info] Despawn_Agent4_Event runningState -> endTransition -> completeState
-[20.205] [info] Maneuver_4 runningState -> endTransition -> completeState
-[20.205] [info] MG_4 complete after 1 execution
-[20.205] [info] MG_4 runningState -> endTransition -> completeState
-[20.205] [info] Despawn_Agent5_Action runningState -> stopTransition -> completeState
-[20.205] [info] Despawn_Agent5_Event complete after 1 execution
-[20.205] [info] Despawn_Agent5_Event runningState -> endTransition -> completeState
-[20.205] [info] Maneuver_5 runningState -> endTransition -> completeState
-[20.205] [info] MG_5 complete after 1 execution
-[20.205] [info] MG_5 runningState -> endTransition -> completeState
-[20.205] [info] Despawn_Agent6_Action runningState -> stopTransition -> completeState
-[20.205] [info] Despawn_Agent6_Event complete after 1 execution
-[20.205] [info] Despawn_Agent6_Event runningState -> endTransition -> completeState
-[20.205] [info] Maneuver_6 runningState -> endTransition -> completeState
-[20.205] [info] MG_6 complete after 1 execution
-[20.205] [info] MG_6 runningState -> endTransition -> completeState
-[20.205] [info] Despawn_Agent7_Action runningState -> stopTransition -> completeState
-[20.205] [info] Despawn_Agent7_Event complete after 1 execution
-[20.205] [info] Despawn_Agent7_Event runningState -> endTransition -> completeState
-[20.205] [info] Maneuver_7 runningState -> endTransition -> completeState
-[20.205] [info] MG_7 complete after 1 execution
-[20.205] [info] MG_7 runningState -> endTransition -> completeState
-[20.205] [info] Despawn_Agent20_Action runningState -> stopTransition -> completeState
-[20.205] [info] Despawn_Agent20_Event complete after 1 execution
-[20.205] [info] Despawn_Agent20_Event runningState -> endTransition -> completeState
-[20.205] [info] Despawn_Agent24_Action runningState -> stopTransition -> completeState
-[20.205] [info] Despawn_Agent24_Event complete after 1 execution
-[20.205] [info] Despawn_Agent24_Event runningState -> endTransition -> completeState
-[21.005] [info] StoryStop: true, delay: 0.00, 21.0050 > 21.0000, edge: rising
-[21.005] [info] Trigger /------------------------------------------------
-[21.005] [info] Group 0:
-[21.005] [info] StoryStop: true
-[21.005] [info] Trigger  ------------------------------------------------/
-[21.005] [info] Agent16_RouteEvent0 standbyState -> stopTransition -> completeState
-[21.005] [info] Agent16_SpeedEvent0 standbyState -> stopTransition -> completeState
-[21.005] [info] Maneuver_16 runningState -> endTransition -> completeState
-[21.005] [info] MG_16 complete after 1 execution
-[21.005] [info] MG_16 runningState -> endTransition -> completeState
-[21.005] [info] Agent17_SpeedEvent0 standbyState -> stopTransition -> completeState
-[21.005] [info] Agent17_RouteEvent0 standbyState -> stopTransition -> completeState
-[21.005] [info] Agent17_SpeedEvent1 standbyState -> stopTransition -> completeState
-[21.005] [info] Maneuver_17 runningState -> endTransition -> completeState
-[21.005] [info] MG_17 complete after 1 execution
-[21.005] [info] MG_17 runningState -> endTransition -> completeState
-[21.005] [info] Agent18_SpeedEvent0 standbyState -> stopTransition -> completeState
-[21.005] [info] Agent18_RouteEvent0 standbyState -> stopTransition -> completeState
-[21.005] [info] Agent18_SpeedEvent1 standbyState -> stopTransition -> completeState
-[21.005] [info] Maneuver_18 runningState -> endTransition -> completeState
-[21.005] [info] MG_18 complete after 1 execution
-[21.005] [info] MG_18 runningState -> endTransition -> completeState
-[21.005] [info] Agent19_SpeedEvent0 standbyState -> stopTransition -> completeState
-[21.005] [info] Agent19_RouteEvent0 standbyState -> stopTransition -> completeState
-[21.005] [info] Agent19_SpeedEvent1 standbyState -> stopTransition -> completeState
-[21.005] [info] Agent19_SpeedEvent2 standbyState -> stopTransition -> completeState
-[21.005] [info] Agent19_SpeedEvent3 standbyState -> stopTransition -> completeState
-[21.005] [info] Agent19_SpeedEvent4 standbyState -> stopTransition -> completeState
-[21.005] [info] Maneuver_19 runningState -> endTransition -> completeState
-[21.005] [info] MG_19 complete after 1 execution
-[21.005] [info] MG_19 runningState -> endTransition -> completeState
-[21.005] [info] Agent20_SpeedEvent0 standbyState -> stopTransition -> completeState
-[21.005] [info] Agent20_RouteEvent0 standbyState -> stopTransition -> completeState
-[21.005] [info] Agent20_SpeedEvent1 standbyState -> stopTransition -> completeState
-[21.005] [info] Maneuver_20 runningState -> endTransition -> completeState
-[21.005] [info] MG_20 complete after 1 execution
-[21.005] [info] MG_20 runningState -> endTransition -> completeState
-[21.005] [info] Agent21_RouteEvent0 standbyState -> stopTransition -> completeState
-[21.005] [info] Agent21_SpeedEvent0 standbyState -> stopTransition -> completeState
-[21.005] [info] Agent21_SpeedEvent1 standbyState -> stopTransition -> completeState
-[21.005] [info] Maneuver_21 runningState -> endTransition -> completeState
-[21.005] [info] MG_21 complete after 1 execution
-[21.005] [info] MG_21 runningState -> endTransition -> completeState
-[21.005] [info] Agent22_SpeedEvent0 standbyState -> stopTransition -> completeState
-[21.005] [info] Agent22_RouteEvent0 standbyState -> stopTransition -> completeState
-[21.005] [info] Agent22_SpeedEvent1 standbyState -> stopTransition -> completeState
-[21.005] [info] Maneuver_22 runningState -> endTransition -> completeState
-[21.005] [info] MG_22 complete after 1 execution
-[21.005] [info] MG_22 runningState -> endTransition -> completeState
-[21.005] [info] Agent23_SpeedEvent0 standbyState -> stopTransition -> completeState
-[21.005] [info] Agent23_RouteEvent0 standbyState -> stopTransition -> completeState
-[21.005] [info] Agent23_SpeedEvent1 standbyState -> stopTransition -> completeState
-[21.005] [info] Agent23_SpeedEvent2 standbyState -> stopTransition -> completeState
-[21.005] [info] Maneuver_23 runningState -> endTransition -> completeState
-[21.005] [info] MG_23 complete after 1 execution
-[21.005] [info] MG_23 runningState -> endTransition -> completeState
-[21.005] [info] Agent24_SpeedEvent0 standbyState -> stopTransition -> completeState
-[21.005] [info] Agent24_SpeedEvent1 standbyState -> stopTransition -> completeState
-[21.005] [info] Maneuver_24 runningState -> endTransition -> completeState
-[21.005] [info] MG_24 complete after 1 execution
-[21.005] [info] MG_24 runningState -> endTransition -> completeState
-[21.005] [info] UnifiedAct runningState -> endTransition -> completeState
-[21.005] [info] UnifiedStory runningState -> endTransition -> completeState
-[21.005] [info] storyBoard runningState -> stopTransition -> completeState
+[0.229] [info] ReachPositionCondition: true, delay: 0.00, distance 2.92 < tolerance (3.00), edge: rising
+[0.229] [info] Trigger /------------------------------------------------
+[0.229] [info] Group 0:
+[0.229] [info] ReachPositionCondition: true
+[0.229] [info] Triggering entity 0: Agent18
+[0.229] [info] Trigger  ------------------------------------------------/
+[0.229] [info] Agent18_RouteEvent0 standbyState -> startTransition -> runningState
+[0.229] [info] SetRoute initState -> startTransition -> runningState
+[0.229] [info] SetRoute runningState -> endTransition -> completeState
+[0.229] [info] Agent18_RouteEvent0 completed run 1 (of max 3)
+[0.229] [info] Agent18_RouteEvent0 runningState -> endTransition -> standbyState
+[0.545] [info] ReachPositionCondition: true, delay: 0.00, distance 2.97 < tolerance (3.00), edge: rising
+[0.545] [info] Trigger /------------------------------------------------
+[0.545] [info] Group 0:
+[0.545] [info] ReachPositionCondition: true
+[0.545] [info] Triggering entity 0: Agent17
+[0.545] [info] Trigger  ------------------------------------------------/
+[0.545] [info] Agent17_RouteEvent0 standbyState -> startTransition -> runningState
+[0.545] [info] SetRoute initState -> startTransition -> runningState
+[0.545] [info] SetRoute runningState -> endTransition -> completeState
+[0.545] [info] Agent17_RouteEvent0 completed run 1 (of max 3)
+[0.545] [info] Agent17_RouteEvent0 runningState -> endTransition -> standbyState
+[0.629] [info] Entity Agent18 on route at roadId=0, s=0.19
+[0.812] [info] SpawnTrigger: true, delay: 0.00, 0.8120 > 0.8000, edge: rising
+[0.812] [info] Trigger /------------------------------------------------
+[0.812] [info] Group 0:
+[0.812] [info] SpawnTrigger: true
+[0.812] [info] Trigger  ------------------------------------------------/
+[0.812] [info] Spawn_Agent19 standbyState -> startTransition -> runningState
+[0.812] [info] Added entity Agent19
+[0.812] [info] SpawnAgent initState -> startTransition -> runningState
+[0.812] [info] SetSpeed initState -> startTransition -> runningState
+[0.812] [info] SimulationTimeCondition: true, delay: 0.00, 0.8120 > 0.8000, edge: rising
+[0.812] [info] Trigger /------------------------------------------------
+[0.812] [info] Group 0:
+[0.812] [info] SimulationTimeCondition: true
+[0.812] [info] Trigger  ------------------------------------------------/
+[0.812] [info] Other events ongoing, Agent19_SpeedEvent0 will run in parallel
+[0.812] [info] Agent19_SpeedEvent0 standbyState -> startTransition -> runningState
+[0.812] [warn] Stopping object Agent19 SetSpeed on conflicting Longitudinal domain(s)
+[0.812] [info] SetSpeed runningState -> endTransition -> completeState
+[0.812] [info] slow_down initState -> startTransition -> runningState
+[0.812] [info] SpawnAgent runningState -> stopTransition -> completeState
+[0.812] [info] Spawn_Agent19 complete after 1 execution
+[0.812] [info] Spawn_Agent19 runningState -> endTransition -> completeState
+[1.179] [info] Entity Agent17 on route at roadId=3, s=0.10
+[1.279] [info] ReachPositionCondition: true, delay: 0.00, distance 2.99 < tolerance (3.00), edge: rising
+[1.279] [info] Trigger /------------------------------------------------
+[1.279] [info] Group 0:
+[1.279] [info] ReachPositionCondition: true
+[1.279] [info] Triggering entity 0: Agent19
+[1.279] [info] Trigger  ------------------------------------------------/
+[1.279] [info] Other events ongoing, Agent19_RouteEvent0 will run in parallel
+[1.279] [info] Agent19_RouteEvent0 standbyState -> startTransition -> runningState
+[1.279] [info] SetRoute initState -> startTransition -> runningState
+[1.279] [info] SetRoute runningState -> endTransition -> completeState
+[1.279] [info] Agent19_RouteEvent0 completed run 1 (of max 3)
+[1.279] [info] Agent19_RouteEvent0 runningState -> endTransition -> standbyState
+[1.845] [info] SpawnTrigger: true, delay: 0.00, 1.8450 > 1.8400, edge: rising
+[1.845] [info] Trigger /------------------------------------------------
+[1.845] [info] Group 0:
+[1.845] [info] SpawnTrigger: true
+[1.845] [info] Trigger  ------------------------------------------------/
+[1.845] [info] Spawn_Agent20 standbyState -> startTransition -> runningState
+[1.845] [info] Added entity Agent20
+[1.845] [info] SpawnAgent initState -> startTransition -> runningState
+[1.845] [info] SetSpeed initState -> startTransition -> runningState
+[1.845] [info] SimulationTimeCondition: true, delay: 0.00, 1.8450 > 1.8400, edge: rising
+[1.845] [info] Trigger /------------------------------------------------
+[1.845] [info] Group 0:
+[1.845] [info] SimulationTimeCondition: true
+[1.845] [info] Trigger  ------------------------------------------------/
+[1.845] [info] Other events ongoing, Agent20_SpeedEvent0 will run in parallel
+[1.845] [info] Agent20_SpeedEvent0 standbyState -> startTransition -> runningState
+[1.845] [warn] Stopping object Agent20 SetSpeed on conflicting Longitudinal domain(s)
+[1.845] [info] SetSpeed runningState -> endTransition -> completeState
+[1.845] [info] slow_down initState -> startTransition -> runningState
+[1.845] [info] ReachPositionCondition: true, delay: 0.00, distance 1.27 < tolerance (3.00), edge: rising
+[1.845] [info] Trigger /------------------------------------------------
+[1.845] [info] Group 0:
+[1.845] [info] ReachPositionCondition: true
+[1.845] [info] Triggering entity 0: Agent20
+[1.845] [info] Trigger  ------------------------------------------------/
+[1.845] [info] Other events ongoing, Agent20_RouteEvent0 will run in parallel
+[1.845] [info] Agent20_RouteEvent0 standbyState -> startTransition -> runningState
+[1.845] [info] SetRoute initState -> startTransition -> runningState
+[1.845] [info] SpawnAgent runningState -> stopTransition -> completeState
+[1.845] [info] Spawn_Agent20 complete after 1 execution
+[1.845] [info] Spawn_Agent20 runningState -> endTransition -> completeState
+[1.845] [info] SetRoute runningState -> endTransition -> completeState
+[1.845] [info] Agent20_RouteEvent0 completed run 1 (of max 3)
+[1.845] [info] Agent20_RouteEvent0 runningState -> endTransition -> standbyState
+[2.012] [info] SimulationTimeCondition: true, delay: 0.20, 2.0120 > 2.0000, edge: rising
+[2.029] [info] SimulationTimeCondition: false, delay: 0.20, 2.0290 > 2.0000, edge: rising
+[2.113] [info] Entity Agent20 on route at roadId=4, s=0.15
+[2.130] [info] Entity Agent19 on route at roadId=34, s=27.95
+[2.212] [info] Trigger /------------------------------------------------
+[2.212] [info] Group 0:
+[2.212] [info] SimulationTimeCondition: true
+[2.212] [info] Trigger  ------------------------------------------------/
+[2.212] [info] Despawn_Agent16_Event standbyState -> startTransition -> runningState
+[2.212] [info] Deleted entity Agent16
+[2.212] [info] Despawn_Agent16_Action initState -> startTransition -> runningState
+[2.212] [info] Despawn_Agent16_Action runningState -> stopTransition -> completeState
+[2.212] [info] Despawn_Agent16_Event complete after 1 execution
+[2.212] [info] Despawn_Agent16_Event runningState -> endTransition -> completeState
+[3.130] [info] SimulationTimeCondition: true, delay: 0.00, 3.1300 > 3.1200, edge: rising
+[3.130] [info] Trigger /------------------------------------------------
+[3.130] [info] Group 0:
+[3.130] [info] SimulationTimeCondition: true
+[3.130] [info] Trigger  ------------------------------------------------/
+[3.130] [info] Agent18_SpeedEvent1 standbyState -> startTransition -> runningState
+[3.130] [info] speed_up initState -> startTransition -> runningState
+[3.363] [info] SimulationTimeCondition: true, delay: 0.00, 3.3630 > 3.3600, edge: rising
+[3.363] [info] Trigger /------------------------------------------------
+[3.363] [info] Group 0:
+[3.363] [info] SimulationTimeCondition: true
+[3.363] [info] Trigger  ------------------------------------------------/
+[3.363] [info] Agent17_SpeedEvent1 standbyState -> startTransition -> runningState
+[3.363] [info] speed_up initState -> startTransition -> runningState
+[3.646] [info] Entity Agent18 moved out of route at roadId=4, s=0.56 (SetPathS())
+[3.646] [info] End of route at road_id=4, lane_id=-1, s=0.45
+[3.929] [info] speed_up runningState -> endTransition -> completeState
+[3.929] [info] Agent18_SpeedEvent1 completed run 1 (of max 3)
+[3.929] [info] Agent18_SpeedEvent1 runningState -> endTransition -> standbyState
+[4.014] [info] SimulationTimeCondition: true, delay: 0.20, 4.0140 > 4.0000, edge: rising
+[4.030] [info] SimulationTimeCondition: false, delay: 0.20, 4.0300 > 4.0000, edge: rising
+[4.230] [info] Trigger /------------------------------------------------
+[4.230] [info] Group 0:
+[4.230] [info] SimulationTimeCondition: true
+[4.230] [info] Trigger  ------------------------------------------------/
+[4.230] [info] Despawn_Agent18_Event standbyState -> startTransition -> runningState
+[4.230] [info] Deleted entity Agent18
+[4.230] [info] Despawn_Agent18_Action initState -> startTransition -> runningState
+[4.230] [info] Despawn_Agent18_Action runningState -> stopTransition -> completeState
+[4.230] [info] Despawn_Agent18_Event complete after 1 execution
+[4.230] [info] Despawn_Agent18_Event runningState -> endTransition -> completeState
+[4.963] [info] slow_down runningState -> endTransition -> completeState
+[4.963] [info] Agent19_SpeedEvent0 completed run 1 (of max 3)
+[4.963] [info] Agent19_SpeedEvent0 runningState -> endTransition -> standbyState
+[5.047] [info] SimulationTimeCondition: true, delay: 0.00, 5.0470 > 5.0400, edge: rising
+[5.047] [info] Trigger /------------------------------------------------
+[5.047] [info] Group 0:
+[5.047] [info] SimulationTimeCondition: true
+[5.047] [info] Trigger  ------------------------------------------------/
+[5.047] [info] Agent19_SpeedEvent1 standbyState -> startTransition -> runningState
+[5.047] [info] speed_up initState -> startTransition -> runningState
+[5.763] [info] SpawnTrigger: true, delay: 0.00, 5.7630 > 5.7600, edge: rising
+[5.763] [info] Trigger /------------------------------------------------
+[5.763] [info] Group 0:
+[5.763] [info] SpawnTrigger: true
+[5.763] [info] Trigger  ------------------------------------------------/
+[5.763] [info] Spawn_Agent21 standbyState -> startTransition -> runningState
+[5.763] [info] Added entity Agent21
+[5.763] [info] SpawnAgent initState -> startTransition -> runningState
+[5.763] [info] SetSpeed initState -> startTransition -> runningState
+[5.763] [info] ReachPositionCondition: true, delay: 0.00, distance 1.09 < tolerance (3.00), edge: rising
+[5.763] [info] Trigger /------------------------------------------------
+[5.763] [info] Group 0:
+[5.763] [info] ReachPositionCondition: true
+[5.763] [info] Triggering entity 0: Agent21
+[5.763] [info] Trigger  ------------------------------------------------/
+[5.763] [info] Other events ongoing, Agent21_RouteEvent0 will run in parallel
+[5.763] [info] Agent21_RouteEvent0 standbyState -> startTransition -> runningState
+[5.763] [info] SetRoute initState -> startTransition -> runningState
+[5.763] [info] SpawnAgent runningState -> stopTransition -> completeState
+[5.763] [info] SetSpeed runningState -> endTransition -> completeState
+[5.763] [info] Spawn_Agent21 complete after 1 execution
+[5.763] [info] Spawn_Agent21 runningState -> endTransition -> completeState
+[5.763] [info] SetRoute runningState -> endTransition -> completeState
+[5.763] [info] Agent21_RouteEvent0 completed run 1 (of max 3)
+[5.763] [info] Agent21_RouteEvent0 runningState -> endTransition -> standbyState
+[5.980] [info] Entity Agent21 on route at roadId=4, s=0.16
+[6.096] [info] SimulationTimeCondition: true, delay: 0.00, 6.0960 > 6.0800, edge: rising
+[6.096] [info] Trigger /------------------------------------------------
+[6.096] [info] Group 0:
+[6.096] [info] SimulationTimeCondition: true
+[6.096] [info] Trigger  ------------------------------------------------/
+[6.096] [info] Agent21_SpeedEvent0 standbyState -> startTransition -> runningState
+[6.096] [info] slow_down initState -> startTransition -> runningState
+[6.231] [info] slow_down runningState -> endTransition -> completeState
+[6.231] [info] Agent20_SpeedEvent0 completed run 1 (of max 3)
+[6.231] [info] Agent20_SpeedEvent0 runningState -> endTransition -> standbyState
+[6.630] [info] Entity Agent17 moved out of route at roadId=4, s=0.29 (SetPathS())
+[6.630] [info] End of route at road_id=4, lane_id=-1, s=0.20
+[7.030] [info] speed_up runningState -> endTransition -> completeState
+[7.030] [info] Agent19_SpeedEvent1 completed run 1 (of max 3)
+[7.030] [info] Agent19_SpeedEvent1 runningState -> endTransition -> standbyState
+[7.130] [info] SimulationTimeCondition: true, delay: 0.00, 7.1300 > 7.1200, edge: rising
+[7.130] [info] Trigger /------------------------------------------------
+[7.130] [info] Group 0:
+[7.130] [info] SimulationTimeCondition: true
+[7.130] [info] Trigger  ------------------------------------------------/
+[7.130] [info] Agent19_SpeedEvent2 standbyState -> startTransition -> runningState
+[7.130] [info] slow_down initState -> startTransition -> runningState
+[7.214] [info] SpawnTrigger: true, delay: 0.00, 7.2140 > 7.2000, edge: rising
+[7.214] [info] Trigger /------------------------------------------------
+[7.214] [info] Group 0:
+[7.214] [info] SpawnTrigger: true
+[7.214] [info] Trigger  ------------------------------------------------/
+[7.214] [info] Spawn_Agent22 standbyState -> startTransition -> runningState
+[7.214] [info] Added entity Agent22
+[7.214] [info] SpawnAgent initState -> startTransition -> runningState
+[7.214] [info] SetSpeed initState -> startTransition -> runningState
+[7.214] [info] SimulationTimeCondition: true, delay: 0.00, 7.2140 > 7.2000, edge: rising
+[7.214] [info] Trigger /------------------------------------------------
+[7.214] [info] Group 0:
+[7.214] [info] SimulationTimeCondition: true
+[7.214] [info] Trigger  ------------------------------------------------/
+[7.214] [info] Other events ongoing, Agent22_SpeedEvent0 will run in parallel
+[7.214] [info] Agent22_SpeedEvent0 standbyState -> startTransition -> runningState
+[7.214] [warn] Stopping object Agent22 SetSpeed on conflicting Longitudinal domain(s)
+[7.214] [info] SetSpeed runningState -> endTransition -> completeState
+[7.214] [info] speed_up initState -> startTransition -> runningState
+[7.214] [info] SpawnAgent runningState -> stopTransition -> completeState
+[7.214] [info] Spawn_Agent22 complete after 1 execution
+[7.214] [info] Spawn_Agent22 runningState -> endTransition -> completeState
+[8.147] [info] speed_up runningState -> endTransition -> completeState
+[8.147] [info] Agent17_SpeedEvent1 completed run 1 (of max 3)
+[8.147] [info] Agent17_SpeedEvent1 runningState -> endTransition -> standbyState
+[8.163] [info] slow_down runningState -> endTransition -> completeState
+[8.163] [info] Agent19_SpeedEvent2 completed run 1 (of max 3)
+[8.163] [info] Agent19_SpeedEvent2 runningState -> endTransition -> standbyState
+[8.247] [info] SimulationTimeCondition: true, delay: 0.20, 8.2470 > 8.2400, edge: rising
+[8.247] [info] SimulationTimeCondition: true, delay: 0.00, 8.2470 > 8.2400, edge: rising
+[8.247] [info] Trigger /------------------------------------------------
+[8.247] [info] Group 0:
+[8.247] [info] SimulationTimeCondition: true
+[8.247] [info] Trigger  ------------------------------------------------/
+[8.247] [info] Agent19_SpeedEvent3 standbyState -> startTransition -> runningState
+[8.247] [info] speed_up initState -> startTransition -> runningState
+[8.264] [info] SimulationTimeCondition: false, delay: 0.20, 8.2640 > 8.2400, edge: rising
+[8.447] [info] Trigger /------------------------------------------------
+[8.447] [info] Group 0:
+[8.447] [info] SimulationTimeCondition: true
+[8.447] [info] Trigger  ------------------------------------------------/
+[8.447] [info] Despawn_Agent17_Event standbyState -> startTransition -> runningState
+[8.447] [info] Deleted entity Agent17
+[8.447] [info] Despawn_Agent17_Action initState -> startTransition -> runningState
+[8.447] [info] Despawn_Agent17_Action runningState -> stopTransition -> completeState
+[8.447] [info] Despawn_Agent17_Event complete after 1 execution
+[8.447] [info] Despawn_Agent17_Event runningState -> endTransition -> completeState
+[8.731] [info] SimulationTimeCondition: true, delay: 0.00, 8.7310 > 8.7200, edge: rising
+[8.731] [info] Trigger /------------------------------------------------
+[8.731] [info] Group 0:
+[8.731] [info] SimulationTimeCondition: true
+[8.731] [info] Trigger  ------------------------------------------------/
+[8.731] [info] Other events ongoing, Agent21_SpeedEvent1 will run in parallel
+[8.731] [info] Agent21_SpeedEvent1 standbyState -> startTransition -> runningState
+[8.731] [warn] Stopping object Agent21 slow_down on conflicting Longitudinal domain(s)
+[8.731] [info] slow_down runningState -> endTransition -> completeState
+[8.731] [info] Agent21_SpeedEvent0 completed run 1 (of max 3)
+[8.731] [info] Agent21_SpeedEvent0 runningState -> endTransition -> standbyState
+[8.731] [info] speed_up initState -> startTransition -> runningState
+[8.816] [info] ReachPositionCondition: true, delay: 0.00, distance 2.97 < tolerance (3.00), edge: rising
+[8.816] [info] Trigger /------------------------------------------------
+[8.816] [info] Group 0:
+[8.816] [info] ReachPositionCondition: true
+[8.816] [info] Triggering entity 0: Agent22
+[8.816] [info] Trigger  ------------------------------------------------/
+[8.816] [info] Other events ongoing, Agent22_RouteEvent0 will run in parallel
+[8.816] [info] Agent22_RouteEvent0 standbyState -> startTransition -> runningState
+[8.816] [info] SetRoute initState -> startTransition -> runningState
+[8.816] [info] SetRoute runningState -> endTransition -> completeState
+[8.816] [info] Agent22_RouteEvent0 completed run 1 (of max 3)
+[8.816] [info] Agent22_RouteEvent0 runningState -> endTransition -> standbyState
+[8.963] [info] speed_up runningState -> endTransition -> completeState
+[8.963] [info] Agent22_SpeedEvent0 completed run 1 (of max 3)
+[8.963] [info] Agent22_SpeedEvent0 runningState -> endTransition -> standbyState
+[9.048] [info] Entity Agent22 on route at roadId=3, s=0.34
+[9.131] [info] SimulationTimeCondition: true, delay: 0.00, 9.1310 > 9.1200, edge: rising
+[9.131] [info] Trigger /------------------------------------------------
+[9.131] [info] Group 0:
+[9.131] [info] SimulationTimeCondition: true
+[9.131] [info] Trigger  ------------------------------------------------/
+[9.131] [info] Agent22_SpeedEvent1 standbyState -> startTransition -> runningState
+[9.131] [info] slow_down initState -> startTransition -> runningState
+[9.847] [info] SpawnTrigger: true, delay: 0.00, 9.8470 > 9.8400, edge: rising
+[9.847] [info] Trigger /------------------------------------------------
+[9.847] [info] Group 0:
+[9.847] [info] SpawnTrigger: true
+[9.847] [info] Trigger  ------------------------------------------------/
+[9.847] [info] Spawn_Agent23 standbyState -> startTransition -> runningState
+[9.847] [info] Added entity Agent23
+[9.847] [info] SpawnAgent initState -> startTransition -> runningState
+[9.847] [info] SetSpeed initState -> startTransition -> runningState
+[9.847] [info] SimulationTimeCondition: true, delay: 0.00, 9.8470 > 9.8400, edge: rising
+[9.847] [info] Trigger /------------------------------------------------
+[9.847] [info] Group 0:
+[9.847] [info] SimulationTimeCondition: true
+[9.847] [info] Trigger  ------------------------------------------------/
+[9.847] [info] Other events ongoing, Agent23_SpeedEvent0 will run in parallel
+[9.847] [info] Agent23_SpeedEvent0 standbyState -> startTransition -> runningState
+[9.847] [warn] Stopping object Agent23 SetSpeed on conflicting Longitudinal domain(s)
+[9.847] [info] SetSpeed runningState -> endTransition -> completeState
+[9.847] [info] speed_up initState -> startTransition -> runningState
+[9.847] [info] ReachPositionCondition: true, delay: 0.00, distance 1.58 < tolerance (3.00), edge: rising
+[9.847] [info] Trigger /------------------------------------------------
+[9.847] [info] Group 0:
+[9.847] [info] ReachPositionCondition: true
+[9.847] [info] Triggering entity 0: Agent23
+[9.847] [info] Trigger  ------------------------------------------------/
+[9.847] [info] Other events ongoing, Agent23_RouteEvent0 will run in parallel
+[9.847] [info] Agent23_RouteEvent0 standbyState -> startTransition -> runningState
+[9.847] [info] SetRoute initState -> startTransition -> runningState
+[9.847] [info] SpawnAgent runningState -> stopTransition -> completeState
+[9.847] [info] Spawn_Agent23 complete after 1 execution
+[9.847] [info] Spawn_Agent23 runningState -> endTransition -> completeState
+[9.847] [info] SetRoute runningState -> endTransition -> completeState
+[9.847] [info] Agent23_RouteEvent0 completed run 1 (of max 3)
+[9.847] [info] Agent23_RouteEvent0 runningState -> endTransition -> standbyState
+[10.663] [info] Entity Agent23 on route at roadId=4, s=0.02
+[11.146] [info] Entity Agent22 moved out of route at roadId=0, s=0.50 (SetPathS())
+[11.146] [info] End of route at road_id=0, lane_id=-1, s=0.31
+[11.730] [info] Entity Agent21 moved out of route at roadId=3, s=0.18 (SetPathS())
+[11.730] [info] End of route at road_id=3, lane_id=-1, s=0.10
+[11.913] [info] speed_up runningState -> endTransition -> completeState
+[11.913] [info] Agent23_SpeedEvent0 completed run 1 (of max 3)
+[11.913] [info] Agent23_SpeedEvent0 runningState -> endTransition -> standbyState
+[11.930] [info] SimulationTimeCondition: true, delay: 0.00, 11.9300 > 11.9200, edge: rising
+[11.930] [info] Trigger /------------------------------------------------
+[11.930] [info] Group 0:
+[11.930] [info] SimulationTimeCondition: true
+[11.930] [info] Trigger  ------------------------------------------------/
+[11.930] [info] Agent23_SpeedEvent1 standbyState -> startTransition -> runningState
+[11.930] [info] slow_down initState -> startTransition -> runningState
+[12.247] [info] SimulationTimeCondition: true, delay: 0.00, 12.2470 > 12.2400, edge: rising
+[12.247] [info] Trigger /------------------------------------------------
+[12.247] [info] Group 0:
+[12.247] [info] SimulationTimeCondition: true
+[12.247] [info] Trigger  ------------------------------------------------/
+[12.247] [info] Agent20_SpeedEvent1 standbyState -> startTransition -> runningState
+[12.247] [info] speed_up initState -> startTransition -> runningState
+[12.563] [info] slow_down runningState -> endTransition -> completeState
+[12.563] [info] Agent22_SpeedEvent1 completed run 1 (of max 3)
+[12.563] [info] Agent22_SpeedEvent1 runningState -> endTransition -> standbyState
+[12.648] [info] SimulationTimeCondition: true, delay: 0.20, 12.6480 > 12.6400, edge: rising
+[12.664] [info] SimulationTimeCondition: false, delay: 0.20, 12.6640 > 12.6400, edge: rising
+[12.863] [info] Trigger /------------------------------------------------
+[12.863] [info] Group 0:
+[12.863] [info] SimulationTimeCondition: true
+[12.863] [info] Trigger  ------------------------------------------------/
+[12.863] [info] Despawn_Agent22_Event standbyState -> startTransition -> runningState
+[12.863] [info] Deleted entity Agent22
+[12.863] [info] Despawn_Agent22_Action initState -> startTransition -> runningState
+[12.863] [info] Despawn_Agent22_Action runningState -> stopTransition -> completeState
+[12.863] [info] Despawn_Agent22_Event complete after 1 execution
+[12.863] [info] Despawn_Agent22_Event runningState -> endTransition -> completeState
+[13.680] [info] slow_down runningState -> endTransition -> completeState
+[13.680] [info] Agent23_SpeedEvent1 completed run 1 (of max 3)
+[13.680] [info] Agent23_SpeedEvent1 runningState -> endTransition -> standbyState
+[13.697] [info] SimulationTimeCondition: true, delay: 0.00, 13.6970 > 13.6800, edge: rising
+[13.697] [info] Trigger /------------------------------------------------
+[13.697] [info] Group 0:
+[13.697] [info] SimulationTimeCondition: true
+[13.697] [info] Trigger  ------------------------------------------------/
+[13.697] [info] Agent23_SpeedEvent2 standbyState -> startTransition -> runningState
+[13.697] [info] speed_up initState -> startTransition -> runningState
+[14.313] [info] speed_up runningState -> endTransition -> completeState
+[14.313] [info] Agent19_SpeedEvent3 completed run 1 (of max 3)
+[14.313] [info] Agent19_SpeedEvent3 runningState -> endTransition -> standbyState
+[14.897] [info] SimulationTimeCondition: true, delay: 0.00, 14.8970 > 14.8800, edge: rising
+[14.897] [info] Trigger /------------------------------------------------
+[14.897] [info] Group 0:
+[14.897] [info] SimulationTimeCondition: true
+[14.897] [info] Trigger  ------------------------------------------------/
+[14.897] [info] Agent19_SpeedEvent4 standbyState -> startTransition -> runningState
+[14.897] [info] speed_up initState -> startTransition -> runningState
+[15.097] [info] Entity Agent19 moved out of route at roadId=4, s=0.21 (SetPathS())
+[15.097] [info] End of route at road_id=4, lane_id=-1, s=0.11
+[15.115] [info] speed_up runningState -> endTransition -> completeState
+[15.115] [info] Agent21_SpeedEvent1 completed run 1 (of max 3)
+[15.115] [info] Agent21_SpeedEvent1 runningState -> endTransition -> standbyState
+[15.214] [info] SimulationTimeCondition: true, delay: 0.20, 15.2140 > 15.2000, edge: rising
+[15.230] [info] SimulationTimeCondition: false, delay: 0.20, 15.2300 > 15.2000, edge: rising
+[15.430] [info] Trigger /------------------------------------------------
+[15.430] [info] Group 0:
+[15.430] [info] SimulationTimeCondition: true
+[15.430] [info] Trigger  ------------------------------------------------/
+[15.430] [info] Despawn_Agent21_Event standbyState -> startTransition -> runningState
+[15.430] [info] Deleted entity Agent21
+[15.430] [info] Despawn_Agent21_Action initState -> startTransition -> runningState
+[15.430] [info] Despawn_Agent21_Action runningState -> stopTransition -> completeState
+[15.430] [info] Despawn_Agent21_Event complete after 1 execution
+[15.430] [info] Despawn_Agent21_Event runningState -> endTransition -> completeState
+[15.930] [info] speed_up runningState -> endTransition -> completeState
+[15.930] [info] Agent19_SpeedEvent4 completed run 1 (of max 3)
+[15.930] [info] Agent19_SpeedEvent4 runningState -> endTransition -> standbyState
+[16.014] [info] SimulationTimeCondition: true, delay: 0.20, 16.0140 > 16.0000, edge: rising
+[16.031] [info] SimulationTimeCondition: false, delay: 0.20, 16.0310 > 16.0000, edge: rising
+[16.230] [info] Trigger /------------------------------------------------
+[16.230] [info] Group 0:
+[16.230] [info] SimulationTimeCondition: true
+[16.230] [info] Trigger  ------------------------------------------------/
+[16.230] [info] Despawn_Agent19_Event standbyState -> startTransition -> runningState
+[16.230] [info] Deleted entity Agent19
+[16.230] [info] Despawn_Agent19_Action initState -> startTransition -> runningState
+[16.230] [info] Despawn_Agent19_Action runningState -> stopTransition -> completeState
+[16.230] [info] Despawn_Agent19_Event complete after 1 execution
+[16.230] [info] Despawn_Agent19_Event runningState -> endTransition -> completeState
+[16.563] [info] Entity Agent23 moved out of route at roadId=3, s=0.62 (SetPathS())
+[16.563] [info] End of route at road_id=3, lane_id=-1, s=0.54
+[16.647] [info] SpawnTrigger: true, delay: 0.00, 16.6470 > 16.6400, edge: rising
+[16.647] [info] Trigger /------------------------------------------------
+[16.647] [info] Group 0:
+[16.647] [info] SpawnTrigger: true
+[16.647] [info] Trigger  ------------------------------------------------/
+[16.647] [info] Spawn_Agent24 standbyState -> startTransition -> runningState
+[16.647] [info] Added entity Agent24
+[16.647] [info] SpawnAgent initState -> startTransition -> runningState
+[16.647] [info] SetSpeed initState -> startTransition -> runningState
+[16.647] [info] SpawnAgent runningState -> stopTransition -> completeState
+[16.647] [info] SetSpeed runningState -> endTransition -> completeState
+[16.647] [info] Spawn_Agent24 complete after 1 execution
+[16.647] [info] Spawn_Agent24 runningState -> endTransition -> completeState
+[16.663] [info] Adjusted Agent24 bounding box to model walkman.osgb - xyz: -0.04, 0.00, 0.91 lwh: 1.05, 0.25, 1.78
+[17.363] [info] SimulationTimeCondition: true, delay: 0.00, 17.3630 > 17.3600, edge: rising
+[17.363] [info] Trigger /------------------------------------------------
+[17.363] [info] Group 0:
+[17.363] [info] SimulationTimeCondition: true
+[17.363] [info] Trigger  ------------------------------------------------/
+[17.363] [info] Agent24_SpeedEvent0 standbyState -> startTransition -> runningState
+[17.363] [info] speed_up initState -> startTransition -> runningState
+[17.763] [info] Entity Agent20 moved out of route at roadId=0, s=0.11 (SetPathS())
+[17.763] [info] End of route at road_id=0, lane_id=-1, s=0.00
+[17.996] [info] speed_up runningState -> endTransition -> completeState
+[17.996] [info] Agent24_SpeedEvent0 completed run 1 (of max 3)
+[17.996] [info] Agent24_SpeedEvent0 runningState -> endTransition -> standbyState
+[18.097] [info] SimulationTimeCondition: true, delay: 0.00, 18.0970 > 18.0800, edge: rising
+[18.097] [info] Trigger /------------------------------------------------
+[18.097] [info] Group 0:
+[18.097] [info] SimulationTimeCondition: true
+[18.097] [info] Trigger  ------------------------------------------------/
+[18.097] [info] Agent24_SpeedEvent1 standbyState -> startTransition -> runningState
+[18.097] [info] slow_down initState -> startTransition -> runningState
+[18.730] [info] slow_down runningState -> endTransition -> completeState
+[18.730] [info] Agent24_SpeedEvent1 completed run 1 (of max 3)
+[18.730] [info] Agent24_SpeedEvent1 runningState -> endTransition -> standbyState
+[19.534] [info] speed_up runningState -> endTransition -> completeState
+[19.534] [info] Agent23_SpeedEvent2 completed run 1 (of max 3)
+[19.534] [info] Agent23_SpeedEvent2 runningState -> endTransition -> standbyState
+[19.616] [info] SimulationTimeCondition: true, delay: 0.20, 19.6160 > 19.6000, edge: rising
+[19.630] [info] SimulationTimeCondition: false, delay: 0.20, 19.6300 > 19.6000, edge: rising
+[19.830] [info] Trigger /------------------------------------------------
+[19.830] [info] Group 0:
+[19.830] [info] SimulationTimeCondition: true
+[19.830] [info] Trigger  ------------------------------------------------/
+[19.830] [info] Despawn_Agent23_Event standbyState -> startTransition -> runningState
+[19.830] [info] Deleted entity Agent23
+[19.830] [info] Despawn_Agent23_Action initState -> startTransition -> runningState
+[19.830] [info] Despawn_Agent23_Action runningState -> stopTransition -> completeState
+[19.830] [info] Despawn_Agent23_Event complete after 1 execution
+[19.830] [info] Despawn_Agent23_Event runningState -> endTransition -> completeState
+[19.914] [info] speed_up runningState -> endTransition -> completeState
+[19.914] [info] Agent20_SpeedEvent1 completed run 1 (of max 3)
+[19.914] [info] Agent20_SpeedEvent1 runningState -> endTransition -> standbyState
+[20.014] [info] SimulationTimeCondition: true, delay: 0.20, 20.0140 > 20.0000, edge: rising
+[20.014] [info] SimulationTimeCondition: true, delay: 0.20, 20.0140 > 20.0000, edge: rising
+[20.014] [info] SimulationTimeCondition: true, delay: 0.20, 20.0140 > 20.0000, edge: rising
+[20.014] [info] SimulationTimeCondition: true, delay: 0.20, 20.0140 > 20.0000, edge: rising
+[20.014] [info] SimulationTimeCondition: true, delay: 0.20, 20.0140 > 20.0000, edge: rising
+[20.014] [info] SimulationTimeCondition: true, delay: 0.20, 20.0140 > 20.0000, edge: rising
+[20.014] [info] SimulationTimeCondition: true, delay: 0.20, 20.0140 > 20.0000, edge: rising
+[20.030] [info] SimulationTimeCondition: false, delay: 0.20, 20.0300 > 20.0000, edge: rising
+[20.030] [info] SimulationTimeCondition: false, delay: 0.20, 20.0300 > 20.0000, edge: rising
+[20.030] [info] SimulationTimeCondition: false, delay: 0.20, 20.0300 > 20.0000, edge: rising
+[20.030] [info] SimulationTimeCondition: false, delay: 0.20, 20.0300 > 20.0000, edge: rising
+[20.030] [info] SimulationTimeCondition: false, delay: 0.20, 20.0300 > 20.0000, edge: rising
+[20.030] [info] SimulationTimeCondition: false, delay: 0.20, 20.0300 > 20.0000, edge: rising
+[20.030] [info] SimulationTimeCondition: false, delay: 0.20, 20.0300 > 20.0000, edge: rising
+[20.230] [info] Trigger /------------------------------------------------
+[20.230] [info] Group 0:
+[20.230] [info] SimulationTimeCondition: true
+[20.230] [info] Trigger  ------------------------------------------------/
+[20.230] [info] Despawn_Agent3_Event standbyState -> startTransition -> runningState
+[20.230] [info] Deleted entity Agent3
+[20.230] [info] Despawn_Agent3_Action initState -> startTransition -> runningState
+[20.230] [info] Trigger /------------------------------------------------
+[20.230] [info] Group 0:
+[20.230] [info] SimulationTimeCondition: true
+[20.230] [info] Trigger  ------------------------------------------------/
+[20.230] [info] Despawn_Agent4_Event standbyState -> startTransition -> runningState
+[20.230] [info] Deleted entity Agent4
+[20.230] [info] Despawn_Agent4_Action initState -> startTransition -> runningState
+[20.230] [info] Trigger /------------------------------------------------
+[20.230] [info] Group 0:
+[20.230] [info] SimulationTimeCondition: true
+[20.230] [info] Trigger  ------------------------------------------------/
+[20.230] [info] Despawn_Agent5_Event standbyState -> startTransition -> runningState
+[20.230] [info] Deleted entity Agent5
+[20.230] [info] Despawn_Agent5_Action initState -> startTransition -> runningState
+[20.230] [info] Trigger /------------------------------------------------
+[20.230] [info] Group 0:
+[20.230] [info] SimulationTimeCondition: true
+[20.230] [info] Trigger  ------------------------------------------------/
+[20.230] [info] Despawn_Agent6_Event standbyState -> startTransition -> runningState
+[20.230] [info] Deleted entity Agent6
+[20.230] [info] Despawn_Agent6_Action initState -> startTransition -> runningState
+[20.230] [info] Trigger /------------------------------------------------
+[20.230] [info] Group 0:
+[20.230] [info] SimulationTimeCondition: true
+[20.230] [info] Trigger  ------------------------------------------------/
+[20.230] [info] Despawn_Agent7_Event standbyState -> startTransition -> runningState
+[20.230] [info] Deleted entity Agent7
+[20.230] [info] Despawn_Agent7_Action initState -> startTransition -> runningState
+[20.230] [info] Trigger /------------------------------------------------
+[20.230] [info] Group 0:
+[20.230] [info] SimulationTimeCondition: true
+[20.230] [info] Trigger  ------------------------------------------------/
+[20.230] [info] Despawn_Agent20_Event standbyState -> startTransition -> runningState
+[20.230] [info] Deleted entity Agent20
+[20.230] [info] Despawn_Agent20_Action initState -> startTransition -> runningState
+[20.230] [info] Trigger /------------------------------------------------
+[20.230] [info] Group 0:
+[20.230] [info] SimulationTimeCondition: true
+[20.230] [info] Trigger  ------------------------------------------------/
+[20.230] [info] Despawn_Agent24_Event standbyState -> startTransition -> runningState
+[20.230] [info] Deleted entity Agent24
+[20.230] [info] Despawn_Agent24_Action initState -> startTransition -> runningState
+[20.230] [info] Despawn_Agent3_Action runningState -> stopTransition -> completeState
+[20.230] [info] Despawn_Agent3_Event complete after 1 execution
+[20.230] [info] Despawn_Agent3_Event runningState -> endTransition -> completeState
+[20.230] [info] Maneuver_3 runningState -> endTransition -> completeState
+[20.230] [info] MG_3 complete after 1 execution
+[20.230] [info] MG_3 runningState -> endTransition -> completeState
+[20.230] [info] Despawn_Agent4_Action runningState -> stopTransition -> completeState
+[20.230] [info] Despawn_Agent4_Event complete after 1 execution
+[20.230] [info] Despawn_Agent4_Event runningState -> endTransition -> completeState
+[20.230] [info] Maneuver_4 runningState -> endTransition -> completeState
+[20.230] [info] MG_4 complete after 1 execution
+[20.230] [info] MG_4 runningState -> endTransition -> completeState
+[20.230] [info] Despawn_Agent5_Action runningState -> stopTransition -> completeState
+[20.230] [info] Despawn_Agent5_Event complete after 1 execution
+[20.230] [info] Despawn_Agent5_Event runningState -> endTransition -> completeState
+[20.230] [info] Maneuver_5 runningState -> endTransition -> completeState
+[20.230] [info] MG_5 complete after 1 execution
+[20.230] [info] MG_5 runningState -> endTransition -> completeState
+[20.230] [info] Despawn_Agent6_Action runningState -> stopTransition -> completeState
+[20.230] [info] Despawn_Agent6_Event complete after 1 execution
+[20.230] [info] Despawn_Agent6_Event runningState -> endTransition -> completeState
+[20.230] [info] Maneuver_6 runningState -> endTransition -> completeState
+[20.230] [info] MG_6 complete after 1 execution
+[20.230] [info] MG_6 runningState -> endTransition -> completeState
+[20.230] [info] Despawn_Agent7_Action runningState -> stopTransition -> completeState
+[20.230] [info] Despawn_Agent7_Event complete after 1 execution
+[20.230] [info] Despawn_Agent7_Event runningState -> endTransition -> completeState
+[20.230] [info] Maneuver_7 runningState -> endTransition -> completeState
+[20.230] [info] MG_7 complete after 1 execution
+[20.230] [info] MG_7 runningState -> endTransition -> completeState
+[20.230] [info] Despawn_Agent20_Action runningState -> stopTransition -> completeState
+[20.230] [info] Despawn_Agent20_Event complete after 1 execution
+[20.230] [info] Despawn_Agent20_Event runningState -> endTransition -> completeState
+[20.230] [info] Despawn_Agent24_Action runningState -> stopTransition -> completeState
+[20.230] [info] Despawn_Agent24_Event complete after 1 execution
+[20.230] [info] Despawn_Agent24_Event runningState -> endTransition -> completeState
+[21.013] [info] StoryStop: true, delay: 0.00, 21.0130 > 21.0000, edge: rising
+[21.013] [info] Trigger /------------------------------------------------
+[21.013] [info] Group 0:
+[21.013] [info] StoryStop: true
+[21.013] [info] Trigger  ------------------------------------------------/
+[21.013] [info] Agent16_RouteEvent0 standbyState -> stopTransition -> completeState
+[21.013] [info] Agent16_SpeedEvent0 standbyState -> stopTransition -> completeState
+[21.013] [info] Maneuver_16 runningState -> endTransition -> completeState
+[21.013] [info] MG_16 complete after 1 execution
+[21.013] [info] MG_16 runningState -> endTransition -> completeState
+[21.013] [info] Agent17_SpeedEvent0 standbyState -> stopTransition -> completeState
+[21.013] [info] Agent17_RouteEvent0 standbyState -> stopTransition -> completeState
+[21.013] [info] Agent17_SpeedEvent1 standbyState -> stopTransition -> completeState
+[21.013] [info] Maneuver_17 runningState -> endTransition -> completeState
+[21.013] [info] MG_17 complete after 1 execution
+[21.013] [info] MG_17 runningState -> endTransition -> completeState
+[21.013] [info] Agent18_SpeedEvent0 standbyState -> stopTransition -> completeState
+[21.013] [info] Agent18_RouteEvent0 standbyState -> stopTransition -> completeState
+[21.013] [info] Agent18_SpeedEvent1 standbyState -> stopTransition -> completeState
+[21.013] [info] Maneuver_18 runningState -> endTransition -> completeState
+[21.013] [info] MG_18 complete after 1 execution
+[21.013] [info] MG_18 runningState -> endTransition -> completeState
+[21.013] [info] Agent19_SpeedEvent0 standbyState -> stopTransition -> completeState
+[21.013] [info] Agent19_RouteEvent0 standbyState -> stopTransition -> completeState
+[21.013] [info] Agent19_SpeedEvent1 standbyState -> stopTransition -> completeState
+[21.013] [info] Agent19_SpeedEvent2 standbyState -> stopTransition -> completeState
+[21.013] [info] Agent19_SpeedEvent3 standbyState -> stopTransition -> completeState
+[21.013] [info] Agent19_SpeedEvent4 standbyState -> stopTransition -> completeState
+[21.013] [info] Maneuver_19 runningState -> endTransition -> completeState
+[21.013] [info] MG_19 complete after 1 execution
+[21.013] [info] MG_19 runningState -> endTransition -> completeState
+[21.013] [info] Agent20_SpeedEvent0 standbyState -> stopTransition -> completeState
+[21.013] [info] Agent20_RouteEvent0 standbyState -> stopTransition -> completeState
+[21.013] [info] Agent20_SpeedEvent1 standbyState -> stopTransition -> completeState
+[21.013] [info] Maneuver_20 runningState -> endTransition -> completeState
+[21.013] [info] MG_20 complete after 1 execution
+[21.013] [info] MG_20 runningState -> endTransition -> completeState
+[21.013] [info] Agent21_RouteEvent0 standbyState -> stopTransition -> completeState
+[21.013] [info] Agent21_SpeedEvent0 standbyState -> stopTransition -> completeState
+[21.013] [info] Agent21_SpeedEvent1 standbyState -> stopTransition -> completeState
+[21.013] [info] Maneuver_21 runningState -> endTransition -> completeState
+[21.013] [info] MG_21 complete after 1 execution
+[21.013] [info] MG_21 runningState -> endTransition -> completeState
+[21.013] [info] Agent22_SpeedEvent0 standbyState -> stopTransition -> completeState
+[21.013] [info] Agent22_RouteEvent0 standbyState -> stopTransition -> completeState
+[21.013] [info] Agent22_SpeedEvent1 standbyState -> stopTransition -> completeState
+[21.013] [info] Maneuver_22 runningState -> endTransition -> completeState
+[21.013] [info] MG_22 complete after 1 execution
+[21.013] [info] MG_22 runningState -> endTransition -> completeState
+[21.013] [info] Agent23_SpeedEvent0 standbyState -> stopTransition -> completeState
+[21.013] [info] Agent23_RouteEvent0 standbyState -> stopTransition -> completeState
+[21.013] [info] Agent23_SpeedEvent1 standbyState -> stopTransition -> completeState
+[21.013] [info] Agent23_SpeedEvent2 standbyState -> stopTransition -> completeState
+[21.013] [info] Maneuver_23 runningState -> endTransition -> completeState
+[21.013] [info] MG_23 complete after 1 execution
+[21.013] [info] MG_23 runningState -> endTransition -> completeState
+[21.013] [info] Agent24_SpeedEvent0 standbyState -> stopTransition -> completeState
+[21.013] [info] Agent24_SpeedEvent1 standbyState -> stopTransition -> completeState
+[21.013] [info] Maneuver_24 runningState -> endTransition -> completeState
+[21.013] [info] MG_24 complete after 1 execution
+[21.013] [info] MG_24 runningState -> endTransition -> completeState
+[21.013] [info] UnifiedAct runningState -> endTransition -> completeState
+[21.013] [info] UnifiedStory runningState -> endTransition -> completeState
+[21.013] [info] storyBoard runningState -> stopTransition -> completeState
 [] [info] Closing
