@@ -19,6 +19,8 @@ def main(args):
     interact with GPT-4o using RAG, and generate scenario descriptions.
     """
 
+    '''
+
     # Define paths and load essential knowledge
     task_desc_path = "memos/dm_task.txt"
     action_definition_path = "memos/action_definition.txt"
@@ -31,8 +33,8 @@ def main(args):
     with open(trigger_definition_path, "r") as f:
         trigger_definitions = f.read()
 
-    # Initialize models
     desc_model = gptDescription(api_key=None, task_description=task_description, action_definitions=action_definitions, trigger_definitions=trigger_definitions)
+    '''
 
     '''
     Define input data paths and load

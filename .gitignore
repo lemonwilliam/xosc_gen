@@ -3,8 +3,11 @@ raw/
 /memos/
 scenariogeneration/
 *.csv
+*.xosc
+*.yaml
+*.dat
 *.h5
 *.zip
 *.tar.gz
 .vscode/
-/__pycache__/
+__pycache__/

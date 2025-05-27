@@ -1,0 +1,38 @@
+esmini GIT REV: v2.45.3-0-9dc23af1
+esmini GIT TAG: v2.45.3
+esmini GIT BRANCH: tags/v2.45.3^0
+esmini BUILD VERSION: N/A - client build
+[] [error] Unsupported geo reference attr: +no_defs
+[] [error] Unsupported geo reference attr: +type
+[] [warn] cannot parse georeference: '+proj=utm +zone=32 +datum=WGS84 +units=m +no_defs +type=crs'. Using default values.
+[] [warn] Lane side userData is note supported
+[] [warn] Lane side userData is note supported
+[] [info] Signal Type 205 doesn't exists for country 
+[] [error] Unsupported object type: -1 - interpret as NONE
+[] [warn] Lane side userData is note supported
+[] [warn] Lane side userData is note supported
+[] [warn] Lane side userData is note supported
+[] [warn] Lane side userData is note supported
+[] [info] Signal Type 205 doesn't exists for country 
+[] [warn] Lane side userData is note supported
+[] [warn] Lane side userData is note supported
+[] [info] Signal Type 341 doesn't exists for country 
+[] [error] INFO: signal element "signalReference" not supported yet
+[] [info] Signal Type 301 doesn't exists for country 
+[] [error] Unsupported object type: -1 - interpret as NONE
+[] [warn] Lane side userData is note supported
+[] [warn] Lane side userData is note supported
+[] [warn] Lane side userData is note supported
+[] [warn] Lane side userData is note supported
+[] [warn] Lane side userData is note supported
+[] [info] Signal Type 301 doesn't exists for country 
+[] [error] Unsupported object type: -1 - interpret as NONE
+[] [warn] Lane side userData is note supported
+[] [warn] Lane side userData is note supported
+[] [info] Signal Type 341 doesn't exists for country 
+[] [warn] Lane side userData is note supported
+[] [info] Signal Type 294 doesn't exists for country 
+[] [info] Signal Type 206 doesn't exists for country 
+[] [error] Unsupported object type: -1 - interpret as NONE
+[] [warn] Lane side userData is note supported
+[] [info] Signal Type 205 doesn't exists for country 
