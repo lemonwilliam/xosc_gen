@@ -33,7 +33,6 @@ def main(args):
 
     # Initialize models
     desc_model = gptDescription(api_key=None, task_description=task_description, action_definitions=action_definitions, trigger_definitions=trigger_definitions)
-    filegen_model = FileGeneration()
 
     '''
     Define input data paths and load
@@ -139,6 +138,7 @@ def main(args):
     
     # Step 3: Generate initial OpenSCENARIO file
     print("\n🔹 Step 3: XOSC File Generation")
+    filegen_model = FileGeneration()
     scenario_description_path = f"results/{args.dataset}/yaml/{args.scenario_id}.yaml"
     output_xosc_paths = [f"results/{args.dataset}/xosc/{args.scenario_id}_gen.xosc", f"esmini/resources/xosc/{args.dataset}/{args.scenario_id}_gen.xosc"]
     with open(scenario_description_path, "r") as f:

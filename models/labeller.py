@@ -1,6 +1,7 @@
 import yaml
 import pandas as pd
 import numpy as np
+import os
 from copy import deepcopy
 
 # 1. Define a marker class that inherits from list
@@ -318,5 +319,6 @@ class Labeller:
 
     def save(self, output_path: str):
         clean = self.normalize(self.scenario)
+        os.makedirs(os.path.dirname(output_path), exist_ok=True)
         with open(output_path, 'w') as f:
             yaml.dump({"scenario": clean}, f, sort_keys=False, default_flow_style=False, indent=2)
