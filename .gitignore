@@ -1,6 +1,7 @@
-raw/
 /esmini/
 /memos/
+/results/
+raw/
 scenariogeneration/
 *.csv
 *.xosc
