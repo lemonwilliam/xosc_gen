@@ -1,7 +1,6 @@
+raw/
 /esmini/
 /memos/
-/results/
-raw/
 scenariogeneration/
 *.csv
 *.xosc
@@ -14,5 +13,3 @@ scenariogeneration/
 __pycache__/
 esminiRM_log.txt
 log.txt
-/esmini-full
-/xodr
