@@ -4,6 +4,7 @@ raw/
 /results/
 scenariogeneration/
 *.csv
+*.txt
 *.xosc
 *.yaml
 *.dat
