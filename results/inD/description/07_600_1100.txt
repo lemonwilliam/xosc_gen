@@ -1,9 +1,0 @@
-Ego agent (car 19):
-- Enters the scenario at t=0.80, starting at Road 1, lane 1.
-- Enters the intersection at t=2.32, go straight towards Road 4, lane -1. Leaves the intersection at t=16.00.
-- Starts slowing down at t=0.80 to look out for car 17, car 18.
-- Starts speeding up at t=5.04 since car 17 has passed the intersection.
-- Starts slowing down at t=7.12 to look out for car 17.
-- Starts speeding up at t=8.24 since car 17 has passed the intersection.
-- Starts speeding up at t=14.88 since the path is clear.
-- car 20 turn left after ego agent has passed the intersection.
