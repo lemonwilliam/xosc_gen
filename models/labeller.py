@@ -23,7 +23,7 @@ class Labeller:
             self.metadata = yaml.safe_load(f)
         # 2) load map
         with open(map_path, 'r') as f:
-            self.map_data = yaml.safe_load(f)['junctions']
+            self.map_data = yaml.safe_load(f)['Junctions']
         # 3) load trajectory
         self.lane_df = pd.read_csv(gt_trajectory_path)
 

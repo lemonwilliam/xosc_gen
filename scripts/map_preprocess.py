@@ -195,8 +195,8 @@ def label_four_roads(connected: dict, tree: ET.ElementTree) -> dict:
     # Rotate so that bottom_idx becomes index 0
     rotated = angle_list[bottom_idx:] + angle_list[:bottom_idx]
 
-    labels = ["bottom road", "right road", "top road", "left road"]
-    result = {labels[i]: rotated[i][0] for i in range(4)}
+    labels = ["Bottom Road", "Right Road", "Top Road", "Left Road"]
+    result = {labels[i]: int(rotated[i][0]) for i in range(4)}
     return result
 
 
@@ -253,8 +253,8 @@ def main():
 
     # 5. Combine everything into one output dict
     output_dict = {
-        "roads": labeled_roads,
-        "junctions": all_junctions    
+        "Roads": labeled_roads,
+        "Junctions": all_junctions    
     }
 
     # 6. Dump to YAML (file or stdout)

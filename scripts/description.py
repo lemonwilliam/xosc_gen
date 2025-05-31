@@ -5,8 +5,9 @@ from shapely.geometry import LineString
 
 
 class ScenarioDescriber:
-    def __init__(self, scenario_yaml_path, trajectory_csv_path):
+    def __init__(self, scenario_yaml_path, trajectory_csv_path, map_yaml_path):
         self.agents = self._load_yaml(scenario_yaml_path)["scenario"]["agents"]
+        self.road_id_to_name, self.road_order = self._load_map_description(map_yaml_path)
         self.trajectory = pd.read_csv(trajectory_csv_path)
         self.agent_dict = self._build_agent_dict()
         self.agent_classifications = {}
@@ -14,6 +15,13 @@ class ScenarioDescriber:
     def _load_yaml(self, path):
         with open(path, "r") as f:
             return yaml.safe_load(f)
+        
+    def _load_map_description(self, map_path):
+        with open(map_path, "r") as f:
+            road_map = yaml.safe_load(f)["Roads"]
+        id_to_name = {v: k for k, v in road_map.items()}
+        ordered_names = list(road_map.keys())  # counter-clockwise
+        return id_to_name, ordered_names
 
     def _get_agent_by_id(self, track_id):
         for agent in self.agents:
@@ -101,29 +109,49 @@ class ScenarioDescriber:
     def _initial_description(self, ego_id):
         ego = self._get_agent_by_id(ego_id)
         t0 = ego["enter_simulation_time"]
-        road, lane = ego["initial_position"][:2]
+        road = ego["initial_position"][0]
         agent_type = self.agent_dict[ego_id]["type"]
-        return f"{agent_type} {ego_id}:\n- Enters the scenario at t={t0:.2f}, starting from Road {road}, lane {lane}."
 
-    def _intersection_description(self, ego_id):
-        ego = self._get_agent_by_id(ego_id)
-        action = self._get_route_action(ego)
-        if not action:
-            return ""
-        attr = action["attributes"]
-        t_entry = attr["start_time"]
-        t_exit = attr["end_time"]
-        exit_road, exit_lane = attr["exit_point"][:2]
-        return f"- Enters the intersection at t={t_entry:.2f}, {action['type'].replace('_', ' ')} towards Road {exit_road}, lane {exit_lane}. Leaves the intersection at t={t_exit:.2f}."
+        if road in self.road_id_to_name:
+            road_name = self.road_id_to_name[road]
+            return f"{agent_type} {ego_id}:\n- Enters the scenario at t={t0:.2f}, starting from {road_name}."
+        else:
+            return f"{agent_type} {ego_id}:\n- Enters the scenario at t={t0:.2f}, starting inside the intersection."
 
-    def _action_description(self, ego_id, classification):
-        lines = []
+
+    def _timeline_description(self, ego_id, classification):
         ego = self._get_agent_by_id(ego_id)
+        events = []
         key_agents = classification["Key"]
         ego_actions = ego.get("actions", [])
+        route_action = self._get_route_action(ego)
         intersection_end = self.agent_dict[ego_id]["exit_time"]
+
+        # Insert intersection entry and exit as events if applicable
+        if route_action:
+            attr = route_action["attributes"]
+            t_entry = attr["start_time"]
+            t_exit = attr["end_time"]
+            entry_road, entry_lane = attr["entry_point"][:2]
+            exit_road, exit_lane = attr["exit_point"][:2]
+            movement = route_action["type"].replace("_", " ")
+            
+            if exit_road in self.road_id_to_name:
+                dest_road_name = self.road_id_to_name[exit_road]
+                sentence = f"- Enters the intersection at t={t_entry:.2f}, {movement} towards {dest_road_name}."
+            else:
+                current_name = self.road_id_to_name[entry_road]
+                idx = self.road_order.index(current_name)
+                offset = {"go straight": 2, "turn right": 1, "turn left": 3}.get(movement, 0)
+                dest_idx = (idx + offset) % len(self.road_order)
+                dest_road_name = self.road_order[dest_idx]
+                sentence = f"- Enters the intersection at t={t_entry:.2f}, {movement} towards {dest_road_name}."
+
+            events.append((t_entry, sentence))
+            events.append((t_exit, f"- Leaves the intersection at t={t_exit:.2f}."))
+
+        # Track previous action state for reasoning
         previous_action_type = None
-        previous_action_start = None
         previous_causes = []
 
         for i, action in enumerate(ego_actions):
@@ -145,32 +173,35 @@ class ScenarioDescriber:
                 if t_start < intersection_end:
                     if causes:
                         listed = ", ".join(f"{self.agent_dict[c]['type']} {c}" for c in causes)
-                        lines.append(f"- Starts slowing down at t={t_start:.2f} to look out for {listed}.")
+                        line = f"- Starts slowing down at t={t_start:.2f} to look out for {listed}."
                     else:
-                        lines.append(f"- Starts slowing down at t={t_start:.2f} for cautious driving.")
+                        line = f"- Starts slowing down at t={t_start:.2f} for cautious driving."
                 else:
-                    lines.append(f"- Starts slowing down at t={t_start:.2f} for cautious driving.")
+                    line = f"- Starts slowing down at t={t_start:.2f} for cautious driving."
+                events.append((t_start, line))
                 previous_action_type = "slow_down"
-                previous_action_start = t_start
                 previous_causes = causes
 
             elif act_type == "speed_up":
                 if previous_action_type == "slow_down" and previous_causes:
                     latest = max(previous_causes, key=lambda x: self.agent_dict[x]["exit_time"])
                     atype = self.agent_dict[latest]["type"]
-                    lines.append(f"- Starts speeding up at t={t_start:.2f} since {atype} {latest} has passed the intersection.")
+                    line = f"- Starts speeding up at t={t_start:.2f} since {atype} {latest} has passed the intersection."
                 else:
-                    lines.append(f"- Starts speeding up at t={t_start:.2f} since the path is clear.")
+                    line = f"- Starts speeding up at t={t_start:.2f} since the path is clear."
+                events.append((t_start, line))
                 previous_action_type = "speed_up"
 
-        return lines
-
+        # Sort all events chronologically
+        sorted_lines = [line for _, line in sorted(events)]
+        return sorted_lines
+    
     def generate_description(self, ego_id):
         classification = self._classify_agents(ego_id)
         self.agent_classifications[ego_id] = classification
         lines = [
-            self._initial_description(ego_id),
-            self._intersection_description(ego_id)
+            self._initial_description(ego_id)
         ]
-        lines += self._action_description(ego_id, classification)
+        lines += self._timeline_description(ego_id, classification)
         return "\n".join(filter(None, lines))
+

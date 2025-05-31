@@ -109,8 +109,9 @@ def main(args):
     descriptions = []
 
     describer = ScenarioDescriber(
-        scenario_yaml_path=output_yaml_path,
-        trajectory_csv_path=f"data/processed/{args.dataset}/trajectory/world/{args.scenario_id}.csv",
+        scenario_yaml_path = output_yaml_path,
+        trajectory_csv_path = f"data/processed/{args.dataset}/trajectory/world/{args.scenario_id}.csv",
+        map_yaml_path = map_intersection_path
     )
 
     for agent in all_agents:
