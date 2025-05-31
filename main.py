@@ -83,31 +83,10 @@ def main(args):
     except Exception as e:
         print(f"Error loading map info: {e}")
         return
+    
 
-    '''
-    # Step 1: Initial simplified Scenario Understanding and Description by OpenAI model
-
-    print("\n🔹 Step 1: Scenario Analysis (General, Actions, Description)")
-    response = desc_model.generate_response(
-        metadata=tracks_meta.to_string(index=False),
-        trajectory_content=gt_trajectory.to_string(index=False)
-    )
-    print(response)
-
-    yaml_match = re.search(r'(scenario:\s+description:.*)', response, re.DOTALL)
-    output_yaml_path = os.path.join(f"results/{args.dataset}/yaml/", f"{args.scenario_id}_half.yaml")
-    if yaml_match:
-        yaml_content = yaml_match.group(1)
-        with open(output_yaml_path, "w") as f:
-            f.write(yaml_content)
-        print(f"\n✅ YAML scenario saved to {output_yaml_path}")
-    else:
-        print("\n❌ No YAML content found in the response.")
-        return
-    '''
-
-    # Step 2: Add Route decision actions to initial description
-    print("\n🔹 Step 2: Add Route Decision Actions")
+    # Step 1: Label individual agent actions using raw trajectory
+    print("\n🔹 Step 1: Label individual actions")
     output_yaml_path = os.path.join(f"results/{args.dataset}/yaml/", f"{args.scenario_id}.yaml")
     labeller = Labeller(
         meta_path=tracks_meta_path,
@@ -124,18 +103,30 @@ def main(args):
     describer.describe(output_path=f"results/{args.dataset}/description/{args.scenario_id}.txt")
     '''
 
-    # Step 2.5: Categorize agents into four categories: Ego, Unrelated, Key, Affected
+    # Step 2: Create scenario descriptions for all relevant agents
+    full_scenario_yaml = yaml.safe_load(open(output_yaml_path))
+    all_agents = full_scenario_yaml["scenario"]["agents"]
+    descriptions = []
+
     describer = ScenarioDescriber(
         scenario_yaml_path=output_yaml_path,
         trajectory_csv_path=f"data/processed/{args.dataset}/trajectory/world/{args.scenario_id}.csv",
-        ego_id=args.ego_id
     )
-    agent_categories = describer.classification
-    description = describer.generate_description()
-    output_path=f"results/{args.dataset}/description/{args.scenario_id}.txt"
+
+    for agent in all_agents:
+        tid = agent["track_id"]
+        if agent["type"] == "pedestrian":
+            continue
+        if agent["initial_speed"] == 0.0 and agent["actions"] == []:
+            continue
+
+        description = describer.generate_description(ego_id=tid)
+        descriptions.append(description)
+
+    output_path = f"results/{args.dataset}/description/{args.scenario_id}.txt"
     os.makedirs(os.path.dirname(output_path), exist_ok=True)
     with open(output_path, "w") as f:
-        f.write(description)
+        f.write("\n\n".join(descriptions))
     
     
     # Step 3: Generate initial OpenSCENARIO file
@@ -145,7 +136,7 @@ def main(args):
     output_xosc_paths = [f"results/{args.dataset}/xosc/{args.scenario_id}_gen.xosc", f"esmini/resources/xosc/{args.dataset}/{args.scenario_id}_gen.xosc"]
     with open(scenario_description_path, "r") as f:
         yaml_dict = yaml.safe_load(f)
-    filegen_model.parse_scenario_description(yaml_dict, gt_trajectory_path, agent_categories, output_xosc_paths)
+    filegen_model.parse_scenario_description(yaml_dict, gt_trajectory_path, describer.agent_classifications[args.ego_id], output_xosc_paths)
     for op in output_xosc_paths:
         filegen_model.parameterize(op, op)
     print(f"✅ Initial OpenSCENARIO file generated\n")
