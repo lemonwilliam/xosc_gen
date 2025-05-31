@@ -103,7 +103,7 @@ class ScenarioDescriber:
         t0 = ego["enter_simulation_time"]
         road, lane = ego["initial_position"][:2]
         agent_type = self.agent_dict[ego_id]["type"]
-        return f"{agent_type} {ego_id}:\n- Enters the scenario at t={t0:.2f}, starting at Road {road}, lane {lane}."
+        return f"{agent_type} {ego_id}:\n- Enters the scenario at t={t0:.2f}, starting from Road {road}, lane {lane}."
 
     def _intersection_description(self, ego_id):
         ego = self._get_agent_by_id(ego_id)
