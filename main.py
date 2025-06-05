@@ -67,16 +67,8 @@ def main(args):
         return
     
     # Load map information
-    loc_id = scenario_meta['locationId'][0]
-    map_dict = {
-        'inD':{
-            1: "01_bendplatz",
-            2: "02_frankenburg",
-            3: "03_heckstrasse",
-            4: "04_aseag"
-        }
-    }
-    map_intersection_path = f"data/processed/{args.dataset}/map/{map_dict[args.dataset][loc_id]}.yaml"
+    loc = tracks_meta['location']
+    map_intersection_path = f"data/processed/{args.dataset}/map/{loc}.yaml"
     try:
         with open(map_intersection_path, "r") as f:
             map_intersection = yaml.safe_load(f)
@@ -137,7 +129,12 @@ def main(args):
     output_xosc_paths = [f"results/{args.dataset}/xosc/{args.scenario_id}_gen.xosc", f"esmini/resources/xosc/{args.dataset}/{args.scenario_id}_gen.xosc"]
     with open(scenario_description_path, "r") as f:
         yaml_dict = yaml.safe_load(f)
-    filegen_model.parse_scenario_description(yaml_dict, gt_trajectory_path, describer.agent_classifications[args.ego_id], output_xosc_paths)
+    filegen_model.parse_scenario_description(
+        scenario_dict = yaml_dict, 
+        gt_trajectory_path = gt_trajectory_path, 
+        agent_categories = describer.agent_classifications[args.ego_id], 
+        output_paths = output_xosc_paths
+    )
     for op in output_xosc_paths:
         filegen_model.parameterize(op, op)
     print(f"✅ Initial OpenSCENARIO file generated\n")

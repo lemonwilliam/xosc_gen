@@ -119,8 +119,9 @@ class Labeller:
 
     def label_longitudinal_actions(self):
         """
-        Fill each agent’s actions list with speed_up, slow_down, cruise entries
-        before route‐decisions get prepended later.
+        Fill each agent’s actions list with speed_up, slow_down entries
+        before route‐decisions get prepended later. Each action now also
+        carries its average acceleration.
         """
         for agent in self.scenario["agents"]:
             tid = agent['track_id']
@@ -128,7 +129,7 @@ class Labeller:
             times = df['time'].values
             vels  = df['velocity'].values
 
-            # compute accel between frames
+            # compute acceleration between frames
             dt = np.diff(times)
             dv = np.diff(vels)
             acc = dv / dt
@@ -146,22 +147,30 @@ class Labeller:
 
             long_actions = []
             start = 0
+            # iterate through labels; note: labels has length (N-1) if there are N timestamps,
+            # so when i == len(labels)-1 we’re still in range
             for i in range(1, len(labels)):
-                if labels[i] != labels[start] or i == len(labels)-1:
+                # detect boundary or last frame
+                if labels[i] != labels[start] or i == len(labels) - 1:
                     typ = labels[start]
                     duration = times[i] - times[start]
-                    if typ in ('speed_up','slow_down') and duration > 0.5:
+
+                    if typ in ('speed_up', 'slow_down') and duration > 0.5:
+                        # compute average acceleration over [start, i]:
+                        accel_avg = (vels[i] - vels[start]) / (times[i] - times[start])
+
                         long_actions.append({
                             'type': typ,
                             'attributes': {
-                                'start_time': round(float(times[start]),3),
-                                'target_speed': round(float(vels[i]),3),
-                                'duration': round(duration,3)
+                                'start_time':   round(float(times[start]), 3),
+                                'acceleration': round(accel_avg, 3),
+                                'target_speed': round(float(vels[i]), 3),
+                                'duration':     round(duration, 3)
                             }
                         })
                     start = i
 
-            # assign (will be prepended later)
+            # prepend these to any existing actions
             agent['actions'] = long_actions + agent.get('actions', [])
 
 

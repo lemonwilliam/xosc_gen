@@ -6,15 +6,12 @@ from shapely.geometry import LineString
 
 class ScenarioDescriber:
     def __init__(self, scenario_yaml_path, trajectory_csv_path, map_yaml_path):
-        self.agents = self._load_yaml(scenario_yaml_path)["scenario"]["agents"]
+        with open(scenario_yaml_path, "r") as f:
+            self.agents = yaml.safe_load(f)["scenario"]["agents"]     
         self.road_id_to_name, self.road_order = self._load_map_description(map_yaml_path)
         self.trajectory = pd.read_csv(trajectory_csv_path)
         self.agent_dict = self._build_agent_dict()
         self.agent_classifications = {}
-
-    def _load_yaml(self, path):
-        with open(path, "r") as f:
-            return yaml.safe_load(f)
         
     def _load_map_description(self, map_path):
         with open(map_path, "r") as f:
@@ -39,11 +36,13 @@ class ScenarioDescriber:
                 exit_time = action["attributes"]["end_time"]
             else:
                 entry_time = exit_time = None
+
             agent_dict[track_id] = {
                 "entry_time": entry_time,
                 "exit_time": exit_time,
                 "type": agent["type"]  # <- store type here
             }
+
         return agent_dict
 
     def _get_route_action(self, agent):
@@ -105,6 +104,15 @@ class ScenarioDescriber:
                 classification["Affected"].append(tid)
 
         return classification
+    
+    def _acceleration_magnitude(self, value):
+        abs_val = abs(value)
+        if abs_val < 1.0:
+            return "Slightly"
+        elif abs_val < 2.0:
+            return "Moderately"
+        else:
+            return "Significantly"
 
     def _initial_description(self, ego_id):
         ego = self._get_agent_by_id(ego_id)
@@ -132,8 +140,12 @@ class ScenarioDescriber:
             attr = route_action["attributes"]
             t_entry = attr["start_time"]
             t_exit = attr["end_time"]
-            entry_road, entry_lane = attr["entry_point"][:2]
-            exit_road, exit_lane = attr["exit_point"][:2]
+            if "trajectory" in attr:
+                entry_road, entry_lane = attr["trajectory"][0][:2]
+                exit_road, exit_lane = attr["trajectory"][-1][:2]     
+            else:
+                entry_road, entry_lane = attr["entry_point"][:2]
+                exit_road, exit_lane = attr["exit_point"][:2]
             movement = route_action["type"].replace("_", " ")
             
             if exit_road in self.road_id_to_name:
@@ -159,38 +171,61 @@ class ScenarioDescriber:
             act_type = action["type"]
 
             if act_type == "slow_down":
-                t_end = None
+
+                # Decide action magnitude according to acceleration
+                acc = action["attributes"].get("acceleration")
+                adverb = self._acceleration_magnitude(acc)
+
+                # Check if the agents slows down till stopped
+                target_speed = action["attributes"].get("target_speed")
+                stop_phrase = " till stopped" if target_speed < 0.5 else ""
+
+                # Set the end time of the slow down action as the next time it starts speeding up
+                t_end = t_start + action["attributes"]["duration"]
                 for a in ego_actions[i+1:]:
                     if a["type"] == "speed_up":
                         t_end = a["attributes"]["start_time"]
                         break
+
+                # 
                 causes = []
                 for aid in key_agents:
                     a_entry = self.agent_dict[aid]["entry_time"]
                     a_exit = self.agent_dict[aid]["exit_time"]
                     if t_end and not (a_exit < t_start or a_entry > t_end):
                         causes.append(aid)
-                if t_start < intersection_end:
-                    if causes:
-                        listed = ", ".join(f"{self.agent_dict[c]['type']} {c}" for c in causes)
-                        line = f"- Starts slowing down at t={t_start:.2f} to look out for {listed}."
+
+                if intersection_end:
+                    if t_start < intersection_end:
+                        if causes:
+                            listed = ", ".join(f"{self.agent_dict[c]['type']} {c}" for c in causes)
+                            line = f"- {adverb} slows down at t={t_start:.2f}{stop_phrase} to look out for {listed}."
+                        else:
+                            line = f"- {adverb} slows down at t={t_start:.2f}{stop_phrase} for cautious driving."
                     else:
-                        line = f"- Starts slowing down at t={t_start:.2f} for cautious driving."
+                        line = f"- {adverb} slows down at t={t_start:.2f}{stop_phrase}."
                 else:
-                    line = f"- Starts slowing down at t={t_start:.2f} for cautious driving."
+                    line = f"- {adverb} slows down at t={t_start:.2f}{stop_phrase}."
+
+                # Append event then set previous action
                 events.append((t_start, line))
                 previous_action_type = "slow_down"
                 previous_causes = causes
 
             elif act_type == "speed_up":
+                acc = action["attributes"].get("acceleration", 0.0)
+                adverb = self._acceleration_magnitude(acc)
                 if previous_action_type == "slow_down" and previous_causes:
                     latest = max(previous_causes, key=lambda x: self.agent_dict[x]["exit_time"])
                     atype = self.agent_dict[latest]["type"]
-                    line = f"- Starts speeding up at t={t_start:.2f} since {atype} {latest} has passed the intersection."
+                    line = f"- {adverb.capitalize()} speeds up at t={t_start:.2f} since {atype} {latest} has passed the intersection."
                 else:
-                    line = f"- Starts speeding up at t={t_start:.2f} since the path is clear."
+                    line = f"- {adverb.capitalize()} speeds up at t={t_start:.2f}."
                 events.append((t_start, line))
                 previous_action_type = "speed_up"
+
+            elif act_type == "lane_change":
+                continue
 
         # Sort all events chronologically
         sorted_lines = [line for _, line in sorted(events)]

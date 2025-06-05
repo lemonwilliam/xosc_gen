@@ -99,11 +99,11 @@ def filter_trajectory(trajectory_csv, overlapping_track_ids, t1, t2, x_offset, y
     return df_lane, df_world
 
 
-def export_meta_to_yaml(tracksMeta_csv, overlapping_track_ids, args, output_path="scenario_metadata.yaml"):
+def export_meta_to_yaml(tracks_meta_path, overlapping_track_ids, args, loc, output_path="scenario_metadata.yaml"):
     """
     Extract agent metadata and scenario-wide metadata, and write to a YAML file.
     """
-    df_frames = pd.read_csv(tracksMeta_csv)
+    df_frames = pd.read_csv(tracks_meta_path)
     condition = df_frames["trackId"].isin(overlapping_track_ids)
     df_overlap = df_frames.loc[condition].copy()
 
@@ -111,7 +111,7 @@ def export_meta_to_yaml(tracksMeta_csv, overlapping_track_ids, args, output_path
 
     scenario_dict = {
         "dataset": args.dataset,
-        "location": args.map,
+        "location": loc,
         "duration": (args.end_time - args.start_time + 25) / 25,
         "agents": []
     }
@@ -140,13 +140,6 @@ if __name__ == "__main__":
         help="Drone dataset to process, e.g. inD, exiD, etc."
     )
     parser.add_argument(
-        "--map", 
-        "-m", 
-        type=str, 
-        default="01_bendplatz", 
-        help="Map which scenario runs on, e.g. 01_bendplatz, 02_frankenburg"
-    )
-    parser.add_argument(
         "--scenario_id", 
         "-s", 
         type=str, 
@@ -172,7 +165,18 @@ if __name__ == "__main__":
     recordingMeta_path = f"./data/raw/{args.dataset}/data/{args.scenario_id}_recordingMeta.csv"
     tracksMeta_path = f"./data/raw/{args.dataset}/data/{args.scenario_id}_tracksMeta.csv"
     trajectory_path = f"./data/raw/{args.dataset}/data/{args.scenario_id}_tracks.csv"
-    map_path = f"./data/raw/{args.dataset}/maps/opendrive/{args.map}.xodr"
+
+    scenario_meta = pd.read_csv(recordingMeta_path)
+    map_dict = {
+        'inD':{
+            1: "01_bendplatz",
+            2: "02_frankenburg",
+            3: "03_heckstrasse",
+            4: "04_aseag"
+        }
+    }
+    loc = map_dict[args.dataset][scenario_meta['locationId'][0]]
+    map_path = f"./data/raw/{args.dataset}/maps/opendrive/{loc}.xodr"
 
     # 1. Define your time interval
     t1, t2 = args.start_time, args.end_time
@@ -197,6 +201,6 @@ if __name__ == "__main__":
     # 4. Write the relevant slices of metadata to another YAML file
     output_meta_path = f"./data/processed/{args.dataset}/metadata/{args.scenario_id}_{t1}_{t2}.yaml"
     os.makedirs(os.path.dirname(output_meta_path), exist_ok=True)
-    export_meta_to_yaml(tracksMeta_path, overlapping_ids, args, output_meta_path)
+    export_meta_to_yaml(tracksMeta_path, overlapping_ids, args, loc, output_meta_path)
 
     
