@@ -202,6 +202,8 @@ class Labeller:
                     end += 1
 
                 duration = times[end] - times[start]
+                direction = "right" if lanes[end] - lanes[start] > 0 else "left"
+
                 if 1.0 <= duration <= 3.0:
                     new_lane = int(lanes[end])
                     lat_actions.append({
@@ -209,6 +211,7 @@ class Labeller:
                         'attributes': {
                             'start_time': round(float(times[start]),3),
                             'target_lane': new_lane,
+                            'direction': direction,
                             'duration': round(duration,3)
                         }
                     })
@@ -219,6 +222,7 @@ class Labeller:
                         'attributes': {
                             'start_time': round(float(times[idx])-1.5,3),
                             'target_lane': new_lane,
+                            'direction': direction,
                             'duration': 3.0
                         }
                     })

@@ -8,7 +8,7 @@ class ScenarioDescriber:
     def __init__(self, scenario_yaml_path, trajectory_csv_path, map_yaml_path):
         with open(scenario_yaml_path, "r") as f:
             self.agents = yaml.safe_load(f)["scenario"]["agents"]     
-        self.road_id_to_name, self.road_order = self._load_map_description(map_yaml_path)
+        self.road_order = self._load_map_description(map_yaml_path)
         self.trajectory = pd.read_csv(trajectory_csv_path)
         self.agent_dict = self._build_agent_dict()
         self.agent_classifications = {}
@@ -16,9 +16,8 @@ class ScenarioDescriber:
     def _load_map_description(self, map_path):
         with open(map_path, "r") as f:
             road_map = yaml.safe_load(f)["Roads"]
-        id_to_name = {v: k for k, v in road_map.items()}
-        ordered_names = list(road_map.keys())  # counter-clockwise
-        return id_to_name, ordered_names
+        road_order = list(road_map.values())  # Order of the roads, counter-clockwise
+        return road_order
 
     def _get_agent_by_id(self, track_id):
         for agent in self.agents:
@@ -117,12 +116,11 @@ class ScenarioDescriber:
     def _initial_description(self, ego_id):
         ego = self._get_agent_by_id(ego_id)
         t0 = ego["enter_simulation_time"]
-        road = ego["initial_position"][0]
+        road, lane = ego["initial_position"][:2]
         agent_type = self.agent_dict[ego_id]["type"]
 
-        if road in self.road_id_to_name:
-            road_name = self.road_id_to_name[road]
-            return f"{agent_type} {ego_id}:\n- Enters the scenario at t={t0:.2f}, starting from {road_name}."
+        if road in self.road_order:
+            return f"{agent_type} {ego_id}:\n- Enters the scenario at t={t0:.2f}, starting from road {road}, lane {lane}."
         else:
             return f"{agent_type} {ego_id}:\n- Enters the scenario at t={t0:.2f}, starting inside the intersection."
 
@@ -148,16 +146,14 @@ class ScenarioDescriber:
                 exit_road, exit_lane = attr["exit_point"][:2]
             movement = route_action["type"].replace("_", " ")
             
-            if exit_road in self.road_id_to_name:
-                dest_road_name = self.road_id_to_name[exit_road]
-                sentence = f"- Enters the intersection at t={t_entry:.2f}, {movement} towards {dest_road_name}."
+            if exit_road in self.road_order:
+                sentence = f"- Enters the intersection at t={t_entry:.2f}, {movement} from Road {entry_road}, Lane {entry_lane} towards Road {exit_road}, Lane {exit_lane}."
             else:
-                current_name = self.road_id_to_name[entry_road]
-                idx = self.road_order.index(current_name)
+                entry_idx = self.road_order.index(entry_road)
                 offset = {"go straight": 2, "turn right": 1, "turn left": 3}.get(movement, 0)
-                dest_idx = (idx + offset) % len(self.road_order)
-                dest_road_name = self.road_order[dest_idx]
-                sentence = f"- Enters the intersection at t={t_entry:.2f}, {movement} towards {dest_road_name}."
+                dest_idx = (entry_idx + offset) % len(self.road_order)
+                exit_road = self.road_order[dest_idx]
+                sentence = f"- Enters the intersection at t={t_entry:.2f}, {movement} from Road {entry_road}, Lane {entry_lane} towards {exit_road}."
 
             events.append((t_entry, sentence))
             events.append((t_exit, f"- Leaves the intersection at t={t_exit:.2f}."))
@@ -218,14 +214,16 @@ class ScenarioDescriber:
                 if previous_action_type == "slow_down" and previous_causes:
                     latest = max(previous_causes, key=lambda x: self.agent_dict[x]["exit_time"])
                     atype = self.agent_dict[latest]["type"]
-                    line = f"- {adverb.capitalize()} speeds up at t={t_start:.2f} since {atype} {latest} has passed the intersection."
+                    line = f"- {adverb} speeds up at t={t_start:.2f} since {atype} {latest} has passed the intersection."
                 else:
-                    line = f"- {adverb.capitalize()} speeds up at t={t_start:.2f}."
+                    line = f"- {adverb} speeds up at t={t_start:.2f}."
                 events.append((t_start, line))
                 previous_action_type = "speed_up"
 
             elif act_type == "lane_change":
-                continue
+                direction = action["attributes"]["direction"]
+                line = f"- Changes lane to the {direction}."
+                events.append((t_start, line))
 
         # Sort all events chronologically
         sorted_lines = [line for _, line in sorted(events)]
