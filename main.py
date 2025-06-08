@@ -4,10 +4,11 @@ import pandas as pd
 import yaml
 
 from models.labeller import Labeller
-from scripts.description import ScenarioDescriber
+from models.description import ScenarioDescriber
 from models.file_generation import FileGeneration
 from scripts.esmini_process import EsminiSimulator
 from scripts.scoring import Scorer
+from scripts.visualization import Visualization
 
 from models.gpt_description import gptDescription
 from models.reflection import Reflection
@@ -165,6 +166,12 @@ def main(args):
         gen_csv_path = f"./results/{args.dataset}/trajectory/{args.scenario_id}_gen.csv"
     )
     print("FDE score:", fde_score)
+
+    vis = Visualization(
+        gt_csv_path=f"./data/processed/{args.dataset}/trajectory/world/{args.scenario_id}.csv", 
+        gen_csv_path=f"./results/{args.dataset}/trajectory/{args.scenario_id}_gen.csv"
+    )
+    vis.interactive_view()
 
     '''
     # Step 5–7: Reflection loop for refinement
