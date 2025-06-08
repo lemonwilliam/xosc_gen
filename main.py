@@ -66,6 +66,14 @@ def main(args):
         print(f"Error loading ground truth tracks: {e}")
         return
     
+    # Load world coordinate tracks (lane coordinates)
+    wc_trajectory_path = f"data/processed/{args.dataset}/trajectory/world/{args.scenario_id}.csv"
+    try:
+        wc_trajectory = pd.read_csv(wc_trajectory_path)
+    except Exception as e:
+        print(f"Error loading world coordinate tracks: {e}")
+        return
+    
     # Load map information
     loc = tracks_meta['location']
     map_intersection_path = f"data/processed/{args.dataset}/map/{loc}.yaml"
@@ -83,7 +91,8 @@ def main(args):
     labeller = Labeller(
         meta_path=tracks_meta_path,
         map_path=map_intersection_path,
-        gt_trajectory_path=gt_trajectory_path
+        gt_trajectory_path=gt_trajectory_path,
+        wc_trajectory_path = wc_trajectory_path
     )
     labeller.label()
     labeller.save(output_yaml_path)

@@ -240,9 +240,16 @@ class FileGeneration:
                     else:
                         # Add control points to Nurbs and set knots
                         nurbs = xosc.Nurbs(order=4) # Create Nurbs objects
+                        world_ctrl_point = []
                         for wp in attrs['trajectory']:
                             nurbs.add_control_point(xosc.ControlPoint(xosc.LanePosition(wp[3], wp[2], wp[1], wp[0])))
-                        nurbs.add_knots([0.0, 0.0, 0.0, 0.0, 1.0, 2.0, 2.0, 2.0, 2.0])
+                            world_ctrl_point.append([wp[4], wp[5]])
+                        
+                        
+                        # Compute and add knots based on number of control points and degree
+                        knot_vector = self.compute_knots(world_ctrl_point)
+                        print(knot_vector)
+                        nurbs.add_knots(knot_vector)
 
                         # Create Trajectory Object and assign nurbs
                         traj = xosc.Trajectory("Agent_{}_trajectory".format(tid), False)
@@ -251,6 +258,8 @@ class FileGeneration:
                             action_type,
                             xosc.FollowTrajectoryAction(traj, following_mode="position")
                         )
+                        print(traj)
+                        input(...)
 
                     valid_action = True                   
                 else:
@@ -291,24 +300,37 @@ class FileGeneration:
                     if action_type in road_ctrl:
                         if attrs['legal']:
                             sp = attrs["entry_point"]
-                        else:
-                            sp = attrs['trajectory'][0]
-                           
-                        start_position = xosc.LanePosition(sp[3], sp[2], sp[1], sp[0])
-                        positionCondition = xosc.ReachPositionCondition(
-                            tolerance = 3.0,
-                            position = start_position
-                        )
-                        event.add_trigger(
-                            xosc.EntityTrigger(
-                                name="ReachPositionCondition",
-                                delay=0,
-                                conditionedge=xosc.ConditionEdge.rising,
-                                entitycondition=positionCondition,
-                                triggerentity=agents.agentNames[i],
-                                triggeringrule="any"
+                            start_position = xosc.LanePosition(sp[3], sp[2], sp[1], sp[0])
+                            positionCondition = xosc.ReachPositionCondition(
+                                tolerance = 3.0,
+                                position = start_position
                             )
-                        )
+                            event.add_trigger(
+                                xosc.EntityTrigger(
+                                    name="ReachPositionCondition",
+                                    delay=0,
+                                    conditionedge=xosc.ConditionEdge.rising,
+                                    entitycondition=positionCondition,
+                                    triggerentity=agents.agentNames[i],
+                                    triggeringrule="any"
+                                )
+                            )   
+                                
+                        else:
+                            timeCondition = xosc.SimulationTimeCondition(
+                                value=attrs["start_time"],
+                                rule="greaterThan"
+                            )
+                            event.add_trigger(
+                                xosc.ValueTrigger(
+                                    name="SimulationTimeCondition",
+                                    delay=0,
+                                    conditionedge=xosc.ConditionEdge.rising,
+                                    valuecondition=timeCondition
+                                )
+                            )
+                           
+                        
                         valid_event = True
                     '''
                     elif condition_type == "DistanceCondition":
@@ -387,7 +409,40 @@ class FileGeneration:
         story.add_act(act)
         sb = sb.add_story(story)
         return sb
-
+    
+    def compute_knots(self, ctrl, degree=3):
+        """
+        Compute clamped knot vector using Chord Length Parameterization for B-spline/NURBS.
+    
+        """
+        control_points = np.array(ctrl)
+        N = len(control_points)
+        
+        if N < degree + 1:
+            raise ValueError("Number of control points must be at least degree + 1.")
+    
+        # Step 1: Compute distances between consecutive control points (chord lengths)
+        distances = np.linalg.norm(np.diff(control_points, axis=0), axis=1)
+        total_length = np.sum(distances)
+        
+        # Step 2: Compute normalized cumulative distances
+        u = [0.0]
+        for d in distances:
+            u.append(u[-1] + d / total_length if total_length > 0 else 0.0)
+    
+        # Step 3: Build knot vector (clamped)
+        num_knots = N + degree + 1
+        knots = [0.0] * (degree + 1)
+    
+        # Internal knots: remove first and last u (which are 0 and 1)
+        num_internal = num_knots - 2 * (degree + 1)
+        if num_internal > 0:
+            for i in range(1, N - degree):
+                knots.append(u[i])
+        
+        knots += [1.0] * (degree + 1)
+    
+        return knots
     
     def parse_scenario_description(self, scenario_dict, gt_trajectory_path, agent_categories, output_paths):
         #init/catalog
@@ -423,6 +478,8 @@ class FileGeneration:
             scenario.write_xml(path)
 
         return
+    
+    
     
     def parameterize(self,path_in, path_out):
         
