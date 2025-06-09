@@ -281,8 +281,8 @@ class Labeller:
                     
                     trajectory = []
                     for idx in indices:
-                        row = lane_df_track.loc[idx, ['road_id','lane_id','lane_offset','s','heading']].tolist() + world_df_track.loc[idx, ['x', 'y']].tolist()
-                        pt = FlowList([int(row[0]), int(row[1]), row[2], row[3], row[4], row[5], row[6]])
+                        row = lane_df_track.loc[idx, ['road_id','lane_id','lane_offset','s','heading']].tolist()
+                        pt = FlowList([int(row[0]), int(row[1]), row[2], row[3], row[4]])
                         trajectory.append(pt)
                     actions.append({
                         'type': ra['type'],

@@ -241,15 +241,15 @@ class FileGeneration:
                     else:
                         # Add control points to Nurbs and set knots
                         order = 3
+                        ctrl_point_num = 0
                         nurbs = xosc.Nurbs(order=order) # Create Nurbs objects
-                        world_ctrl_point = []
                         for wp in attrs['trajectory']:
                             nurbs.add_control_point(xosc.ControlPoint(xosc.LanePosition(wp[3], wp[2], wp[1], wp[0])))
-                            world_ctrl_point.append([wp[5], wp[6]])
+                            ctrl_point_num += 1
                         
                         
                         # Compute and add knots based on number of control points and degree
-                        knots = knotvector.generate(order-1, len(world_ctrl_point))
+                        knots = knotvector.generate(order-1, ctrl_point_num)
                         nurbs.add_knots(knots)
 
                         # Create Trajectory Object and assign nurbs
