@@ -95,7 +95,6 @@ def find_representative_points_each_segment(df, track_id, plot=False, turn_thres
         plt.legend()
         plt.grid(True)
         plt.axis('equal')
-        plt.show()
     
         plt.figure(figsize=(10, 4))
         plt.plot(curvature, label='Curvature', linewidth=2)

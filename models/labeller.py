@@ -274,8 +274,11 @@ class Labeller:
                     })
                 else:
                     # build fallback trajectory of represent point points
-                    indices = find_representative_points(self.world_df, tid)#, plot=True)
-                    print(indices)
+                    #debug plot
+                    #indices = find_representative_points(self.world_df, tid, plot=True)
+                    indices = find_representative_points(self.world_df, tid)
+                    print("trajectory node:", indices)
+                    
                     trajectory = []
                     for idx in indices:
                         row = lane_df_track.loc[idx, ['road_id','lane_id','lane_offset','s','heading']].tolist() + world_df_track.loc[idx, ['x', 'y']].tolist()
@@ -290,6 +293,7 @@ class Labeller:
                             'trajectory': trajectory
                         }
                     })
+                    
 
             # prepend these new actions
             agent['actions'] = actions + agent.get('actions', [])
