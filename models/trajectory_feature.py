@@ -81,7 +81,6 @@ def find_representative_points_each_segment(df, track_id, plot=False, turn_thres
     rep_points['curvature'] = curvature[rep_points_idx]
    
     peak = sorted(list(set(peak)))
-    peak_points = df_track.iloc[peak].copy()
     
     # debug graph
     if plot:

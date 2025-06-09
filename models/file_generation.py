@@ -132,6 +132,7 @@ class FileGeneration:
             speed_event_count = 0
             lateral_event_count = 0
             route_event_count = 0
+            assign_trajectory = False
 
             ## ➡️ First: Initialize agents that did not get teleported in Init
             if init_row.time != 0:
@@ -195,7 +196,7 @@ class FileGeneration:
                     event = xosc.Event(
                         f"{agents.agentNames[i]}_SpeedEvent{speed_event_count}",
                         xosc.Priority.parallel,
-                        maxexecution=3
+                        maxexecution=1
                     )
                     speed_event_count += 1
                     dynamics = xosc.TransitionDynamics("linear", "time", attrs["duration"])
@@ -209,7 +210,7 @@ class FileGeneration:
                     event = xosc.Event(
                         f"{agents.agentNames[i]}_LateralEvent{lateral_event_count}",
                         xosc.Priority.parallel,
-                        maxexecution=3
+                        maxexecution=1
                     )
                     lateral_event_count += 1
                     lane_id = attrs['target_lane']
@@ -224,7 +225,7 @@ class FileGeneration:
                     event = xosc.Event(
                         f"{agents.agentNames[i]}_RouteEvent{route_event_count}",
                         xosc.Priority.parallel,
-                        maxexecution=3
+                        maxexecution=1
                     )
                     route_event_count += 1
                     if attrs['legal']:
@@ -316,6 +317,7 @@ class FileGeneration:
                             )   
                                 
                         else:
+                            assign_trajectory = True
                             timeCondition = xosc.SimulationTimeCondition(
                                 value=attrs["start_time"],
                                 rule="greaterThan"
@@ -355,7 +357,31 @@ class FileGeneration:
                         maneuver.add_event(event)
                         valid_maneuver = True
             
-            if end_row.time < duration:
+            if assign_trajectory:
+                despawn_event = xosc.Event(
+                        f"Despawn_{agents.agentNames[i]}_Event",
+                        xosc.Priority.parallel,
+                        maxexecution=1
+                )
+                despawn_event.add_action(
+                    f"Despawn_{agents.agentNames[i]}_Action",
+                    xosc.DeleteEntityAction(entityref = agents.agentNames[i])
+                )
+                despawn_event.add_trigger(
+                    xosc.ValueTrigger(
+                        name = "StoryboardElementStateCondition",
+                        delay = 0.2,
+                        conditionedge = xosc.ConditionEdge.rising,
+                        valuecondition = xosc.StoryboardElementStateCondition(
+                            element="event",
+                            reference =  f"{agents.agentNames[i]}_RouteEvent{route_event_count-1}",
+                            state = xosc.StoryboardElementState.completeState
+                        )
+                    )
+                )
+                maneuver.add_event(despawn_event)
+                valid_maneuver = True
+            elif end_row.time < duration:
                 despawn_event = xosc.Event(
                         f"Despawn_{agents.agentNames[i]}_Event",
                         xosc.Priority.parallel,
