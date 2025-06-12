@@ -1,66 +1,83 @@
-import openai
 import os
-import base64
-import pandas as pd
-
-'''
-from langchain.embeddings.openai import OpenAIEmbeddings
-from langchain.vectorstores import FAISS
-from langchain.chains import RetrievalQA
+import openai
 from langchain.chat_models import ChatOpenAI
-'''
+from langchain.memory import ConversationBufferMemory
+from langchain.chains import ConversationChain
 
-"You are a professional traffic scenario assistant. Interpret top-down traffic maps accurately."
 
-class mapInterpretation:
+class MapInterpretation:
     def __init__(self, api_key=None):
         """
-        Initialize the OpenAI client with the provided API key,
-        essential traffic rules, and map comprehension guidelines.
+        Initialize the OpenAI client and LangChain memory pipeline.
         """
         self.api_key = api_key or os.getenv('OPENAI_API_KEY')
         if not self.api_key:
             raise ValueError("API key must be provided either directly or through the 'OPENAI_API_KEY' environment variable.")
         
         self.client = openai.OpenAI(api_key=self.api_key)
+        
+        # LangChain setup for memory-based follow-up analysis
+        self.llm = ChatOpenAI(model_name="gpt-4o", openai_api_key=self.api_key)
+        self.memory = ConversationBufferMemory(memory_key="history", return_messages=True)
+        self.chain = ConversationChain(llm=self.llm, memory=self.memory)
 
-    def analyze_map_image(self, image_url: str, prompt: str, max_tokens: int = 300):
+        '''
+        self.task_description = task_description if task_description else None
+        self.condition_definitions = condition_definitions if condition_definitions else None
+        '''
+
+
+    def analyze_map_image(self, image_url: str, max_tokens: int = 500):
         """
-        Use OpenAI's VLM model to analyze a top-down traffic map image.
-
-        :param image_url: URL to the top-down traffic map image
-        :param prompt: Instructional text to analyze the image
-        :param max_tokens: Maximum number of tokens in the response
-        :return: LLM-generated description
+        Use OpenAI Vision API to analyze the top-down traffic map image.
         """
         try:
             response = self.client.chat.completions.create(
-                model="gpt-4o-mini",
+                model="gpt-4o",
                 messages=[
-                    {"role": "system", "content": "You are a professional art critic."},
-                    {"role": "user", "content": [
-                        {"type": "text", "text": prompt},
-                        {"type": "image_url", "image_url": {"url": image_url}}
-                    ]}
+                    {
+                        "role": "system",
+                        "content": "You are a traffic scenario assistant. Interpret top-down traffic maps accurately."
+                    },
+                    {
+                        "role": "user",
+                        "content": [
+                            {"type": "text", "text": "Please describe the structure of this intersection map."},
+                            {"type": "image_url", "image_url": {"url": image_url}}
+                        ]
+                    }
                 ],
                 max_tokens=max_tokens
             )
+            content = response.choices[0].message.content.strip()
+            print("Image analysis complete.")
             print("Prompt tokens:", response.usage.prompt_tokens)
             print("Completion tokens:", response.usage.completion_tokens)
             print("Total tokens used:", response.usage.total_tokens)
-            return response.choices[0].message.content.strip()
-
+            return content
         except Exception as e:
-            print(f"Error interpreting map image: {e}")
+            print(f"Error during image analysis: {e}")
             return None
-        
-# Example usage
-if __name__ == "__main__":
-    interpreter = mapInterpretation()
-    image_url = "https://raw.githubusercontent.com/lemonwilliam/LLM-TSG/refs/heads/main/screen_shot_00290.jpg?token=GHSAT0AAAAAADCP7FVNDDBNZYC54A3P2VV22AQ3WVA"
-    description = interpreter.analyze_map_image(image_url, prompt="Describe the image given.")
-    if description:
-        print("\nMap Description:\n", description)
-    else:
-        print("Failed to interpret the map image.")
 
+    def feed_map_understanding_to_memory(self, map_description: str):
+        """
+        Save the result of Task 1 (map analysis) into LangChain memory.
+        """
+        self.chain.run(f"This is the result of the map analysis:\n{map_description}")
+
+    def analyze_agent_behaviors(self, behavior_log: str):
+        """
+        Task 2: Analyze agent behaviors using previously stored map understanding.
+        """
+        prompt = f"""
+Now that you understand the underlying map, analyze the following agent behaviors that occur on this map.
+
+Agent Behavior Log:
+{behavior_log}
+
+For each agent, explain the likely reason for its action:
+- due to road structure
+- interaction with another agent
+- or no specific reason
+"""
+        return self.chain.run(prompt)

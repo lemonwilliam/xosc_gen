@@ -5,12 +5,13 @@ import yaml
 
 from models.labeller import Labeller
 from models.description import ScenarioDescriber
+from models.map_interpretation import MapInterpretation
 from models.file_generation import FileGeneration
 from scripts.esmini_process import EsminiSimulator
 from scripts.scoring import Scorer
 from scripts.visualization import Visualization
 
-from models.gpt_description import gptDescription
+from models.map_interpretation import mapInterpretation
 from models.reflection import Reflection
 
 
@@ -24,15 +25,12 @@ def main(args):
 
     # Define paths and load essential knowledge
     task_desc_path = "memos/dm_task.txt"
-    action_definition_path = "memos/action_definition.txt"
-    trigger_definition_path = "memos/condition_definition.txt"
+    condition_definition_path = "memos/condition_definition.txt"
 
     with open(task_desc_path , "r") as f:
         task_description = f.read()
-    with open(action_definition_path, "r") as f:
-        action_definitions = f.read()
     with open(trigger_definition_path, "r") as f:
-        trigger_definitions = f.read()
+        condition_definitions = f.read()
 
     desc_model = gptDescription(api_key=None, task_description=task_description, action_definitions=action_definitions, trigger_definitions=trigger_definitions)
     '''
@@ -90,11 +88,6 @@ def main(args):
     labeller.save(output_yaml_path)
     print(f"✅ Route secision actions added to YAML file\n")
 
-    '''
-    # Step 2.5: Convert YAML to easily readable description
-    describer = ScenarioDescriber(output_yaml_path, map_intersection_path)
-    describer.describe(output_path=f"results/{args.dataset}/description/{args.scenario_id}.txt")
-    '''
 
     # Step 2: Create scenario descriptions for all relevant agents
     full_scenario_yaml = yaml.safe_load(open(output_yaml_path))
@@ -117,12 +110,30 @@ def main(args):
         description = describer.generate_description(ego_id=tid)
         descriptions.append(description)
 
-    output_path = f"results/{args.dataset}/description/{args.scenario_id}.txt"
-    os.makedirs(os.path.dirname(output_path), exist_ok=True)
-    with open(output_path, "w") as f:
+    behavior_log_path = f"results/{args.dataset}/description/{args.scenario_id}.txt"
+    os.makedirs(os.path.dirname(behavior_log_path), exist_ok=True)
+    with open(behavior_log_path, "w") as f:
         f.write("\n\n".join(descriptions))
+
+
+    # Step 2.5: Use OpenAI API to acquire trigger conditions for actions
+    interpreter = MapInterpretation()
+    image_url = "https://raw.githubusercontent.com/lemonwilliam/LLM-TSG/refs/heads/main/screen_shot_00290.jpg?token=GHSAT0AAAAAADCP7FVNDDBNZYC54A3P2VV22AQ3WVA"
+    map_description = interpreter.analyze_map(image_url)
+    if map_description:
+        print("\nMap Description:\n", map_description)
+    else:
+        print("Failed to interpret the map image.")
+
+    interpreter.feed_map_understanding_to_memory(map_description)
+
+    with open(behavior_log_path , "r") as f:
+        behavior_log = f.read()
+
+    result = interpreter.analyze_agent_behaviors(behavior_log=behavior_log)
+    print(result)
     
-    
+
     # Step 3: Generate initial OpenSCENARIO file
     print("\n🔹 Step 3: XOSC File Generation")
     filegen_model = FileGeneration()

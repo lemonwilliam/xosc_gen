@@ -147,16 +147,23 @@ class ScenarioDescriber:
             movement = route_action["type"].replace("_", " ")
             
             if exit_road in self.road_order:
-                sentence = f"- Enters the intersection at t={t_entry:.2f}, {movement} from Road {entry_road}, Lane {entry_lane} towards Road {exit_road}, Lane {exit_lane}."
+                if entry_road in self.road_order:
+                    sentence = f"- Enters the intersection at t={t_entry:.2f}, {movement} from Road {entry_road}, Lane {entry_lane} towards Road {exit_road}, Lane {exit_lane}."
+                else:
+                    sentence = f"- {movement} towards Road {exit_road}, Lane {exit_lane}."
             else:
-                entry_idx = self.road_order.index(entry_road)
-                offset = {"go straight": 2, "turn right": 1, "turn left": 3}.get(movement, 0)
-                dest_idx = (entry_idx + offset) % len(self.road_order)
-                exit_road = self.road_order[dest_idx]
-                sentence = f"- Enters the intersection at t={t_entry:.2f}, {movement} from Road {entry_road}, Lane {entry_lane} towards {exit_road}."
+                if entry_road in self.road_order:
+                    entry_idx = self.road_order.index(entry_road)
+                    offset = {"go straight": 2, "turn right": 1, "turn left": 3}.get(movement, 0)
+                    dest_idx = (entry_idx + offset) % len(self.road_order)
+                    estimated_exit_road = self.road_order[dest_idx]
+                    sentence = f"- Enters the intersection at t={t_entry:.2f}, {movement} from Road {entry_road}, Lane {entry_lane} towards Road {estimated_exit_road}."
+                else:
+                    sentence = f"- {movement} inside the intersection"
 
             events.append((t_entry, sentence))
-            events.append((t_exit, f"- Leaves the intersection at t={t_exit:.2f}."))
+            if exit_road in self.road_order:
+                events.append((t_exit, f"- Leaves the intersection at t={t_exit:.2f}."))
 
         # Track previous action state for reasoning
         previous_action_type = None
