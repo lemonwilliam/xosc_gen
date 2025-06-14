@@ -11,7 +11,6 @@ from scripts.esmini_process import EsminiSimulator
 from scripts.scoring import Scorer
 from scripts.visualization import Visualization
 
-from models.map_interpretation import mapInterpretation
 from models.reflection import Reflection
 
 
@@ -118,8 +117,8 @@ def main(args):
 
     # Step 2.5: Use OpenAI API to acquire trigger conditions for actions
     interpreter = MapInterpretation()
-    image_url = "https://raw.githubusercontent.com/lemonwilliam/LLM-TSG/refs/heads/main/screen_shot_00290.jpg?token=GHSAT0AAAAAADCP7FVNDDBNZYC54A3P2VV22AQ3WVA"
-    map_description = interpreter.analyze_map(image_url)
+    image_url = "https://raw.githubusercontent.com/lemonwilliam/xosc_gen/refs/heads/william/data/processed/inD/map/01_bendplatz_graph.jpeg"
+    map_description = interpreter.analyze_map_image(image_url)
     if map_description:
         print("\nMap Description:\n", map_description)
     else:
