@@ -6,7 +6,10 @@ from scenariogeneration import xosc, prettyprint
 import xml.etree.ElementTree as ET
 from collections import defaultdict
 from xml.dom import minidom
-from geomdl import knotvector
+from geomdl import knotvector, BSpline
+from geomdl.visualization import VisMPL
+from geomdl import operations
+from scripts.world_to_lane import CoordProjector
 
 
 class Agents:
@@ -242,16 +245,28 @@ class FileGeneration:
                     else:
                         # Add control points to Nurbs and set knots
                         order = 3
-                        ctrl_point_num = 0
-                        nurbs = xosc.Nurbs(order=order) # Create Nurbs objects
+                        curve  = BSpline.Curve()
+                        curve.degree = order - 1
+                        representpts = []
+                       
                         for wp in attrs['trajectory']:
-                            nurbs.add_control_point(xosc.ControlPoint(xosc.LanePosition(wp[3], wp[2], wp[1], wp[0])))
-                            ctrl_point_num += 1
-                        
-                        
+                            representpts.append([wp[5], wp[6]])
+                        curve.ctrlpts = representpts
                         # Compute and add knots based on number of control points and degree
-                        knots = knotvector.generate(order-1, ctrl_point_num)
-                        nurbs.add_knots(knots)
+                        curve.knotvector = knotvector.generate(curve.degree, curve.ctrlpts_size)
+                        operations.refine_knotvector(curve, [1])
+                        
+                        if __debug__:
+                            curve.vis = VisMPL.VisCurve2D()
+                            curve.render()
+                            print("curve point:", curve.ctrlpts)
+                            print("curve knot:", curve.knotvector)
+                        
+                            
+                        nurbs = xosc.Nurbs(order=order) # Create Nurbs objects
+                        for cc in curve.ctrlpts:
+                            nurbs.add_control_point(xosc.ControlPoint(xosc.WorldPosition(x=cc[0], y=cc[1])))
+                        nurbs.add_knots(curve.knotvector)
 
                         # Create Trajectory Object and assign nurbs
                         traj = xosc.Trajectory("Agent_{}_trajectory".format(tid), False)

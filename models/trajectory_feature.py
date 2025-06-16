@@ -13,7 +13,7 @@ from scipy.signal import argrelextrema
 def read_csv():
     path = '../data/processed/inD/trajectory/world/12_2250_2550.csv'
     data = pd.read_csv(path)
-    row = find_representative_points(data, 25, plot=True)
+    row = find_representative_points(data, 24)
     print(row)
 
 def curvature_from_xy(x, y, time):
@@ -38,7 +38,7 @@ def split_segments(indices):
     segments.append(current_segment)
     return segments
 
-def find_representative_points_each_segment(df, track_id, plot=False, turn_thresh=0.1, seg_thresh=0.3):
+def find_representative_points_each_segment(df, track_id, turn_thresh=0.1, seg_thresh=0.0):
     df_track = df[df['trackId'] == track_id].copy().reset_index(drop=True)
     x = df_track['x'].values
     y = df_track['y'].values
@@ -83,11 +83,13 @@ def find_representative_points_each_segment(df, track_id, plot=False, turn_thres
     peak = sorted(list(set(peak)))
     
     # debug graph
-    if plot:
+    if __debug__:
         plt.figure(figsize=(10,6))
         plt.plot(x, y, label='Path', linewidth=2)
         plt.scatter(x[turning_idx], y[turning_idx], color='orange', label='Turning Points', s=20)
         plt.scatter(x[rep_points_idx], y[rep_points_idx], color='red', label='Representative Points', s=40)
+        for i, idx in enumerate(rep_points_idx):
+            plt.text(x[idx], y[idx], f'{idx}', fontsize=10, color='red')
         plt.xlabel('X')
         plt.ylabel('Y')
         plt.title(f'Track {track_id} Representative Points Per Turning Segment')
@@ -99,6 +101,8 @@ def find_representative_points_each_segment(df, track_id, plot=False, turn_thres
         plt.plot(curvature, label='Curvature', linewidth=2)
         plt.scatter(peak, curvature[peak], color='red', label='peak', zorder=3, s=20)
         plt.scatter(rep_points_idx, curvature[rep_points_idx], color='orange', label='Representative Points', zorder=2, s=40)
+        for i, idx in enumerate(rep_points_idx):
+            plt.text(idx, curvature[idx], f'{idx}', fontsize=10, color='red')
         plt.xlabel('Row Index')
         plt.ylabel('Curvature')
         plt.title(f'Track {track_id} Curvature vs Row Index')
@@ -137,7 +141,6 @@ def find_representative_points(data, trackID, plot=False, turn_thresh=0.1, seg_t
     rep_points = find_representative_points_each_segment(
         df=data,
         track_id=trackID,
-        plot=plot,
         turn_thresh=turn_thresh,
         seg_thresh=seg_thresh
     )
