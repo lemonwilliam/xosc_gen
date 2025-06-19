@@ -3,6 +3,7 @@ import pandas as pd
 import numpy as np
 import os
 from copy import deepcopy
+from .trajectory_feature import find_representative_points
 
 # 1. Define a marker class that inherits from list
 class FlowList(list):
@@ -14,10 +15,9 @@ def flow_list_representer(dumper, data):
 
 
 class Labeller:
-    def __init__(self, meta_path: str, map_path: str, gt_trajectory_path: str):
+    def __init__(self, meta_path: str, map_path: str, gt_trajectory_path: str, wc_trajectory_path: str):
 
         yaml.add_representer(FlowList, flow_list_representer)
-
         # 1) load metadata
         with open(meta_path, 'r') as f:
             self.metadata = yaml.safe_load(f)
@@ -26,6 +26,7 @@ class Labeller:
             self.map_data = yaml.safe_load(f)['Junctions']
         # 3) load trajectory
         self.lane_df = pd.read_csv(gt_trajectory_path)
+        self.world_df = pd.read_csv(wc_trajectory_path)
 
         # 4) initialize scenario dict
         self.scenario = {
@@ -238,6 +239,7 @@ class Labeller:
         for agent in self.scenario["agents"]:
             tid = agent['track_id']
             lane_df_track = self.lane_df[self.lane_df.trackId == tid].reset_index(drop=True)
+            world_df_track = self.world_df[self.world_df.trackId == tid].reset_index(drop=True)
 
             actions = []
             for ra in self._find_route_actions_for_track(tid):
@@ -271,22 +273,25 @@ class Labeller:
                         }
                     })
                 else:
-                    # build fallback trajectory of 5 points
-                    indices = np.linspace(entry_row, min(exit_row+5, len(lane_df_track)-1), 5, dtype=int)
+                    # build fallback trajectory of represent point points
+                    indices = find_representative_points(self.world_df, tid)
+                    print("trajectory node:", indices)
+                    
                     trajectory = []
                     for idx in indices:
-                        row = lane_df_track.loc[idx, ['road_id','lane_id','lane_offset','s','heading']].tolist()
-                        pt = FlowList([int(row[0]), int(row[1]), row[2], row[3], row[4]])
+                        row = lane_df_track.loc[idx, ['road_id','lane_id','lane_offset','s','heading']].tolist() + world_df_track.loc[idx, ['x', 'y']].tolist()
+                        pt = FlowList([int(row[0]), int(row[1]), row[2], row[3], row[4], row[5], row[6]])
                         trajectory.append(pt)
                     actions.append({
                         'type': ra['type'],
                         'attributes': {
-                            'start_time': start_time,
-                            'end_time':   end_time,
+                            'start_time': lane_df_track.loc[0].time,
+                            'end_time':   lane_df_track.loc[len(lane_df_track)-1].time,
                             'legal':      False,
                             'trajectory': trajectory
                         }
                     })
+                    
 
             # prepend these new actions
             agent['actions'] = actions + agent.get('actions', [])

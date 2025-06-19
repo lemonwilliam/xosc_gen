@@ -6,6 +6,10 @@ from scenariogeneration import xosc, prettyprint
 import xml.etree.ElementTree as ET
 from collections import defaultdict
 from xml.dom import minidom
+from geomdl import knotvector, BSpline
+from geomdl.visualization import VisMPL
+from geomdl import operations
+from scripts.world_to_lane import CoordProjector
 
 
 class Agents:
@@ -131,6 +135,7 @@ class FileGeneration:
             speed_event_count = 0
             lateral_event_count = 0
             route_event_count = 0
+            assign_trajectory = False
 
             ## ➡️ First: Initialize agents that did not get teleported in Init
             if init_row.time != 0:
@@ -194,7 +199,7 @@ class FileGeneration:
                     event = xosc.Event(
                         f"{agents.agentNames[i]}_SpeedEvent{speed_event_count}",
                         xosc.Priority.parallel,
-                        maxexecution=3
+                        maxexecution=1
                     )
                     speed_event_count += 1
                     dynamics = xosc.TransitionDynamics("linear", "time", attrs["duration"])
@@ -208,7 +213,7 @@ class FileGeneration:
                     event = xosc.Event(
                         f"{agents.agentNames[i]}_LateralEvent{lateral_event_count}",
                         xosc.Priority.parallel,
-                        maxexecution=3
+                        maxexecution=1
                     )
                     lateral_event_count += 1
                     lane_id = attrs['target_lane']
@@ -223,7 +228,7 @@ class FileGeneration:
                     event = xosc.Event(
                         f"{agents.agentNames[i]}_RouteEvent{route_event_count}",
                         xosc.Priority.parallel,
-                        maxexecution=3
+                        maxexecution=1
                     )
                     route_event_count += 1
                     if attrs['legal']:
@@ -239,10 +244,29 @@ class FileGeneration:
                         )                           
                     else:
                         # Add control points to Nurbs and set knots
-                        nurbs = xosc.Nurbs(order=4) # Create Nurbs objects
+                        order = 3
+                        curve  = BSpline.Curve()
+                        curve.degree = order - 1
+                        representpts = []
+                       
                         for wp in attrs['trajectory']:
-                            nurbs.add_control_point(xosc.ControlPoint(xosc.LanePosition(wp[3], wp[2], wp[1], wp[0])))
-                        nurbs.add_knots([0.0, 0.0, 0.0, 0.0, 1.0, 2.0, 2.0, 2.0, 2.0])
+                            representpts.append([wp[5], wp[6]])
+                        curve.ctrlpts = representpts
+                        # Compute and add knots based on number of control points and degree
+                        curve.knotvector = knotvector.generate(curve.degree, curve.ctrlpts_size)
+                        operations.refine_knotvector(curve, [1])
+                        
+                        if __debug__:
+                            curve.vis = VisMPL.VisCurve2D()
+                            curve.render()
+                            print("curve point:", curve.ctrlpts)
+                            print("curve knot:", curve.knotvector)
+                        
+                            
+                        nurbs = xosc.Nurbs(order=order) # Create Nurbs objects
+                        for cc in curve.ctrlpts:
+                            nurbs.add_control_point(xosc.ControlPoint(xosc.WorldPosition(x=cc[0], y=cc[1])))
+                        nurbs.add_knots(curve.knotvector)
 
                         # Create Trajectory Object and assign nurbs
                         traj = xosc.Trajectory("Agent_{}_trajectory".format(tid), False)
@@ -291,24 +315,38 @@ class FileGeneration:
                     if action_type in road_ctrl:
                         if attrs['legal']:
                             sp = attrs["entry_point"]
-                        else:
-                            sp = attrs['trajectory'][0]
-                           
-                        start_position = xosc.LanePosition(sp[3], sp[2], sp[1], sp[0])
-                        positionCondition = xosc.ReachPositionCondition(
-                            tolerance = 3.0,
-                            position = start_position
-                        )
-                        event.add_trigger(
-                            xosc.EntityTrigger(
-                                name="ReachPositionCondition",
-                                delay=0,
-                                conditionedge=xosc.ConditionEdge.rising,
-                                entitycondition=positionCondition,
-                                triggerentity=agents.agentNames[i],
-                                triggeringrule="any"
+                            start_position = xosc.LanePosition(sp[3], sp[2], sp[1], sp[0])
+                            positionCondition = xosc.ReachPositionCondition(
+                                tolerance = 3.0,
+                                position = start_position
                             )
-                        )
+                            event.add_trigger(
+                                xosc.EntityTrigger(
+                                    name="ReachPositionCondition",
+                                    delay=0,
+                                    conditionedge=xosc.ConditionEdge.rising,
+                                    entitycondition=positionCondition,
+                                    triggerentity=agents.agentNames[i],
+                                    triggeringrule="any"
+                                )
+                            )   
+                                
+                        else:
+                            assign_trajectory = True
+                            timeCondition = xosc.SimulationTimeCondition(
+                                value=attrs["start_time"],
+                                rule="greaterThan"
+                            )
+                            event.add_trigger(
+                                xosc.ValueTrigger(
+                                    name="SimulationTimeCondition",
+                                    delay=0,
+                                    conditionedge=xosc.ConditionEdge.none,
+                                    valuecondition=timeCondition
+                                )
+                            )
+                           
+                        
                         valid_event = True
                     '''
                     elif condition_type == "DistanceCondition":
@@ -334,7 +372,31 @@ class FileGeneration:
                         maneuver.add_event(event)
                         valid_maneuver = True
             
-            if end_row.time < duration:
+            if assign_trajectory:
+                despawn_event = xosc.Event(
+                        f"Despawn_{agents.agentNames[i]}_Event",
+                        xosc.Priority.parallel,
+                        maxexecution=1
+                )
+                despawn_event.add_action(
+                    f"Despawn_{agents.agentNames[i]}_Action",
+                    xosc.DeleteEntityAction(entityref = agents.agentNames[i])
+                )
+                despawn_event.add_trigger(
+                    xosc.ValueTrigger(
+                        name = "StoryboardElementStateCondition",
+                        delay = 0.2,
+                        conditionedge = xosc.ConditionEdge.rising,
+                        valuecondition = xosc.StoryboardElementStateCondition(
+                            element="event",
+                            reference =  f"{agents.agentNames[i]}_RouteEvent{route_event_count-1}",
+                            state = xosc.StoryboardElementState.completeState
+                        )
+                    )
+                )
+                maneuver.add_event(despawn_event)
+                valid_maneuver = True
+            elif end_row.time < duration:
                 despawn_event = xosc.Event(
                         f"Despawn_{agents.agentNames[i]}_Event",
                         xosc.Priority.parallel,
@@ -387,6 +449,7 @@ class FileGeneration:
         story.add_act(act)
         sb = sb.add_story(story)
         return sb
+    
 
     
     def parse_scenario_description(self, scenario_dict, gt_trajectory_path, agent_categories, output_paths):
@@ -423,6 +486,8 @@ class FileGeneration:
             scenario.write_xml(path)
 
         return
+    
+    
     
     def parameterize(self,path_in, path_out):
         
