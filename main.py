@@ -123,7 +123,7 @@ def main(args):
     with open(behavior_log_path, "w") as f:
         f.write("\n\n".join(descriptions))
 
-
+    '''
     # Step 2.5: Use OpenAI API to acquire trigger conditions for actions
     interpreter = MapInterpretation()
     image_url = "https://raw.githubusercontent.com/lemonwilliam/xosc_gen/refs/heads/william/data/processed/inD/map/01_bendplatz_graph.jpeg"
@@ -140,7 +140,7 @@ def main(args):
 
     result = interpreter.analyze_agent_behaviors(behavior_log=behavior_log)
     print(result)
-    
+    '''
 
     # Step 3: Generate initial OpenSCENARIO file
     print("\n🔹 Step 3: XOSC File Generation")

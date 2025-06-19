@@ -15,8 +15,7 @@ class ScenarioDescriber:
         
     def _load_map_description(self, map_path):
         with open(map_path, "r") as f:
-            road_map = yaml.safe_load(f)["Roads"]
-        road_order = list(road_map.values())  # Order of the roads, counter-clockwise
+            road_order = yaml.safe_load(f)["Roads"]
         return road_order
 
     def _get_agent_by_id(self, track_id):
