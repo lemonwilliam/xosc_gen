@@ -15,14 +15,14 @@ def flow_list_representer(dumper, data):
 
 
 class Labeller:
-    def __init__(self, meta_path: str, map_path: str, gt_trajectory_path: str, wc_trajectory_path: str):
+    def __init__(self, meta_path: str, map_yaml_path: str, gt_trajectory_path: str, wc_trajectory_path: str):
 
         yaml.add_representer(FlowList, flow_list_representer)
         # 1) load metadata
         with open(meta_path, 'r') as f:
             self.metadata = yaml.safe_load(f)
         # 2) load map
-        with open(map_path, 'r') as f:
+        with open(map_yaml_path, 'r') as f:
             self.map_data = yaml.safe_load(f)['Junctions']
         # 3) load trajectory
         self.lane_df = pd.read_csv(gt_trajectory_path)
@@ -104,16 +104,16 @@ class Labeller:
             for conn in junction['connections']:
                 if (conn['Entry_road'] == e_road and
                     conn['Exit_road']  == x_road and
-                    e_lane  in conn['Entry_lanes'] and
-                    x_lane  in conn['Exit_lanes']):
+                    conn['Entry_lane'] == e_lane and
+                    conn['Exit_lane'] == x_lane):
                     return True
                 elif (conn['Connection_road'] == e_road and
                       conn['Exit_road']  == x_road and
-                      x_lane  in conn['Exit_lanes']):
+                      conn['Exit_lane'] == x_lane):
                     return True
                 elif (conn['Connection_road'] == x_road and
                       conn['Entry_road'] == e_road and
-                      e_lane  in conn['Entry_lanes']):
+                      conn['Entry_lane'] == e_lane):
                     return True
         return False
 
