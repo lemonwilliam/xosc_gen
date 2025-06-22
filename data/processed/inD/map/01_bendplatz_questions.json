@@ -1,0 +1,148 @@
+{
+    "Basic structure": [
+        {
+            "question": "How many branching roads does the intersection have?",
+            "answer": "4"
+        },
+        {
+            "question": "How many driving lanes does Road 0 have going towards the intersection?",
+            "answer": "2"
+        },
+        {
+            "question": "How many driving lanes does Road 0 have going away from the intersection?",
+            "answer": "1"
+        },
+        {
+            "question": "How many driving lanes does Road 4 have going towards the intersection?",
+            "answer": "1"
+        },
+        {
+            "question": "How many driving lanes does Road 4 have going away from the intersection?",
+            "answer": "1"
+        },
+        {
+            "question": "How many driving lanes does Road 3 have going towards the intersection?",
+            "answer": "2"
+        },
+        {
+            "question": "How many driving lanes does Road 3 have going away from the intersection?",
+            "answer": "1"
+        },
+        {
+            "question": "How many driving lanes does Road 1 have going towards the intersection?",
+            "answer": "1"
+        },
+        {
+            "question": "How many driving lanes does Road 1 have going away from the intersection?",
+            "answer": "1"
+        }
+    ],
+    "Road relations": [
+        {
+            "question": "If a vehicle enters from Road 0 then goes straight, what is the ID of the Road it arrives?",
+            "answer": "3"
+        },
+        {
+            "question": "If a vehicle enters from Road 4 then goes straight, what is the ID of the Road it arrives?",
+            "answer": "1"
+        },
+        {
+            "question": "If a vehicle enters from Road 3 then goes straight, what is the ID of the Road it arrives?",
+            "answer": "0"
+        },
+        {
+            "question": "If a vehicle enters from Road 1 then goes straight, what is the ID of the Road it arrives?",
+            "answer": "4"
+        },
+        {
+            "question": "If a vehicle enters from Road 0 lane 1, is it allowed to turn right?",
+            "answer": "No"
+        }
+    ],
+    "Crossing routes": [
+        {
+            "question": "If one vehicle goes from Road 0 to Road 1, and another vehicle goes from Road 4 to Road 0, will their paths at the intersection cross?",
+            "answer": "Yes"
+        },
+        {
+            "question": "If one vehicle goes from Road 0 to Road 1, and another vehicle goes from Road 4 to Road 3, will their paths at the intersection cross?",
+            "answer": "No"
+        },
+        {
+            "question": "If one vehicle goes from Road 0 to Road 1, and another vehicle goes from Road 3 to Road 0, will their paths at the intersection cross?",
+            "answer": "Yes"
+        },
+        {
+            "question": "If one vehicle goes from Road 0 to Road 1, and another vehicle goes from Road 1 to Road 0, will their paths at the intersection cross?",
+            "answer": "No"
+        },
+        {
+            "question": "If one vehicle goes from Road 0 to Road 1, and another vehicle goes from Road 1 to Road 4, will their paths at the intersection cross?",
+            "answer": "Yes"
+        },
+        {
+            "question": "If one vehicle goes from Road 0 to Road 1, and another vehicle goes from Road 1 to Road 3, will their paths at the intersection cross?",
+            "answer": "Yes"
+        },
+        {
+            "question": "If one vehicle goes from Road 0 to Road 4, and another vehicle goes from Road 4 to Road 0, will their paths at the intersection cross?",
+            "answer": "No"
+        },
+        {
+            "question": "If one vehicle goes from Road 0 to Road 4, and another vehicle goes from Road 4 to Road 1, will their paths at the intersection cross?",
+            "answer": "No"
+        },
+        {
+            "question": "If one vehicle goes from Road 0 to Road 4, and another vehicle goes from Road 4 to Road 3, will their paths at the intersection cross?",
+            "answer": "No"
+        },
+        {
+            "question": "If one vehicle goes from Road 0 to Road 4, and another vehicle goes from Road 3 to Road 0, will their paths at the intersection cross?",
+            "answer": "No"
+        },
+        {
+            "question": "If one vehicle goes from Road 0 to Road 4, and another vehicle goes from Road 3 to Road 1, will their paths at the intersection cross?",
+            "answer": "No"
+        },
+        {
+            "question": "If one vehicle goes from Road 0 to Road 3, and another vehicle goes from Road 4 to Road 1, will their paths at the intersection cross?",
+            "answer": "Yes"
+        },
+        {
+            "question": "If one vehicle goes from Road 0 to Road 3, and another vehicle goes from Road 3 to Road 4, will their paths at the intersection cross?",
+            "answer": "Yes"
+        },
+        {
+            "question": "If one vehicle goes from Road 0 to Road 3, and another vehicle goes from Road 3 to Road 0, will their paths at the intersection cross?",
+            "answer": "No"
+        },
+        {
+            "question": "If one vehicle goes from Road 0 to Road 3, and another vehicle goes from Road 3 to Road 1, will their paths at the intersection cross?",
+            "answer": "No"
+        },
+        {
+            "question": "If one vehicle goes from Road 4 to Road 1, and another vehicle goes from Road 3 to Road 4, will their paths at the intersection cross?",
+            "answer": "Yes"
+        },
+        {
+            "question": "If one vehicle goes from Road 4 to Road 1, and another vehicle goes from Road 1 to Road 4, will their paths at the intersection cross?",
+            "answer": "No"
+        },
+        {
+            "question": "If one vehicle goes from Road 4 to Road 1, and another vehicle goes from Road 1 to Road 3, will their paths at the intersection cross?",
+            "answer": "Yes"
+        },
+        {
+            "question": "If one vehicle goes from Road 4 to Road 3, and another vehicle goes from Road 3 to Road 4, will their paths at the intersection cross?",
+            "answer": "No"
+        },
+        {
+            "question": "If one vehicle goes from Road 4 to Road 3, and another vehicle goes from Road 3 to Road 1, will their paths at the intersection cross?",
+            "answer": "No"
+        },
+        {
+            "question": "If one vehicle goes from Road 3 to Road 1, and another vehicle goes from Road 1 to Road 3, will their paths at the intersection cross?",
+            "answer": "No"
+        }
+    ]
+}

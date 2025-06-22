@@ -5,7 +5,7 @@ import json
 import random
 import os
 import re # For robust JSON parsing
-from typing import List, Dict, Any, Tuple, Optional, Union
+from typing import List, Dict, Any, Tuple, Optional, Union, Set
 
 # --- Configuration ---
 # Set OPENAI_API_KEY as an environment variable or pass it to the constructor.
@@ -21,11 +21,6 @@ class MapInterpretation:
         Args:
             categorized_qa_pairs: A dictionary where keys are category names (str)
                                   and values are lists of QA dicts for that category.
-                                  Example: 
-                                  {
-                                      "Roads": [{"q": "...", "a": "..."}],
-                                      "Buildings": [{"q": "...", "a": "..."}]
-                                  }
             api_key: Your OpenAI API key.
             model: The OpenAI model to use.
         """
@@ -41,12 +36,26 @@ class MapInterpretation:
 
         self.current_conversation_history: List[Dict[str, Any]] = []
         self.current_map_image_base64: Optional[str] = None
+        self.current_map_description: Optional[str] = None # New attribute
         self.map_verified_successfully: bool = False
         
         print(f"MapInterpretation initialized with {len(categorized_qa_pairs)} QA categories, using model {self.model}.")
 
+    def _read_map_description(self, description_path: Optional[str]) -> Optional[str]:
+        """Reads map description from a file path."""
+        if description_path:
+            try:
+                with open(description_path, 'r', encoding='utf-8') as f:
+                    return f.read()
+            except FileNotFoundError:
+                print(f"Warning: Map description file not found at {description_path}. Proceeding without it.")
+                return None
+            except Exception as e:
+                print(f"Warning: Error reading map description file {description_path}: {e}. Proceeding without it.")
+                return None
+        return None
+
     def _encode_image_to_base64(self, image_path_or_url: str) -> Optional[str]:
-        # (Same as before)
         try:
             if image_path_or_url.startswith(('http://', 'https://')):
                 response = requests.get(image_path_or_url, stream=True)
@@ -59,19 +68,17 @@ class MapInterpretation:
         except requests.exceptions.RequestException as e:
             print(f"Error fetching image from URL {image_path_or_url}: {e}")
             return None
-        except FileNotFoundError:
-            print(f"Image file not found at path: {image_path_or_url}")
-            return None
+        except FileNotFoundError: # Changed to raise IOError for explicit handling in verify_map_understanding
+            raise IOError(f"Image file not found at path: {image_path_or_url}")
         except Exception as e:
             print(f"Error processing image {image_path_or_url}: {e}")
             return None
 
     def _normalize_answer(self, answer: str) -> str:
-        # (Same as before)
         return answer.lower().strip()
 
-    def _call_llm_with_history(self, messages_to_send: List[Dict[str, Union[str, List[Dict[str,str]]]]], temperature: float = 0.2, max_tokens: int = 500) -> str:
-        # (Same as before, ensuring messages_to_send type hint is flexible for multimodal content)
+    def _call_llm_with_history(self, messages_to_send: List[Dict[str, Any]], temperature: float = 0.2, max_tokens: int = 500) -> str:
+        # Changed type hint for messages_to_send to List[Dict[str, Any]] for broader compatibility
         print(f"\n--- Sending to LLM ({self.model}) ---")
         try:
             response = self.client.chat.completions.create(
@@ -91,7 +98,6 @@ class MapInterpretation:
             return "ERROR_API_CALL"
 
     def _parse_llm_json_list_response(self, raw_llm_response: str, num_expected_answers: int) -> List[str]:
-        """Parses LLM response expected to be a JSON list of strings."""
         llm_answers_list: List[str] = []
         if "ERROR_API_CALL" in raw_llm_response or "ERROR_LLM_NO_CONTENT" in raw_llm_response :
                 return ["ERROR_API_RESPONSE"] * num_expected_answers
@@ -100,7 +106,7 @@ class MapInterpretation:
             match = re.search(r"```json\s*([\s\S]*?)\s*```", parsed_content)
             if match:
                 parsed_content = match.group(1)
-            else:
+            else: # If no markdown, try to parse directly, stripping whitespace
                 parsed_content = parsed_content.strip()
             
             parsed_answers = json.loads(parsed_content)
@@ -115,41 +121,58 @@ class MapInterpretation:
         return llm_answers_list
 
     def verify_map_understanding(self, 
-                                 image_path_or_url: str, 
+                                 image_path_or_url: str,
+                                 map_description_path: Optional[str] = None, # New parameter
                                  questions_per_category: int = 2, 
                                  max_retries_per_category: int = 2) -> bool:
         """
-        Verifies LLM's understanding by asking questions from different categories.
-        Retries on a per-category basis if answers are incorrect, picking new random questions for that category.
+        Verifies LLM's understanding using image and optional text description.
         """
         self.current_conversation_history = []
         self.map_verified_successfully = False
-        self.current_map_image_base64 = self._encode_image_to_base64(image_path_or_url)
+        
+        try:
+            self.current_map_image_base64 = self._encode_image_to_base64(image_path_or_url)
+        except IOError as e: # Catch IOError specifically from _encode_image_to_base64
+            print(f"Critical error loading image: {e}")
+            return False # Cannot proceed without image
 
-        if not self.current_map_image_base64:
+        if not self.current_map_image_base64: # General check if encoding failed for other reasons
             print("Failed to load and encode map image.")
             return False
 
+        self.current_map_description = self._read_map_description(map_description_path)
+
         system_prompt_content = (
-            "You are an expert map interpreter. Analyze the provided map image carefully. "
-            "You will be asked questions about specific categories related to the map. "
+            "You are an expert map interpreter. You will be provided with a map image and optionally a textual description of the map. Analyze these inputs carefully. "
+            "You will then be asked questions about specific categories related to the map. "
             "For each set of questions, provide your answers *only* as a JSON list of strings, corresponding to the order of the questions."
             "Do not add any other explanatory text before or after the JSON list itself."
         )
         self.current_conversation_history.append({"role": "system", "content": system_prompt_content})
         
-        # Initial user message with the image, added once.
-        # Subsequent turns will refer to this context.
-        initial_user_prompt_text = "Here is an image of a map. I will now ask you questions about it in categories."
-        initial_user_message_content_parts = [
-            {"type": "text", "text": initial_user_prompt_text},
+        # Initial user message with the image and description
+        initial_user_prompt_parts = []
+        initial_user_prompt_text_intro = "Here is a map image"
+        if self.current_map_description:
+            initial_user_prompt_text_intro += " and its textual description. Please analyze both."
+            initial_user_prompt_parts.append({"type": "text", "text": initial_user_prompt_text_intro})
+            initial_user_prompt_parts.append({"type": "text", "text": f"\nMap Description:\n---\n{self.current_map_description}\n---"})
+        else:
+            initial_user_prompt_text_intro += ". Red boxed numbers represent Road IDs and black boxed numbers represent lane ids. Please analyze it."
+            initial_user_prompt_parts.append({"type": "text", "text": initial_user_prompt_text_intro})
+
+        initial_user_prompt_parts.append(
             {"type": "image_url", "image_url": {"url": f"data:image/jpeg;base64,{self.current_map_image_base64}"}}
-        ]
-        self.current_conversation_history.append({"role": "user", "content": initial_user_message_content_parts})
-        # Add a placeholder assistant response to keep alternating roles for subsequent actual Q&A.
-        self.current_conversation_history.append({"role": "assistant", "content": "Understood. I have analyzed the map. I am ready for your questions."})
+        )
+        initial_user_prompt_parts.append(
+             {"type": "text", "text": "\nI will now ask you questions about it in categories."}
+        )
 
+        self.current_conversation_history.append({"role": "user", "content": initial_user_prompt_parts})
+        self.current_conversation_history.append({"role": "assistant", "content": "Understood. I have analyzed the provided map information. I am ready for your questions."})
 
+        # --- Category verification loop (largely same as before) ---
         all_categories_passed = True
         for category_name, qa_list_for_category in self.categorized_qa_pairs.items():
             print(f"\n--- Verifying Category: {category_name} ---")
@@ -158,36 +181,30 @@ class MapInterpretation:
                 continue
 
             passed_this_category = False
-            # Keep track of questions already asked in this category for this verification run
-            # to avoid re-picking the same set on retry if possible.
-            # This is a simple per-category, per-verification run cache.
             asked_question_indices_in_category: Set[int] = set()
 
 
             for attempt in range(max_retries_per_category + 1):
                 print(f"  Attempt {attempt + 1}/{max_retries_per_category + 1} for category '{category_name}'")
 
-                # Select k random questions for this category attempt
-                # Ensure we don't ask more than available or re-ask if possible
                 available_indices = [i for i, _ in enumerate(qa_list_for_category) if i not in asked_question_indices_in_category]
                 
                 num_to_select = min(questions_per_category, len(available_indices))
-                if num_to_select == 0 and len(qa_list_for_category) > 0 : # Exhausted unique questions, allow re-picking
+                if num_to_select == 0 and len(qa_list_for_category) > 0 : 
                     print(f"    Note: All unique questions in '{category_name}' asked for this verification run. Re-sampling allowed.")
-                    asked_question_indices_in_category.clear() # Reset for this specific case
+                    asked_question_indices_in_category.clear() 
                     available_indices = list(range(len(qa_list_for_category)))
                     num_to_select = min(questions_per_category, len(available_indices))
 
-                if num_to_select == 0: # Still no questions (e.g., category empty or questions_per_category is 0)
+                if num_to_select == 0: 
                     print(f"    No questions to ask for '{category_name}' in this attempt. Marking as passed (vacuously true).")
-                    passed_this_category = True # Or handle as error if questions_per_category > 0
+                    passed_this_category = True 
                     break
 
 
                 selected_indices = random.sample(available_indices, num_to_select)
                 current_questions_being_asked = [qa_list_for_category[i] for i in selected_indices]
                 
-                # Update asked_question_indices_in_category for the *next* retry attempt for this category
                 for idx in selected_indices:
                     asked_question_indices_in_category.add(idx)
 
@@ -195,8 +212,8 @@ class MapInterpretation:
                 question_texts = [qa['question'] for qa in current_questions_being_asked]
                 
                 prompt_lines = [
-                    f"Now, focusing on the '{category_name}' category for the map provided earlier.",
-                    "Please answer the following questions based *only* on the map image.",
+                    f"Now, focusing on the '{category_name}' category for the map information (image and text description, if provided) that you have already processed.",
+                    "Please answer the following questions based *only* on the previously provided map image and its description (if any).",
                     "Provide your answers as a JSON list of strings, in the same order as the questions.\n",
                     "Questions:"
                 ]
@@ -205,23 +222,18 @@ class MapInterpretation:
                 prompt_lines.append("\nYour JSON response:")
                 category_user_prompt_text = "\n".join(prompt_lines)
 
-                # Add user message to history for this category's turn
-                # The image is already in history from the initial user message.
-                # OpenAI models can refer to images in previous turns of a conversation.
                 messages_for_this_call = self.current_conversation_history + [
-                    {"role": "user", "content": category_user_prompt_text}
+                    {"role": "user", "content": category_user_prompt_text} # Text only for category Qs
                 ]
                 
-                estimated_max_tokens = 50 + (len(current_questions_being_asked) * 30)
+                estimated_max_tokens = 70 + (len(current_questions_being_asked) * 35) # Increased estimate
                 raw_llm_response = self._call_llm_with_history(messages_for_this_call, temperature=0.1, max_tokens=estimated_max_tokens)
 
-                # Update main conversation history
                 self.current_conversation_history.append({"role": "user", "content": category_user_prompt_text})
                 self.current_conversation_history.append({"role": "assistant", "content": raw_llm_response})
 
                 llm_answers_list = self._parse_llm_json_list_response(raw_llm_response, len(current_questions_being_asked))
                 
-                # --- Compare answers for this category attempt ---
                 incorrect_in_this_attempt = False
                 if len(llm_answers_list) != len(current_questions_being_asked):
                     print(f"    Warning: LLM returned {len(llm_answers_list)} answers for category '{category_name}', but {len(current_questions_being_asked)} questions were asked.")
@@ -244,23 +256,23 @@ class MapInterpretation:
                 if not incorrect_in_this_attempt:
                     print(f"  +++ Category '{category_name}' passed this attempt! +++")
                     passed_this_category = True
-                    break # Move to the next category
+                    break 
                 else:
                     print(f"  --- Incorrect answer(s) in category '{category_name}' for this attempt. ---")
                     if attempt >= max_retries_per_category:
                         print(f"  --- Max retries for category '{category_name}' reached. This category FAILED. ---")
-                        all_categories_passed = False # Mark overall failure
-                        break # Stop trying this category
+                        all_categories_passed = False 
+                        break 
                     else:
                         print(f"    Will retry category '{category_name}' with new questions if available.")
             
-            if not passed_this_category: # If after all retries, category didn't pass
-                all_categories_passed = False # Ensure this is set
-                break # Stop verifying other categories if one has definitively failed
+            if not passed_this_category: 
+                all_categories_passed = False 
+                break 
 
         self.map_verified_successfully = all_categories_passed
         if self.map_verified_successfully:
-            print("\nSUCCESS: All categories verified successfully!")
+            print("\nSUCCESS: All categories verified successfully using map image and description (if provided)!")
         else:
             print("\nFAILURE: Not all categories could be verified successfully.")
         return self.map_verified_successfully
@@ -268,47 +280,57 @@ class MapInterpretation:
 
     def analyze_vehicle_interactions(self, vehicle_actions: List[str]) -> Optional[str]:
         """
-        Analyzes vehicle interactions on the map, using the established conversation history.
+        Analyzes vehicle interactions, using established context (image and description).
         """
-        if not self.map_verified_successfully or not self.current_map_image_base64:
-            print("Error: Map understanding has not been successfully verified for the current map, or no map is loaded.")
+        if not self.map_verified_successfully: # Removed image check here, as it's part of context
+            print("Error: Map understanding has not been successfully verified for the current map context.")
             print("Please call `verify_map_understanding()` successfully first.")
             return None
+        
+        if not self.current_map_image_base64: # Add a check here just in case, though it should be set if verified
+            print("Error: Map image base64 not found in current context. This should not happen if verification was successful.")
+            return None
+
 
         actions_text = "\n".join([f"- {action}" for action in vehicle_actions])
-        analysis_prompt_text = (
-            "You have previously demonstrated an understanding of the provided map by correctly answering questions about its features across several categories. "
-            "Now, considering that same map (which you have already analyzed) and the following vehicle actions, "
-            "please analyze potential interactions between vehicles. \n\n"
+        
+        analysis_prompt_text_parts_list = [] # Will build list of content dicts
+
+        analysis_intro_text = (
+            "You have previously demonstrated an understanding of the provided map context (which included an image and possibly a textual description) "
+            "by correctly answering questions about its features across several categories. "
+            "Now, considering that same map context and the following vehicle actions, "
+            "please analyze potential interactions between vehicles.\n\n"
             "Focus on identifying and describing:\n"
-            "1. Conflicts: Situations where vehicles might compete for the same space or right-of-way.\n"
-            "2. Potential Collisions: Scenarios where a collision is likely if actions continue unchanged.\n"
-            "3. Necessary Yielding Maneuvers: Who should yield to whom based on standard traffic rules or map context.\n"
-            "4. Any other safety-critical observations.\n\n"
+            "1. Conflicts, 2. Potential Collisions, 3. Necessary Yielding Maneuvers, 4. Other safety-critical observations.\n\n"
             "If no significant interactions or safety concerns are found, please state that clearly.\n\n"
             "Vehicle Actions:\n"
             f"{actions_text}\n\n"
             "Your detailed analysis of interactions:"
         )
-
-        # For the analysis, we still send the image again with the prompt for max robustness,
-        # even though it's in the history.
-        user_message_for_analysis_content_parts = [
-            {"type": "text", "text": analysis_prompt_text},
-            {"type": "image_url", "image_url": {"url": f"data:image/jpeg;base64,{self.current_map_image_base64}"}}
-        ]
+        analysis_prompt_text_parts_list.append({"type": "text", "text": analysis_intro_text})
         
+        # Re-send image for robustness in this critical analysis step.
+        analysis_prompt_text_parts_list.append(
+             {"type": "image_url", "image_url": {"url": f"data:image/jpeg;base64,{self.current_map_image_base64}"}}
+        )
+        # Optionally, re-send description text if it's crucial and short, or a summary.
+        # This reinforces the textual context directly with the task, rather than just relying on history.
+        if self.current_map_description:
+           summary_desc = self.current_map_description[:500] + ("..." if len(self.current_map_description) > 500 else "")
+           analysis_prompt_text_parts_list.append({"type": "text", "text": f"\nReminder of Map Description Context:\n---\n{summary_desc}\n---"})
+
+
         messages_for_analysis_call = self.current_conversation_history + [
-            {"role": "user", "content": user_message_for_analysis_content_parts}
+            {"role": "user", "content": analysis_prompt_text_parts_list} # Use the list of content dicts
         ]
 
-        print("\n--- Requesting Vehicle Interaction Analysis ---")
+        print("\n--- Requesting Vehicle Interaction Analysis (with map image & description context) ---")
         llm_analysis_response = self._call_llm_with_history(messages_for_analysis_call, temperature=0.4, max_tokens=1000)
 
         if "ERROR_API_CALL" not in llm_analysis_response and "ERROR_LLM_NO_CONTENT" not in llm_analysis_response:
-            self.current_conversation_history.append({"role": "user", "content": user_message_for_analysis_content_parts})
+            self.current_conversation_history.append({"role": "user", "content": analysis_prompt_text_parts_list})
             self.current_conversation_history.append({"role": "assistant", "content": llm_analysis_response})
-            # print(f"\nLLM Interaction Analysis Output:\n{llm_analysis_response}") # Already printed by _call_llm
             return llm_analysis_response
         else:
             print("Failed to get interaction analysis from LLM.")
@@ -316,7 +338,6 @@ class MapInterpretation:
 
 # --- Example Usage ---
 if __name__ == "__main__":
-    # Categorized QA pairs
     categorized_sample_qa_pairs = {
         "Structures & Roads": [
             {"question": "How many branching roads does the intersection have?", "answer": "4"},
@@ -340,53 +361,64 @@ if __name__ == "__main__":
     }
 
     try:
+        # It's good practice to ensure OPENAI_API_KEY is set before this, or pass it explicitly.
+        # Example: interpreter = MapInterpretation(categorized_qa_pairs=categorized_sample_qa_pairs, api_key="sk-...")
         interpreter = MapInterpretation(categorized_qa_pairs=categorized_sample_qa_pairs)
     except ValueError as e:
         print(f"Initialization Error: {e}")
         exit()
 
+    # Define paths for your specific map image and its description
+    # Ensure these paths are correct for your environment.
+    map_image_location = "./data/processed/inD/map/01_bendplatz_graph.jpeg" # Your actual image path
+    map_description_file_path = "./data/processed/inD/map/01_bendplatz_description.txt" # Your actual description file path
 
-    map_image_location = "./data/processed/inD/map/01_bendplatz_graph.jpeg"
+    # Check if files exist
     if not os.path.exists(map_image_location):
-        print(f"Error: map_image_location '{map_image_location}' does not exist.")
+        print(f"Error: Map image file not found at '{map_image_location}'. Please check the path.")
         exit()
-    
-    # 1. Verify map understanding with categorized questions
+    if not os.path.exists(map_description_file_path):
+        print(f"Warning: Map description file not found at '{map_description_file_path}'. Proceeding without description.")
+        # Set to None if you want to proceed without it, or handle as an error if description is mandatory.
+        # map_description_file_path = None
+
+
     print(f"\nStarting categorized map verification for: {map_image_location}")
+    if map_description_file_path:
+        print(f"Using map description from: {map_description_file_path}")
+    
     is_understood = interpreter.verify_map_understanding(
         image_path_or_url=map_image_location,
-        questions_per_category=3, # Ask 2 questions from each category
-        max_retries_per_category=1  # Allow 1 retry for each category (total 2 attempts)
+        map_description_path=map_description_file_path, # Pass the description path
+        questions_per_category=3, 
+        max_retries_per_category=1  
     )
 
     if is_understood:
-        print("\nOVERALL SUCCESS: LLM map understanding verified across all categories.")
-
-        '''
+        print("\nOVERALL SUCCESS: LLM map understanding verified using image and description (if provided).")
         
-        vehicle_actions_on_map_simple = [
-            "Vehicle Red (not pictured) is approaching the house from the top of the map along a path parallel to the river on the left side.",
-            "Vehicle Yellow (the one visible on the map) starts moving towards the river along the road.",
-            "Vehicle Blue (not pictured) enters the map from the right, moving towards the forest edge."
+        '''
+        # Example vehicle actions for your specific map scenario (you'll need to define these)
+        vehicle_actions_for_inD_map = [
+            "Vehicle 1 (Car) enters from Road 0, intending to turn left onto Road 1.",
+            "Vehicle 2 (Truck) enters from Road 3, intending to go straight onto Road 0.",
+            "Vehicle 3 (Motorcycle) enters from Road 4, intending to turn right onto Road 0.",
+            # Add more actions relevant to the inD dataset map's intersection
         ]
 
-        print("\n--- Now, analyzing vehicle interactions ---")
-        analysis_result = interpreter.analyze_vehicle_interactions(vehicle_actions=vehicle_actions_on_map_simple)
+        print("\n--- Now, analyzing vehicle interactions (with description context) ---")
+        analysis_result = interpreter.analyze_vehicle_interactions(vehicle_actions=vehicle_actions_for_inD_map)
 
         if analysis_result:
-            print("\n--- Vehicle Interaction Analysis Complete (output already shown by LLM call) ---")
-            with open("vehicle_interaction_analysis_categorized.txt", "w") as f:
+            print("\n--- Vehicle Interaction Analysis Complete ---")
+            # The result is already printed within the method, but you can process it further.
+            output_filename = "vehicle_interaction_analysis_inD_01.txt"
+            with open(output_filename, "w", encoding="utf-8") as f:
                 f.write(analysis_result)
-            print("Analysis saved to vehicle_interaction_analysis_categorized.txt")
+            print(f"Analysis saved to {output_filename}")
         else:
             print("\n--- Vehicle Interaction Analysis Failed ---")
-            
-        # Optional: print full history
-        # print("\nFull conversation history:")
-        # for i, msg in enumerate(interpreter.current_conversation_history):
-        # ... (history printing logic from before)
-
         '''
-
+            
     else:
-        print("\nOVERALL FAILURE: LLM map understanding could not be verified across all categories.")
+        print("\nOVERALL FAILURE: LLM map understanding could not be verified.")

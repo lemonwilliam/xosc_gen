@@ -3,362 +3,543 @@ import os
 import argparse
 import xml.etree.ElementTree as ET
 import yaml
+import json
+import itertools
+import numpy as np
+import csv
 
+class NoTupleDumper(yaml.SafeDumper):
+    def represent_tuple(self, data):
+        return self.represent_list(data)
 
-def compute_junction_connections(junction: ET.Element, roads: dict) -> list:
-    """
-    Given a <junction> element and a dict of <road> elements by id,
-    return a list of connection dicts:
-      - Connection_road: (int) the ID of the connectingRoad
-      - Entry_road: (int) the incomingRoad ID from the connection
-      - Entry_lanes: list[int] of laneLink “from” IDs
-      - Exit_road: (int | None) the ID of the road on the far side of connectingRoad, if it's a road. Can be None.
-      - Exit_lanes: list[int] of laneLink “to” IDs
-    """
+# --- Core XODR Parsing and Data Extraction Functions ---
+def compute_junction_connections(junction_elem: ET.Element, roads_dict: dict[int, ET.Element]) -> list:
+    """Extracts connection details from a <junction> element."""
     conns = []
-    for conn_elem in junction.findall("connection"):
+    for conn_elem in junction_elem.findall("connection"):
         conn_road_id = int(conn_elem.get("connectingRoad"))
-        entry_road = int(conn_elem.get("incomingRoad"))
+        entry_road_id = int(conn_elem.get("incomingRoad"))
+        contact_point_val = conn_elem.get("contactPoint") # Get contactPoint
 
-        entry_lanes = []
-        exit_lanes = []
-        for ll in conn_elem.findall("laneLink"):
-            entry_lanes.append(int(ll.get("from")))
-            exit_lanes.append(int(ll.get("to")))
+        lane_links_pairs = [] 
+        for ll_elem in conn_elem.findall("laneLink"):
+            lane_links_pairs.append(
+                (int(ll_elem.get("from")), int(ll_elem.get("to")))
+            )
 
-        road_elem = roads.get(conn_road_id) # Get <road> element for connectingRoad
-        exit_road_id = None
-
-        if road_elem is not None:
-            link_elem = road_elem.find("link")
-            if link_elem is not None:
+        conn_road_elem = roads_dict.get(conn_road_id)
+        exit_arterial_road_id = None
+        if conn_road_elem:
+            link_elem = conn_road_elem.find("link")
+            if link_elem:
                 pred_elem = link_elem.find("predecessor")
                 succ_elem = link_elem.find("successor")
-
-                pred_road_id_val = None
-                if pred_elem is not None and pred_elem.get("elementType") == "road":
-                    pred_road_id_val = int(pred_elem.get("elementId"))
-
-                succ_road_id_val = None
-                if succ_elem is not None and succ_elem.get("elementType") == "road":
-                    succ_road_id_val = int(succ_elem.get("elementId"))
-
-                contact_point = conn_elem.get("contactPoint")
-
-                if contact_point == "start":
-                    exit_road_id = succ_road_id_val
-                elif contact_point == "end":
-                    exit_road_id = pred_road_id_val
-                # If contactPoint is missing or invalid, exit_road_id remains None, which is handled later.
-
+                # This logic for exit_arterial_road_id was already correct based on contact_point
+                if contact_point_val == "start": 
+                    if succ_elem is not None and succ_elem.get("elementType") == "road":
+                        exit_arterial_road_id = int(succ_elem.get("elementId"))
+                elif contact_point_val == "end": 
+                    if pred_elem is not None and pred_elem.get("elementType") == "road":
+                        exit_arterial_road_id = int(pred_elem.get("elementId"))
+        
         conns.append({
             "Connection_road": conn_road_id,
-            "Entry_road": entry_road,
-            "Entry_lanes": entry_lanes,
-            "Exit_road": exit_road_id,
-            "Exit_lanes": exit_lanes
+            "Entry_road": entry_road_id,
+            "Lane_links": lane_links_pairs,
+            "Exit_road": exit_arterial_road_id,
+            "Contact_point_on_connecting_road": contact_point_val, # Store contactPoint
+            # Keep these for compatibility if other parts use them, though extract_maneuvers will prioritize Lane_links
+            "Entry_lanes": [p[0] for p in lane_links_pairs],
+            "Connecting_road_lanes": [p[1] for p in lane_links_pairs]
         })
     return conns
 
-
-def get_all_junctions(xodr_file: str) -> dict:
-    tree = ET.parse(xodr_file)
-    root = tree.getroot()
-    roads = {int(r.get("id")): r for r in root.findall("road")}
-    junctions_data = {}
-    for junction_elem in root.findall("junction"):
+def get_all_junctions_data(root_elem: ET.Element, roads_dict: dict[int, ET.Element]) -> dict:
+    """Parses all junctions in the XODR."""
+    junctions_map_data = {}
+    for junction_elem in root_elem.findall("junction"):
         jid = junction_elem.get("id")
-        conns = compute_junction_connections(junction_elem, roads)
-        junctions_data[f"Junction {jid}"] = {"connections": conns}
-    return junctions_data
-
+        connections = compute_junction_connections(junction_elem, roads_dict)
+        junctions_map_data[f"Junction {jid}"] = {"connections": connections}
+    return junctions_map_data
 
 def normalize_angle(angle: float) -> float:
-    two_pi = 2.0 * math.pi
-    return angle % two_pi
-
+    """Normalize an angle (in radians) to [0, 2π)."""
+    return angle % (2.0 * math.pi)
 
 def extract_road_heading(road_elem: ET.Element, contact_type: str) -> float:
+    """Extracts road heading in radians as it leaves the junction."""
     plan_view = road_elem.find("planView")
-    if plan_view is None:
-        raise ValueError(f"Road ID={road_elem.get('id')} has no <planView>.")
-    geom = plan_view.find("geometry")
-    if geom is None:
-        raise ValueError(f"Road ID={road_elem.get('id')} missing <geometry> under <planView>.")
-    hdg = float(geom.get("hdg", "0.0"))
-    raw = hdg + math.pi if contact_type == "successor" else hdg
-    return normalize_angle(raw)
+    if not plan_view: raise ValueError(f"Road ID={road_elem.get('id')} has no <planView>.")
+    geometry = plan_view.find("geometry")
+    if not geometry: raise ValueError(f"Road ID={road_elem.get('id')} has no <geometry> in <planView>.")
+    hdg = float(geometry.get("hdg", 0.0))
+    return normalize_angle(hdg + math.pi if contact_type == "successor" else hdg)
 
-
-def collect_connected_roads(tree: ET.ElementTree, junction: ET.Element) -> dict[str, str]:
-    """
-    Find the four <road> IDs whose <link> references this junction.
-    Returns a dict mapping road_id (str) -> contact_type ("predecessor" or "successor").
-    """
-    root = tree.getroot()
-    jid = junction.get("id")
-    connected = {}
-    for road in root.findall("road"):
-        rid = road.get("id")
-        link = road.find("link")
-        if link is None: continue
+def collect_arterial_roads(root_elem: ET.Element, target_junction_id: str) -> dict[str, str]:
+    """Identifies 4 arterial roads connected to the target junction."""
+    connected_roads = {}
+    for road_elem in root_elem.findall("road"):
+        road_id_str = road_elem.get("id")
+        link = road_elem.find("link")
+        if not link: continue
         pred = link.find("predecessor")
-        if pred is not None and pred.get("elementType") == "junction" and pred.get("elementId") == jid:
-            connected[rid] = "predecessor"
+        if pred is not None and pred.get("elementType") == "junction" and pred.get("elementId") == target_junction_id:
+            connected_roads[road_id_str] = "predecessor"
             continue
         succ = link.find("successor")
-        if succ is not None and succ.get("elementType") == "junction" and succ.get("elementId") == jid:
-            connected[rid] = "successor"
-    if len(connected) != 4:
-        raise RuntimeError(f"Expected 4 roads connected to junction ID={jid}, but found {len(connected)}.")
-    return connected
+        if succ is not None and succ.get("elementType") == "junction" and succ.get("elementId") == target_junction_id:
+            connected_roads[road_id_str] = "successor"
+    if len(connected_roads) != 4:
+        raise RuntimeError(f"Junction {target_junction_id} expects 4 connected roads, found {len(connected_roads)}.")
+    return connected_roads
 
-
-def get_ordered_roads_and_ccw_indices(connected_roads_by_type: dict[str, str], tree: ET.ElementTree) -> tuple[list[int], dict[int, int]]:
-    """
-    Computes each road’s heading and orders them counter-clockwise (CCW)
-    starting from the one closest to 3π/2 (270°).
-
-    Args:
-        connected_roads_by_type: Dict mapping road_id (str) -> contact_type ("predecessor" or "successor").
-        tree: Parsed XML tree.
-
-    Returns:
-        A tuple containing:
-        - ordered_road_ids_list: List of road IDs (int) in CCW order.
-        - road_id_to_ccw_index: Dict mapping road ID (int) to its CCW index (0-3).
-    """
-    root = tree.getroot()
-    angle_list = [] # Stores (road_id_str, angle)
-    for rid_str, contact in connected_roads_by_type.items():
-        road_elem = root.find(f".//road[@id='{rid_str}']")
-        if road_elem is None:
-            raise RuntimeError(f"Connected road ID={rid_str} not found in <road> elements.")
-        angle = extract_road_heading(road_elem, contact)
-        angle_list.append((rid_str, angle))
-
-    # Sort by angle ascending (0..2π)
-    angle_list.sort(key=lambda x: x[1])
-
-    # Find which entry is “bottom” (closest to 3π/2)
-    target_angle = 1.5 * math.pi  # 270° in radians
-    # Calculate angular difference, handling wrap-around
-    diffs = [abs(((ang - target_angle + math.pi) % (2 * math.pi)) - math.pi) for (_, ang) in angle_list]
-
-    if not angle_list: # Should not happen if collect_connected_roads works
-        return [], {}
-
+def get_ordered_roads_and_ccw_indices(
+    arterial_roads_by_type: dict[str, str], 
+    roads_dict: dict[int, ET.Element]
+) -> tuple[list[int], dict[int, int]]:
+    """Orders arterial roads CCW starting from the one closest to 270 degrees."""
+    angle_list = []
+    for road_id_str, contact_type in arterial_roads_by_type.items():
+        road_elem = roads_dict.get(int(road_id_str))
+        if not road_elem: raise RuntimeError(f"Road ID {road_id_str} not found in roads_dict.")
+        angle = extract_road_heading(road_elem, contact_type)
+        angle_list.append((road_id_str, angle))
+    
+    angle_list.sort(key=lambda item: item[1])
+    target_angle = 1.5 * math.pi
+    diffs = [abs(normalize_angle(ang - target_angle + math.pi) - math.pi) for _, ang in angle_list]
+    
+    if not angle_list: return [], {}
     start_idx = min(range(len(angle_list)), key=lambda i: diffs[i])
-
-    # Rotate so that the "bottom-most" road becomes index 0
+    
     rotated_angle_list = angle_list[start_idx:] + angle_list[:start_idx]
+    ordered_ids = [int(r_id_str) for r_id_str, _ in rotated_angle_list]
+    id_to_ccw_idx = {int(r_id_str): i for i, (r_id_str, _) in enumerate(rotated_angle_list)}
+    return ordered_ids, id_to_ccw_idx
 
-    ordered_road_ids_list = [int(rid_str) for rid_str, _ in rotated_angle_list]
-    road_id_to_ccw_index = {int(rid_str): i for i, (rid_str, _) in enumerate(rotated_angle_list)}
+def get_road_lane_details(road_elem: ET.Element, contact_type: str) -> dict:
+    """Extracts detailed lane ID lists for a given arterial road."""
+    details = {'driving_towards_ids': set(), 'driving_away_ids': set(),
+               'biking_towards_ids': set(), 'biking_away_ids': set(),
+               'bidirectional_ids': set()}
+    if not road_elem or not contact_type: # Should not happen with prior checks
+        for key in details: details[key] = []
+        details['all_towards_lanes_ids'] = []
+        return details
 
-    return ordered_road_ids_list, road_id_to_ccw_index
+    for ls_elem in road_elem.findall(".//laneSection"):
+        for side_elem in [ls_elem.find("left"), ls_elem.find("right")]:
+            if not side_elem: continue
+            for lane_elem in side_elem.findall("lane"):
+                lane_id, lane_type = int(lane_elem.get("id")), lane_elem.get("type")
+                if lane_type not in ["driving", "biking", "bidirectional"]: continue
+                if lane_type == "bidirectional":
+                    details['bidirectional_ids'].add(lane_id)
+                    continue
+                
+                vl_elem = lane_elem.find(".//userData/vectorLane")
+                travel_dir = vl_elem.get("travelDir") if vl_elem else None
+                is_eff_forward = (travel_dir == "forward") or (travel_dir is None and lane_id < 0)
+                is_towards_junc = (contact_type == "predecessor" and not is_eff_forward) or \
+                                  (contact_type == "successor" and is_eff_forward)
+                
+                category_key = f"{lane_type}_{'towards' if is_towards_junc else 'away'}_ids"
+                details[category_key].add(lane_id)
 
+    for key in details: details[key] = sorted(list(details[key]))
+    details['all_towards_lanes_ids'] = sorted(list(set(details['driving_towards_ids']) | set(details['biking_towards_ids'])))
+    return details
 
-def generate_text_description(ordered_road_ids: list[int],
-                              road_id_to_ccw_index: dict[int, int],
-                              all_junctions_data: dict, tree: ET.ElementTree,
-                              target_junction_id_str: str,
-                              road_contact_types: dict[str, str]) -> str:
-    text_parts = []
-    root = tree.getroot()
+def get_turn_type(entry_road_id: int, exit_road_id: int, road_id_to_ccw_index: dict[int,int]) -> str | None:
+    """Determines turn type (straight, left, right, U-turn)."""
+    if entry_road_id not in road_id_to_ccw_index or exit_road_id not in road_id_to_ccw_index:
+        return None
+    idx_entry, idx_exit = road_id_to_ccw_index[entry_road_id], road_id_to_ccw_index[exit_road_id]
+    diff = (idx_exit - idx_entry + 4) % 4
+    if entry_road_id == exit_road_id: return "U-turn"
+    if diff == 1: return "right"
+    if diff == 2: return "straight"
+    if diff == 3: return "left"
+    return None
 
-    text_parts.append("Roads:")
-    # road_lane_details: road_id_int -> {'all_towards_lanes': [ids]} for permissions
-    # Also stores detailed breakdowns for the road description string.
-    road_lane_details = {}
-
-    for road_id_int in ordered_road_ids:
-        road_id_str = str(road_id_int)
-        road_elem = root.find(f".//road[@id='{road_id_str}']")
-        if road_elem is None:
-            text_parts.append(f"- Road ID {road_id_int}: Error - Road element not found.")
-            continue
-        contact_type = road_contact_types.get(road_id_str)
-        if contact_type is None:
-            text_parts.append(f"- Road ID {road_id_int}: Error - Contact type not found.")
-            continue
-
-        driving_towards, driving_away = [], []
-        biking_towards, biking_away = [], []
-        bidirectional_lanes_list = []
-        all_towards_lanes_for_permissions = []
-
-        for lane_section in road_elem.findall(".//laneSection"):
-            for side_elem in [lane_section.find("left"), lane_section.find("right")]:
-                if side_elem is None: continue
-                for lane_elem in side_elem.findall("lane"):
-                    lane_id = int(lane_elem.get("id"))
-                    lane_type_attr = lane_elem.get("type")
-
-                    if lane_type_attr not in ["driving", "biking", "bidirectional"]:
-                        continue
-
-                    if lane_type_attr == "bidirectional":
-                        bidirectional_lanes_list.append(lane_id)
-                    else: # driving or biking
-                        vec_lane_elem = lane_elem.find(".//userData/vectorLane")
-                        travel_dir_attr = vec_lane_elem.get("travelDir") if vec_lane_elem is not None else None
-                        
-                        effective_forward_travel = False
-                        if travel_dir_attr == "forward": effective_forward_travel = True
-                        elif travel_dir_attr == "backward": effective_forward_travel = False
-                        else: effective_forward_travel = (lane_id < 0)
-
-                        is_towards_junction = False
-                        if contact_type == "predecessor":
-                            is_towards_junction = not effective_forward_travel
-                        else: # successor
-                            is_towards_junction = effective_forward_travel
-
-                        if is_towards_junction:
-                            all_towards_lanes_for_permissions.append(lane_id)
-                            if lane_type_attr == "driving": driving_towards.append(lane_id)
-                            elif lane_type_attr == "biking": biking_towards.append(lane_id)
-                        else:
-                            if lane_type_attr == "driving": driving_away.append(lane_id)
-                            elif lane_type_attr == "biking": biking_away.append(lane_id)
+def extract_maneuvers(
+    target_junction_connections: list, 
+    road_id_to_ccw_index: dict[int, int],
+    road_lane_details_map: dict[int, dict], 
+    roads_dict: dict[int, ET.Element], 
+    arterial_road_ids: list[int]
+) -> list:
+    """Extracts all valid maneuvers through the junction, correctly determining exit lanes."""
+    maneuvers = []
+    for entry_road_id in arterial_road_ids:
+        road_details = road_lane_details_map.get(entry_road_id, {})
+        lanes_towards_junc = road_details.get('all_towards_lanes_ids', [])
         
-        driving_towards = sorted(list(set(driving_towards)))
-        driving_away = sorted(list(set(driving_away)))
-        biking_towards = sorted(list(set(biking_towards)))
-        biking_away = sorted(list(set(biking_away)))
-        bidirectional_lanes_list = sorted(list(set(bidirectional_lanes_list)))
-        all_towards_lanes_for_permissions = sorted(list(set(all_towards_lanes_for_permissions)))
+        for entry_lane_id in lanes_towards_junc:
+            for conn_info in target_junction_connections:
+                if conn_info["Entry_road"] == entry_road_id:
+                    arterial_exit_road_id = conn_info["Exit_road"]
+                    if arterial_exit_road_id is None or arterial_exit_road_id not in arterial_road_ids:
+                        continue 
+                    
+                    turn_type_str = get_turn_type(entry_road_id, arterial_exit_road_id, road_id_to_ccw_index)
+                    if not turn_type_str: continue
 
-        road_lane_details[road_id_int] = {
-            'all_towards_lanes': all_towards_lanes_for_permissions
-        }
+                    lane_on_conn_road = None
+                    if "Lane_links" in conn_info:
+                        for from_lane, to_lane in conn_info["Lane_links"]:
+                            if from_lane == entry_lane_id:
+                                lane_on_conn_road = to_lane
+                                break
+                    
+                    if lane_on_conn_road is None:
+                        # This specific entry_lane_id is not part of this conn_info's path
+                        continue 
+
+                    final_lane_on_arterial_exit = None # Initialize
+                    contact_point = conn_info.get("Contact_point_on_connecting_road")
+                    conn_road_elem = roads_dict.get(conn_info["Connection_road"])
+
+                    if conn_road_elem and contact_point:
+                        found_final_link = False
+                        for ls_cr in conn_road_elem.findall('.//laneSection'):
+                            for side_cr in [ls_cr.find('left'), ls_cr.find('right')]:
+                                if not side_cr: continue
+                                for lane_cr_elem in side_cr.findall('lane'):
+                                    if int(lane_cr_elem.get('id')) == lane_on_conn_road:
+                                        link_cr_elem = lane_cr_elem.find('link')
+                                        if link_cr_elem:
+                                            # Determine which link (predecessor or successor) of the connecting road's lane
+                                            # leads to the arterial exit road.
+                                            if contact_point == "start": # Traffic flows towards successor of connecting road's lane
+                                                link_target_elem = link_cr_elem.find('successor')
+                                            elif contact_point == "end": # Traffic flows towards predecessor of connecting road's lane
+                                                link_target_elem = link_cr_elem.find('predecessor')
+                                            else: # Should not happen if contactPoint is always start/end
+                                                link_target_elem = None
+                                            
+                                            if link_target_elem is not None and link_target_elem.get('id') is not None:
+                                                final_lane_on_arterial_exit = int(link_target_elem.get('id'))
+                                                found_final_link = True
+                                                break 
+                                if found_final_link: break
+                            if found_final_link: break
+                    
+                    if final_lane_on_arterial_exit is None:
+                        # If logic failed to find it, default or skip. For now, let's use a placeholder.
+                        # print(f"Warning: Could not trace final exit lane for maneuver: {entry_road_id}:{entry_lane_id} -> CR{conn_info['Connection_road']}:{lane_on_conn_road}")
+                        final_lane_on_arterial_exit = -999 # Indicates an issue in tracing
+
+                    maneuvers.append({
+                        "entry_road": entry_road_id,
+                        "entry_lane": entry_lane_id,
+                        "turn_type": turn_type_str,
+                        "exit_road": arterial_exit_road_id,
+                        "exit_lane": final_lane_on_arterial_exit, 
+                        "connecting_road_id": conn_info["Connection_road"],
+                        "lane_on_connecting_road": lane_on_conn_road
+                    })
+    return maneuvers
+
+
+# --- Geometry Helper Functions (Simplified for brevity, assuming previous detailed versions) ---
+
+def on_segment(p, q, r):
+    return (q[0] <= max(p[0], r[0]) and q[0] >= min(p[0], r[0]) and \
+            q[1] <= max(p[1], r[1]) and q[1] >= min(p[1], r[1]))
+
+def orientation(p, q, r):
+    val = (q[1] - p[1]) * (r[0] - q[0]) - (q[0] - p[0]) * (r[1] - q[1])
+    if val == 0: return 0
+    return 1 if val > 0 else 2
+
+def do_segments_intersect(p1, q1, p2, q2):
+    o1, o2 = orientation(p1, q1, p2), orientation(p1, q1, q2)
+    o3, o4 = orientation(p2, q2, p1), orientation(p2, q2, q1)
+    if o1 != o2 and o3 != o4: return True
+    if o1 == 0 and on_segment(p1, p2, q1): return True
+    if o2 == 0 and on_segment(p1, q2, q1): return True
+    if o3 == 0 and on_segment(p2, p1, q2): return True
+    if o4 == 0 and on_segment(p2, q1, q2): return True
+    return False
+
+# --- New Function to Load Lane Paths from Visualizer's CSV ---
+_parsed_csv_lane_data = {} # Cache for CSV data: {(road_id_str, lane_id_str): [(x,y), ...]}
+
+def load_lane_paths_from_csv(csv_file_path: str):
+    """
+    Parses the visualizer's CSV file and stores lane centerline points.
+    This should be called once.
+    """
+    global _parsed_csv_lane_data
+    if _parsed_csv_lane_data: # Already loaded
+        return
+
+    try:
+        with open(csv_file_path, 'r') as f:
+            reader = csv.reader(f, skipinitialspace=True)
+            current_lane_key = None
+            for row in reader:
+                if not row: continue
+                if row[0] == 'lane':
+                    road_id_str = row[1]
+                    # lane_section_idx = row[2] # Not strictly needed for path lookup by road/lane ID
+                    lane_id_str_csv = row[3]
+                    # lane_type_csv = row[4] if len(row) > 4 else "driving" # visualizer's type
+                    
+                    # We are interested in paths of connecting roads' lanes
+                    current_lane_key = (road_id_str, lane_id_str_csv)
+                    if current_lane_key not in _parsed_csv_lane_data:
+                        _parsed_csv_lane_data[current_lane_key] = []
+                elif current_lane_key and len(row) >= 2:
+                    try:
+                        x, y = float(row[0]), float(row[1])
+                        _parsed_csv_lane_data[current_lane_key].append((x, y))
+                    except ValueError:
+                        # print(f"Warning: Skipping malformed coordinate in CSV: {row}")
+                        pass
+    except FileNotFoundError:
+        print(f"Error: Visualizer CSV file not found at {csv_file_path}. Crossing detection will be limited.")
+    except Exception as e:
+        print(f"Error reading visualizer CSV {csv_file_path}: {e}")
+
+def get_lane_segments_from_csv_data(road_id: int, lane_id_on_road: int) -> list[tuple[tuple[float,float], tuple[float,float]]]:
+    """
+    Retrieves lane path segments from the pre-parsed CSV data.
+    `lane_id_on_road` is the ID of the lane on the specified `road_id` (typically a connectingRoad).
+    """
+    global _parsed_csv_lane_data
+    lane_key = (str(road_id), str(lane_id_on_road)) # CSV uses string IDs
+    
+    points = _parsed_csv_lane_data.get(lane_key, [])
+    if len(points) < 2:
+        # print(f"Warning: Not enough points in CSV for lane path: road {road_id}, lane {lane_id_on_road}")
+        return []
+    
+    segments = []
+    for i in range(len(points) - 1):
+        segments.append((points[i], points[i+1]))
+    return segments
+
+
+# --- generate_text_description (Assumed to be the refined version from previous response) ---
+# ... (This function remains largely the same, using road_lane_details_map and valid_maneuvers)
+
+def generate_text_description(
+    ordered_arterial_road_ids: list[int],
+    road_lane_details_map: dict[int, dict],
+    valid_maneuvers: list[dict]
+) -> str:
+    text_parts = ["Common Sense Traffic Rules:", "- Yield to pedestrians in crosswalks.",
+                  "- Obey all traffic signals and signs.", "- Do not block intersections.",
+                  "- Maintain a safe following distance.", "- Use turn signals to indicate intentions.",
+                  "- Check for cyclists and motorcyclists.", "- Drive at a speed appropriate for conditions.",
+                  "- Generally, vehicles turning left must yield to oncoming traffic going straight.",
+                  "- Vehicles entering a main road from a minor road or driveway must yield.", "\nRoads:"]
+
+    for r_id in ordered_arterial_road_ids:
+        details = road_lane_details_map.get(r_id, {})
+        desc_clauses = []
         
-        road_desc_parts = []
-        towards_clauses = []
-        if driving_towards: towards_clauses.append(f"{len(driving_towards)} driving lane(s) (id: {', '.join(map(str, driving_towards))})")
-        if biking_towards: towards_clauses.append(f"{len(biking_towards)} biking lane(s) (id: {', '.join(map(str, biking_towards))})")
-        if towards_clauses: road_desc_parts.append(f"{', '.join(towards_clauses)} going towards the intersection")
+        dir_lanes = []
+        if details.get('driving_towards_ids'): dir_lanes.append(f"{len(details['driving_towards_ids'])} driving lane(s) (id: {', '.join(map(str, details['driving_towards_ids']))})")
+        if details.get('biking_towards_ids'): dir_lanes.append(f"{len(details['biking_towards_ids'])} biking lane(s) (id: {', '.join(map(str, details['biking_towards_ids']))})")
+        if dir_lanes: desc_clauses.append(f"{', '.join(dir_lanes)} going towards the intersection")
 
-        away_clauses = []
-        if driving_away: away_clauses.append(f"{len(driving_away)} driving lane(s) (id: {', '.join(map(str, driving_away))})")
-        if biking_away: away_clauses.append(f"{len(biking_away)} biking lane(s) (id: {', '.join(map(str, biking_away))})")
-        if away_clauses: road_desc_parts.append(f"{', '.join(away_clauses)} leaving the intersection")
+        dir_lanes = []
+        if details.get('driving_away_ids'): dir_lanes.append(f"{len(details['driving_away_ids'])} driving lane(s) (id: {', '.join(map(str, details['driving_away_ids']))})")
+        if details.get('biking_away_ids'): dir_lanes.append(f"{len(details['biking_away_ids'])} biking lane(s) (id: {', '.join(map(str, details['biking_away_ids']))})")
+        if dir_lanes: desc_clauses.append(f"{', '.join(dir_lanes)} leaving the intersection")
+
+        if details.get('bidirectional_ids'): desc_clauses.append(f"{len(details['bidirectional_ids'])} bidirectional lane(s) (id: {', '.join(map(str, details['bidirectional_ids']))})")
         
-        if bidirectional_lanes_list: road_desc_parts.append(f"{len(bidirectional_lanes_list)} bidirectional lane(s) (id: {', '.join(map(str, bidirectional_lanes_list))})")
-
-        if not road_desc_parts:
-            text_parts.append(f"- Road ID {road_id_int} has no relevant driving, biking, or bidirectional lanes.")
-        else:
-            text_parts.append(f"- Road ID {road_id_int} has {', '.join(road_desc_parts)}")
+        text_parts.append(f"- Road ID {r_id} has {', '.join(desc_clauses)}" if desc_clauses else f"- Road ID {r_id} has no relevant lanes.")
 
     text_parts.append("\nIntersection permissions:")
-    target_junction_key = f"Junction {target_junction_id_str}"
-    if target_junction_key not in all_junctions_data:
-        text_parts.append(f"  Error: Junction {target_junction_id_str} data not found for permissions.")
-        return "\n".join(text_parts)
-
-    target_connections = all_junctions_data[target_junction_key]["connections"]
-
-    for entry_road_id_int in ordered_road_ids: # Iterate in CCW order
-        if entry_road_id_int not in road_lane_details or not road_lane_details[entry_road_id_int]['all_towards_lanes']:
-            continue
+    perms_by_entry = {}
+    for m in valid_maneuvers:
+        key = (m["entry_road"], m["entry_lane"])
+        if key not in perms_by_entry: perms_by_entry[key] = []
+        perms_by_entry[key].append(f"{m['turn_type']} to Road ID {m['exit_road']} lane {m['exit_lane']}")
+    
+    for (entry_r, entry_l), perm_list in sorted(perms_by_entry.items()):
+        perm_list.sort()
+        text_parts.append(f"- Road ID {entry_r} lane {entry_l} can {', or '.join(perm_list)}")
         
-        for entry_lane_id in road_lane_details[entry_road_id_int]['all_towards_lanes']:
-            permissions_for_lane = []
-            for conn_info in target_connections:
-                if conn_info["Entry_road"] == entry_road_id_int and entry_lane_id in conn_info["Entry_lanes"]:
-                    try:
-                        lane_idx_in_conn = conn_info["Entry_lanes"].index(entry_lane_id)
-                        exit_road_id_int = conn_info["Exit_road"]
-
-                        if exit_road_id_int is None or exit_road_id_int not in road_id_to_ccw_index: # Check if exit road is one of the 4
-                            continue 
-
-                        exit_lane_id = conn_info["Exit_lanes"][lane_idx_in_conn]
-
-                        idx_entry = road_id_to_ccw_index[entry_road_id_int]
-                        idx_exit = road_id_to_ccw_index[exit_road_id_int]
-                        diff = (idx_exit - idx_entry + 4) % 4 
-
-                        turn_action_str = ""
-                        if entry_road_id_int == exit_road_id_int : turn_action_str = "make a U-turn" # diff will be 0
-                        elif diff == 1: turn_action_str = "turn right"
-                        elif diff == 2: turn_action_str = "go straight"
-                        elif diff == 3: turn_action_str = "turn left"
-                        
-                        if turn_action_str:
-                            permissions_for_lane.append(
-                                f"{turn_action_str} to Road ID {exit_road_id_int} lane {exit_lane_id}")
-                    except ValueError: pass # entry_lane_id not in this conn_info["Entry_lanes"]
-                    except IndexError: pass # Mismatch between Entry_lanes and Exit_lanes (should not happen)
-            
-            if permissions_for_lane:
-                permissions_for_lane.sort() # Sort for consistent output
-                text_parts.append(
-                    f"- Road ID {entry_road_id_int} lane {entry_lane_id} can {', or '.join(permissions_for_lane)}")
     return "\n".join(text_parts)
 
 
+# --- generate_questions_json (Modified for CSV-based crossing) ---
+def generate_questions_json(
+    ordered_arterial_road_ids: list[int],
+    road_lane_details_map: dict[int, dict],
+    valid_maneuvers: list[dict], # This now contains detailed maneuver info
+    roads_dict: dict[int, ET.Element] # For checking sidewalk type of connecting roads
+) -> dict:
+    questions = {"Basic structure": [], "Road relations": [], "Crossing routes": []}
+
+    # Basic structure (same as before)
+    questions["Basic structure"].append({"question": "How many branching roads does the intersection have?", "answer": str(len(ordered_arterial_road_ids))})
+    for r_id in ordered_arterial_road_ids:
+        details = road_lane_details_map.get(r_id, {})
+        questions["Basic structure"].append({"question": f"How many driving lanes does Road {r_id} have going towards the intersection?", "answer": str(len(details.get('driving_towards_ids',[])))})
+        questions["Basic structure"].append({"question": f"How many driving lanes does Road {r_id} have going away from the intersection?", "answer": str(len(details.get('driving_away_ids',[])))})
+
+    # Road relations (same as before, uses valid_maneuvers)
+    for r_id in ordered_arterial_road_ids:
+        s_man = next((m for m in valid_maneuvers if m["entry_road"] == r_id and m["turn_type"] == "straight"), None)
+        ans = str(s_man["exit_road"]) if s_man else "This maneuver is not directly possible."
+        questions["Road relations"].append({"question": f"If a vehicle enters from Road {r_id} then goes straight, what is the ID of the Road it arrives?", "answer": ans})
+
+    if valid_maneuvers:
+        example_m = valid_maneuvers[0]
+        er, el = example_m["entry_road"], example_m["entry_lane"]
+        has_r_turn = any(m for m in valid_maneuvers if m["entry_road"]==er and m["entry_lane"]==el and m["turn_type"]=="right")
+        questions["Road relations"].append({"question": f"If a vehicle enters from Road {er} lane {el}, is it allowed to turn right?", "answer": "Yes" if has_r_turn else "No"})
+    
+    # --- Crossing routes (CSV-based) ---
+    non_sidewalk_maneuvers = []
+    for m in valid_maneuvers:
+        conn_road_elem = roads_dict.get(m["connecting_road_id"]) # Get XODR element for connecting road
+        if conn_road_elem:
+            # Check XODR for sidewalk type on this connecting road
+            is_sidewalk_path = any(l.get('type') == 'sidewalk' for l in conn_road_elem.findall('.//lane'))
+            if not is_sidewalk_path:
+                non_sidewalk_maneuvers.append(m)
+        else:
+            # print(f"Warning: Connecting road ID {m['connecting_road_id']} not found in roads_dict for sidewalk check.")
+            non_sidewalk_maneuvers.append(m) # Default to include if XODR element missing for check
+
+    for m in non_sidewalk_maneuvers:
+        print(m)
+
+    generated_q_keys = set()
+    for m1, m2 in itertools.combinations(non_sidewalk_maneuvers, 2):
+        if m1["entry_road"] == m2["entry_road"] or \
+           m1["exit_road"] == m2["exit_road"] or \
+           m1["connecting_road_id"] == m2["connecting_road_id"]:
+            continue
+
+        q_text = (f"If one vehicle goes from Road {m1['entry_road']} to Road {m1['exit_road']}, "
+                  f"and another vehicle goes from Road {m2['entry_road']} to Road {m2['exit_road']}, "
+                  f"will their paths at the intersection cross?")
+        
+        route_pair_key_part1 = tuple(sorted((m1['entry_road'], m1['exit_road'])))
+        route_pair_key_part2 = tuple(sorted((m2['entry_road'], m2['exit_road'])))
+        canonical_q_key = tuple(sorted((route_pair_key_part1, route_pair_key_part2)))
+
+        if canonical_q_key in generated_q_keys: continue
+        generated_q_keys.add(canonical_q_key)
+
+        # Get paths from CSV data
+        path1_segments = get_lane_segments_from_csv_data(m1["connecting_road_id"], m1["lane_on_connecting_road"])
+        path2_segments = get_lane_segments_from_csv_data(m2["connecting_road_id"], m2["lane_on_connecting_road"])
+
+        if not path1_segments or not path2_segments:
+            # print(f"Warning: CSV path data missing for one or both routes in pair: "
+            #       f"({m1['connecting_road_id']},{m1['lane_on_connecting_road']}) or "
+            #       f"({m2['connecting_road_id']},{m2['lane_on_connecting_road']}). Defaulting to 'No' for crossing.")
+            questions["Crossing routes"].append({"question": q_text, "answer": "No"}) # Default if paths missing
+            continue
+
+        intersects = any(do_segments_intersect(s1p1, s1q1, s2p2, s2q2)
+                         for s1p1, s1q1 in path1_segments for s2p2, s2q2 in path2_segments)
+        questions["Crossing routes"].append({"question": q_text, "answer": "Yes" if intersects else "No"})
+        
+    return questions
+
+# --- Main Execution ---
 def main():
-    parser = argparse.ArgumentParser(
-        description="Extract junction connections and order roads around an intersection."
-    )
-    parser.add_argument("--dataset", "-d", default="inD", help="Drone dataset to process")
-    parser.add_argument("--map_id", "-m", default="01_bendplatz", help="Map ID to process")
-    parser.add_argument("--junction", "-j", default=None, help="Junction ID. Uses first <junction> if omitted.")
+    parser = argparse.ArgumentParser(description="XODR Map Preprocessor")
+    parser.add_argument("--dataset", "-d", default="inD", help="Dataset name")
+    parser.add_argument("--map_id", "-m", default="01_bendplatz", help="Map ID")
+    parser.add_argument("--junction", "-j", default=None, help="Target Junction ID")
+    parser.add_argument("--viz_csv", "-v", help="Path to the visualizer's preprocessed CSV track file for crossing detection.") # New argument
     args = parser.parse_args()
 
-    xodr_path = f"./data/raw/{args.dataset}/maps/opendrive/{args.map_id}.xodr"
-    processed_dir = f"./data/processed/{args.dataset}/map/"
+    base_dir = "./data"
+    xodr_path = os.path.join(base_dir, "raw", args.dataset, "maps", "opendrive", f"{args.map_id}.xodr")
+    processed_dir = os.path.join(base_dir, "processed", args.dataset, "map")
     os.makedirs(processed_dir, exist_ok=True)
-    yaml_output_path = os.path.join(processed_dir, f"{args.map_id}.yaml")
-    txt_output_path = os.path.join(processed_dir, f"{args.map_id}_description.txt")
-
-    all_junctions_data = get_all_junctions(xodr_path)
-    tree = ET.parse(xodr_path)
-    root = tree.getroot()
-    junction_elem = None
-    target_junction_id_str = None
-
-    if args.junction is not None:
-        target_junction_id_str = args.junction
-        junction_elem = root.find(f".//junction[@id='{target_junction_id_str}']")
-        if junction_elem is None:
-            raise ValueError(f"Junction ID={target_junction_id_str} not found in XODR.")
-    else:
-        junction_elem = root.find(".//junction")
-        if junction_elem is None:
-            raise ValueError("No <junction> found in XODR.")
-        target_junction_id_str = junction_elem.get("id")
-
-    # road_contact_types: dict {"road_id_str": "predecessor" or "successor"}
-    road_contact_types = collect_connected_roads(tree, junction_elem)
     
-    # ordered_road_ids_list: List of road IDs (int) in CCW order.
-    # road_id_to_ccw_index: dict mapping road ID (int) to its CCW index (0-3).
-    ordered_road_ids_list, road_id_to_ccw_index = get_ordered_roads_and_ccw_indices(road_contact_types, tree)
+    yaml_out_path = os.path.join(processed_dir, f"{args.map_id}.yaml")
+    txt_out_path = os.path.join(processed_dir, f"{args.map_id}_description.txt")
+    json_q_path = os.path.join(processed_dir, f"{args.map_id}_questions.json")
 
-    output_dict_yaml = {
-        "Roads": ordered_road_ids_list, # List of road IDs in CCW order
-        "Junctions": all_junctions_data
+    if not os.path.exists(xodr_path):
+        print(f"Error: XODR file not found at {xodr_path}"); return
+        
+    tree = ET.parse(xodr_path)
+    root_elem = tree.getroot()
+    roads_dict = {int(r.get("id")): r for r in root_elem.findall("road")}
+
+    target_junction_id_str = args.junction
+    if not target_junction_id_str:
+        first_junction = root_elem.find(".//junction")
+        if not first_junction: raise ValueError("No <junction> in XODR."); 
+        target_junction_id_str = first_junction.get("id")
+    
+    target_junction_elem = root_elem.find(f".//junction[@id='{target_junction_id_str}']")
+    if not target_junction_elem: raise ValueError(f"Junction {target_junction_id_str} not found.")
+
+    # Load CSV data if path provided
+    if args.viz_csv:
+        if os.path.exists(args.viz_csv):
+            print(f"Loading lane paths from visualizer CSV: {args.viz_csv}")
+            load_lane_paths_from_csv(args.viz_csv)
+        else:
+            print(f"Warning: Visualizer CSV path provided but file not found: {args.viz_csv}. Crossing detection will be limited.")
+    else:
+        print("Warning: No visualizer CSV path provided (--viz_csv). Crossing detection accuracy might be limited or based on heuristics if CSV data is unavailable.")
+
+
+    all_junctions_map_data = get_all_junctions_data(root_elem, roads_dict) # Ensure this is the refined function
+    arterial_roads_info = collect_arterial_roads(root_elem, target_junction_id_str)
+    
+    ordered_arterial_ids, road_id_to_ccw_idx = get_ordered_roads_and_ccw_indices(arterial_roads_info, roads_dict)
+    if not ordered_arterial_ids:
+        print("Warning: Could not order arterial roads."); return
+
+    road_lane_details_map = {
+        r_id: get_road_lane_details(roads_dict[r_id], arterial_roads_info[str(r_id)]) # Ensure refined get_road_lane_details
+        for r_id in ordered_arterial_ids
+    }
+    
+    target_junc_conns = all_junctions_map_data.get(f"Junction {target_junction_id_str}", {}).get("connections", [])
+    valid_maneuvers = extract_maneuvers(target_junc_conns, road_id_to_ccw_idx, # Ensure refined extract_maneuvers
+                                        road_lane_details_map, roads_dict, ordered_arterial_ids)
+
+    # Outputs
+    simplified_junctions_data_for_yaml = {}
+    for junction_key, junction_content in all_junctions_map_data.items():
+        simplified_connections = []
+        for m in valid_maneuvers:
+            simplified_connections.append({
+                "Connection_road": m["connecting_road_id"],
+                "Entry_road": m["entry_road"],
+                "Entry_lane": m["entry_lane"],
+                "Exit_road": m["exit_road"],
+                "Exit_lane": m["exit_lane"] # Using the traced final exit lane
+            })
+        simplified_junctions_data_for_yaml[junction_key] = {"connections": simplified_connections}
+    output_yaml_data = { # Renamed from output_dict_yaml to avoid confusion
+        "Roads": ordered_arterial_ids,
+        "Junctions": simplified_junctions_data_for_yaml # Use the new simplified data
     }
 
-    with open(yaml_output_path, "w") as f:
-        yaml.dump(output_dict_yaml, f, sort_keys=False, default_flow_style=False)
-    print(f"YAML output generated at: {yaml_output_path}")
+    with open(yaml_out_path, "w") as f:
+        yaml.dump(output_yaml_data, f, Dumper=NoTupleDumper, sort_keys=False, default_flow_style=False)
+    print(f"YAML output generated: {yaml_out_path}")
 
-    description_text = generate_text_description(
-        ordered_road_ids_list,
-        road_id_to_ccw_index,
-        all_junctions_data,
-        tree,
-        target_junction_id_str,
-        road_contact_types
-    )
-    with open(txt_output_path, "w") as f:
-        f.write(description_text)
-    print(f"Text description generated at: {txt_output_path}")
+    text_desc = generate_text_description(ordered_arterial_ids, road_lane_details_map, valid_maneuvers)
+    with open(txt_out_path, "w") as f: f.write(text_desc)
+    print(f"Text description: {txt_out_path}")
+
+    questions_data = generate_questions_json(ordered_arterial_ids, road_lane_details_map,
+                                             valid_maneuvers, roads_dict)
+    with open(json_q_path, "w") as f: json.dump(questions_data, f, indent=4)
+    print(f"JSON questions: {json_q_path}")
 
 if __name__ == "__main__":
     main()
