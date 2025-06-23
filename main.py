@@ -88,7 +88,7 @@ def main(args):
     output_yaml_path = os.path.join(f"results/{args.dataset}/yaml/", f"{args.scenario_id}.yaml")
     labeller = Labeller(
         meta_path=tracks_meta_path,
-        map_path=map_intersection_path,
+        map_yaml_path=map_intersection_path,
         gt_trajectory_path=gt_trajectory_path,
         wc_trajectory_path = wc_trajectory_path
     )
