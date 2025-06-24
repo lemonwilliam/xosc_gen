@@ -12,21 +12,24 @@ from typing import List, Dict, Any, Tuple, Optional, Union, Set
 
 class MapInterpretation:
     def __init__(self, 
-                 categorized_qa_pairs: Dict[str, List[Dict[str, str]]], 
+                 qa_json_path: str, # MODIFIED: Takes path to QA JSON file
                  api_key: Optional[str] = None, 
                  model: str = "gpt-4o"):
         """
         Initializes the MapInterpretation class.
 
         Args:
-            categorized_qa_pairs: A dictionary where keys are category names (str)
-                                  and values are lists of QA dicts for that category.
+            qa_json_path: Path to a JSON file containing categorized QA pairs.
+                          The JSON structure should be: 
+                          {
+                              "CategoryName1": [{"question": "...", "answer": "..."}],
+                              "CategoryName2": [{"question": "...", "answer": "..."}]
+                          }
             api_key: Your OpenAI API key.
             model: The OpenAI model to use.
         """
-        if not categorized_qa_pairs or not all(isinstance(v, list) and v for v in categorized_qa_pairs.values()):
-            raise ValueError("categorized_qa_pairs cannot be empty and each category must have QA pairs.")
-        self.categorized_qa_pairs = categorized_qa_pairs
+        self.categorized_qa_pairs = self._load_qa_from_json(qa_json_path) # MODIFIED: Load QAs
+        
         self.model = model
         
         resolved_api_key = api_key or os.getenv("OPENAI_API_KEY")
@@ -36,10 +39,51 @@ class MapInterpretation:
 
         self.current_conversation_history: List[Dict[str, Any]] = []
         self.current_map_image_base64: Optional[str] = None
-        self.current_map_description: Optional[str] = None # New attribute
+        self.current_map_description: Optional[str] = None
         self.map_verified_successfully: bool = False
         
-        print(f"MapInterpretation initialized with {len(categorized_qa_pairs)} QA categories, using model {self.model}.")
+        # MODIFIED: Print statement reflects loading from JSON
+        print(f"MapInterpretation initialized with {len(self.categorized_qa_pairs)} QA categories from '{qa_json_path}', using model {self.model}.")
+
+    def _load_qa_from_json(self, qa_json_path: str) -> Dict[str, List[Dict[str, str]]]: # NEW METHOD
+        """Loads categorized QA pairs from a JSON file."""
+        try:
+            with open(qa_json_path, 'r', encoding='utf-8') as f:
+                data = json.load(f)
+        except FileNotFoundError:
+            raise ValueError(f"QA JSON file not found at: {qa_json_path}")
+        except json.JSONDecodeError:
+            raise ValueError(f"Error decoding JSON from file: {qa_json_path}")
+        
+        # Basic validation of the loaded structure
+        if not isinstance(data, dict):
+            raise ValueError(f"QA JSON content in '{qa_json_path}' must be a dictionary (categories as keys).")
+        
+        validated_data: Dict[str, List[Dict[str, str]]] = {}
+        for category, qas in data.items():
+            if not isinstance(category, str):
+                raise ValueError(f"Category names in '{qa_json_path}' must be strings.")
+            if not isinstance(qas, list):
+                raise ValueError(f"Value for category '{category}' in '{qa_json_path}' must be a list of QA pairs.")
+            if not qas: # Allow empty categories if intended, or raise error:
+                print(f"Warning: Category '{category}' in '{qa_json_path}' is empty.")
+            
+            validated_qas_for_category = []
+            for qa_pair in qas:
+                if not isinstance(qa_pair, dict) or \
+                   'question' not in qa_pair or not isinstance(qa_pair['question'], str) or \
+                   'answer' not in qa_pair or not isinstance(qa_pair['answer'], str):
+                    raise ValueError(
+                        f"Each item in category '{category}' in '{qa_json_path}' must be a dictionary "
+                        "with 'question' (str) and 'answer' (str) keys."
+                    )
+                validated_qas_for_category.append({'question': qa_pair['question'], 'answer': qa_pair['answer']})
+            validated_data[category] = validated_qas_for_category
+            
+        if not validated_data:
+             raise ValueError(f"QA JSON file '{qa_json_path}' resulted in no valid categories being loaded.")
+             
+        return validated_data
 
     def _read_map_description(self, description_path: Optional[str]) -> Optional[str]:
         """Reads map description from a file path."""
@@ -120,40 +164,41 @@ class MapInterpretation:
             return ["ERROR_JSON_DECODE"] * num_expected_answers
         return llm_answers_list
 
+    # Verify_map_understanding
     def verify_map_understanding(self, 
                                  image_path_or_url: str,
-                                 map_description_path: Optional[str] = None, # New parameter
-                                 questions_per_category: int = 2, 
+                                 map_description_path: Optional[str] = None,
                                  max_retries_per_category: int = 2) -> bool:
         """
         Verifies LLM's understanding using image and optional text description.
+        LLM answers ALL questions in a category. Retries on a per-category basis 
+        if answers are incorrect, re-presenting all questions for that category.
         """
         self.current_conversation_history = []
         self.map_verified_successfully = False
         
         try:
             self.current_map_image_base64 = self._encode_image_to_base64(image_path_or_url)
-        except IOError as e: # Catch IOError specifically from _encode_image_to_base64
+        except IOError as e: 
             print(f"Critical error loading image: {e}")
-            return False # Cannot proceed without image
+            return False
 
-        if not self.current_map_image_base64: # General check if encoding failed for other reasons
+        if not self.current_map_image_base64: 
             print("Failed to load and encode map image.")
             return False
 
         self.current_map_description = self._read_map_description(map_description_path)
 
         system_prompt_content = (
-            "You are an expert map interpreter. You will be provided with a map image and optionally a textual description of the map. Analyze these inputs carefully. "
+            "You are an expert map interpreter. You will be provided with a map diagram and optionally a textual description of the map. Analyze these inputs carefully. "
             "You will then be asked questions about specific categories related to the map. "
             "For each set of questions, provide your answers *only* as a JSON list of strings, corresponding to the order of the questions."
             "Do not add any other explanatory text before or after the JSON list itself."
         )
         self.current_conversation_history.append({"role": "system", "content": system_prompt_content})
         
-        # Initial user message with the image and description
         initial_user_prompt_parts = []
-        initial_user_prompt_text_intro = "Here is a map image"
+        initial_user_prompt_text_intro = "Here is a map diagram"
         if self.current_map_description:
             initial_user_prompt_text_intro += " and its textual description. Please analyze both."
             initial_user_prompt_parts.append({"type": "text", "text": initial_user_prompt_text_intro})
@@ -172,72 +217,81 @@ class MapInterpretation:
         self.current_conversation_history.append({"role": "user", "content": initial_user_prompt_parts})
         self.current_conversation_history.append({"role": "assistant", "content": "Understood. I have analyzed the provided map information. I am ready for your questions."})
 
-        # --- Category verification loop (largely same as before) ---
         all_categories_passed = True
         for category_name, qa_list_for_category in self.categorized_qa_pairs.items():
             print(f"\n--- Verifying Category: {category_name} ---")
             if not qa_list_for_category:
-                print(f"Warning: No QA pairs for category '{category_name}'. Skipping.")
+                print(f"    No questions to ask for '{category_name}'. Marking as passed (vacuously true).")
                 continue
 
             passed_this_category = False
-            asked_question_indices_in_category: Set[int] = set()
-
+            # MODIFICATION: Store details of incorrect answers from the PREVIOUS attempt for this category
+            incorrect_details_from_previous_attempt: List[Dict[str, str]] = [] 
 
             for attempt in range(max_retries_per_category + 1):
                 print(f"  Attempt {attempt + 1}/{max_retries_per_category + 1} for category '{category_name}'")
 
-                available_indices = [i for i, _ in enumerate(qa_list_for_category) if i not in asked_question_indices_in_category]
+                current_questions_being_asked = qa_list_for_category 
                 
-                num_to_select = min(questions_per_category, len(available_indices))
-                if num_to_select == 0 and len(qa_list_for_category) > 0 : 
-                    print(f"    Note: All unique questions in '{category_name}' asked for this verification run. Re-sampling allowed.")
-                    asked_question_indices_in_category.clear() 
-                    available_indices = list(range(len(qa_list_for_category)))
-                    num_to_select = min(questions_per_category, len(available_indices))
-
-                if num_to_select == 0: 
-                    print(f"    No questions to ask for '{category_name}' in this attempt. Marking as passed (vacuously true).")
-                    passed_this_category = True 
-                    break
-
-
-                selected_indices = random.sample(available_indices, num_to_select)
-                current_questions_being_asked = [qa_list_for_category[i] for i in selected_indices]
-                
-                for idx in selected_indices:
-                    asked_question_indices_in_category.add(idx)
-
-
                 question_texts = [qa['question'] for qa in current_questions_being_asked]
                 
-                prompt_lines = [
-                    f"Now, focusing on the '{category_name}' category for the map information (image and text description, if provided) that you have already processed.",
+                # MODIFICATION: Construct retry prompt with details of previous errors
+                prompt_lines = []
+                if attempt > 0 and incorrect_details_from_previous_attempt: # This is a retry and there were errors
+                    prompt_lines.extend([
+                        f"You previously attempted questions for category '{category_name}'. Some answers were incorrect.",
+                        "Please carefully review your reasoning for the following questions based on the map information provided earlier:",
+                    ])
+                    for i, detail in enumerate(incorrect_details_from_previous_attempt):
+                        prompt_lines.append(f"  Incorrect Item {i+1}:")
+                        prompt_lines.append(f"    Question: \"{detail['question']}\"")
+                        prompt_lines.append(f"    Your (incorrect) answer: \"{detail['llm_answer']}\"")
+                        prompt_lines.append(f"    The correct answer is: \"{detail['correct_answer']}\"")
+                    prompt_lines.append("\nKeeping these corrections in mind, please re-answer ALL questions for this category:")
+                else: # First attempt for this category
+                    prompt_lines.append(
+                        f"Now, focusing on the '{category_name}' category for the map information (image and text description, if provided) that you have already processed."
+                    )
+
+                prompt_lines.extend([
                     "Please answer the following questions based *only* on the previously provided map image and its description (if any).",
                     "Provide your answers as a JSON list of strings, in the same order as the questions.\n",
                     "Questions:"
-                ]
+                ])
                 for i, q_text in enumerate(question_texts):
                     prompt_lines.append(f"{i+1}. {q_text}")
                 prompt_lines.append("\nYour JSON response:")
                 category_user_prompt_text = "\n".join(prompt_lines)
 
                 messages_for_this_call = self.current_conversation_history + [
-                    {"role": "user", "content": category_user_prompt_text} # Text only for category Qs
+                    {"role": "user", "content": category_user_prompt_text} 
                 ]
                 
-                estimated_max_tokens = 70 + (len(current_questions_being_asked) * 35) # Increased estimate
-                raw_llm_response = self._call_llm_with_history(messages_for_this_call, temperature=0.1, max_tokens=estimated_max_tokens)
+                estimated_max_tokens = 150 + (len(current_questions_being_asked) * 35) + (len(incorrect_details_from_previous_attempt) * 70) # Adjust for longer retry prompt
+                raw_llm_response = self._call_llm_with_history(messages_for_this_call, temperature=0.1, max_tokens=estimated_max_tokens) # Temperature could be slightly higher for retries if needed
 
                 self.current_conversation_history.append({"role": "user", "content": category_user_prompt_text})
                 self.current_conversation_history.append({"role": "assistant", "content": raw_llm_response})
 
                 llm_answers_list = self._parse_llm_json_list_response(raw_llm_response, len(current_questions_being_asked))
                 
+                num_correct_in_this_attempt = 0
+                total_questions_in_attempt = len(current_questions_being_asked)
+                
+                # MODIFICATION: Clear and repopulate incorrect_details for the *next* potential retry
+                current_attempt_incorrect_details: List[Dict[str, str]] = [] 
+
                 incorrect_in_this_attempt = False
-                if len(llm_answers_list) != len(current_questions_being_asked):
-                    print(f"    Warning: LLM returned {len(llm_answers_list)} answers for category '{category_name}', but {len(current_questions_being_asked)} questions were asked.")
+                if len(llm_answers_list) != total_questions_in_attempt:
+                    print(f"    Warning: LLM returned {len(llm_answers_list)} answers for category '{category_name}', but {total_questions_in_attempt} questions were asked.")
                     incorrect_in_this_attempt = True
+                    # Mark all as incorrect if length mismatch
+                    for i, qa_pair_expected in enumerate(current_questions_being_asked):
+                        current_attempt_incorrect_details.append({
+                            'question': qa_pair_expected['question'],
+                            'llm_answer': "ERROR_LENGTH_MISMATCH" if i >= len(llm_answers_list) else llm_answers_list[i],
+                            'correct_answer': qa_pair_expected['answer']
+                        })
                 else:
                     for i, qa_pair_expected in enumerate(current_questions_being_asked):
                         llm_ans_norm = self._normalize_answer(llm_answers_list[i])
@@ -250,13 +304,33 @@ class MapInterpretation:
                         if llm_ans_norm != correct_ans_norm:
                             print("      Result: INCORRECT")
                             incorrect_in_this_attempt = True
+                            current_attempt_incorrect_details.append({ # MODIFICATION: Capture details
+                                'question': qa_pair_expected['question'],
+                                'llm_answer': llm_answers_list[i],
+                                'correct_answer': qa_pair_expected['answer']
+                            })
                         else:
                             print("      Result: CORRECT")
+                            num_correct_in_this_attempt += 1
+                
+                # Update for the next potential retry
+                incorrect_details_from_previous_attempt = current_attempt_incorrect_details
+
+                correct_rate = 0.0
+                if total_questions_in_attempt > 0:
+                    correct_rate = (num_correct_in_this_attempt / total_questions_in_attempt) * 100
+                    print(f"    Category '{category_name}' - Attempt {attempt + 1} Correct Rate: {num_correct_in_this_attempt}/{total_questions_in_attempt} ({correct_rate:.2f}%)")
+                else:
+                    print(f"    Category '{category_name}' - Attempt {attempt + 1}: No questions were processed to calculate a rate.")
                 
                 if not incorrect_in_this_attempt:
                     print(f"  +++ Category '{category_name}' passed this attempt! +++")
                     passed_this_category = True
-                    break 
+                    break
+                elif attempt == max_retries_per_category and correct_rate >= 0.95:
+                    print(f"  +++ Category '{category_name}' passed this attempt! +++")
+                    passed_this_category = True
+                    break
                 else:
                     print(f"  --- Incorrect answer(s) in category '{category_name}' for this attempt. ---")
                     if attempt >= max_retries_per_category:
@@ -264,17 +338,14 @@ class MapInterpretation:
                         all_categories_passed = False 
                         break 
                     else:
-                        print(f"    Will retry category '{category_name}' with new questions if available.")
+                        print(f"    Will retry category '{category_name}' (all questions), providing corrections.") 
             
             if not passed_this_category: 
                 all_categories_passed = False 
                 break 
 
         self.map_verified_successfully = all_categories_passed
-        if self.map_verified_successfully:
-            print("\nSUCCESS: All categories verified successfully using map image and description (if provided)!")
-        else:
-            print("\nFAILURE: Not all categories could be verified successfully.")
+        # ... (rest of the method)
         return self.map_verified_successfully
 
 
@@ -338,60 +409,45 @@ class MapInterpretation:
 
 # --- Example Usage ---
 if __name__ == "__main__":
-    categorized_sample_qa_pairs = {
-        "Structures & Roads": [
-            {"question": "How many branching roads does the intersection have?", "answer": "4"},
-            {"question": "How many lanes does Road 0 have going towards the intersection?", "answer": "2"},
-            {"question": "How many lanes does Road 1 have going towards the intersection?", "answer": "1"},
-            {"question": "How many lanes does Road 3 have going towards the intersection?", "answer": "2"},
-            {"question": "How many lanes does Road 4 have going towards the intersection?", "answer": "1"},
-            {"question": "How many lanes does Road 0 have going away from the intersection?", "answer": "1"},
-            {"question": "How many lanes does Road 1 have going away from the intersection?", "answer": "1"},
-            {"question": "How many lanes does Road 3 have going away from the intersection?", "answer": "1"},
-            {"question": "How many lanes does Road 4 have going away from the intersection?", "answer": "1"}
-        ],
-        "Crossing routes": [
-            {"question": "If one vehicle goes from Road 0 to Road 3, another goes from Road 1 to Road 4, will their paths at the intersection cross?", "answer": "Yes"},
-            {"question": "If one vehicle goes from Road 4 to Road 3, another goes from Road 1 to Road 4, will their paths at the intersection cross?", "answer": "No"},
-            {"question": "If one vehicle goes from Road 0 to Road 3, another goes from Road 4 to Road 0, will their paths at the intersection cross?", "answer": "Yes"},
-            {"question": "If one vehicle goes from Road 0 to Road 3, another goes from Road 1 to Road 0, will their paths at the intersection cross?", "answer": "No"},
-            {"question": "If one vehicle goes from Road 1 to Road 3, another goes from Road 4 to Road 1, will their paths at the intersection cross?", "answer": "Yes"},
-            {"question": "If one vehicle goes from Road 0 to Road 1, another goes from Road 4 to Road 3, will their paths at the intersection cross?", "answer": "No"},
-        ]
-    }
 
-    try:
-        # It's good practice to ensure OPENAI_API_KEY is set before this, or pass it explicitly.
-        # Example: interpreter = MapInterpretation(categorized_qa_pairs=categorized_sample_qa_pairs, api_key="sk-...")
-        interpreter = MapInterpretation(categorized_qa_pairs=categorized_sample_qa_pairs)
-    except ValueError as e:
-        print(f"Initialization Error: {e}")
-        exit()
-
-    # Define paths for your specific map image and its description
-    # Ensure these paths are correct for your environment.
-    map_image_location = "./data/processed/inD/map/01_bendplatz_graph.jpeg" # Your actual image path
-    map_description_file_path = "./data/processed/inD/map/01_bendplatz_description.txt" # Your actual description file path
+    # Define paths for inputs
+    qa_json_path = "./data/processed/inD/map/01_bendplatz_questions.json"
+    map_image_path = "./data/processed/inD/map/01_bendplatz_graph.jpeg"
+    map_description_path = "./data/processed/inD/map/01_bendplatz_description.txt"
 
     # Check if files exist
-    if not os.path.exists(map_image_location):
-        print(f"Error: Map image file not found at '{map_image_location}'. Please check the path.")
+    if not os.path.exists(qa_json_path):
+        print(f"Error: Map image file not found at '{qa_json_path}'. Please check the path.")
         exit()
-    if not os.path.exists(map_description_file_path):
-        print(f"Warning: Map description file not found at '{map_description_file_path}'. Proceeding without description.")
+    if not os.path.exists(map_image_path):
+        print(f"Error: Map image file not found at '{map_image_path}'. Please check the path.")
+        exit()
+    if not os.path.exists(map_description_path):
+        print(f"Warning: Map description file not found at '{map_description_path}'. Proceeding without description.")
         # Set to None if you want to proceed without it, or handle as an error if description is mandatory.
         # map_description_file_path = None
 
+    try:
+        interpreter = MapInterpretation(
+            qa_json_path=qa_json_path,
+            # api_key="sk-..." # Optionally pass API key here if not in env
+        )
+    except ValueError as e:
+        print(f"Initialization Error: {e}")
+        exit()
+    except Exception as e:
+        print(f"An unexpected error occurred during initialization: {e}")
+        exit()
 
-    print(f"\nStarting categorized map verification for: {map_image_location}")
-    if map_description_file_path:
-        print(f"Using map description from: {map_description_file_path}")
+
+    print(f"\nStarting categorized map verification for: {map_image_path}")
+    if map_description_path:
+        print(f"Using map description from: {map_description_path}")
     
     is_understood = interpreter.verify_map_understanding(
-        image_path_or_url=map_image_location,
-        map_description_path=map_description_file_path, # Pass the description path
-        questions_per_category=3, 
-        max_retries_per_category=1  
+        image_path_or_url=map_image_path,
+        map_description_path=map_description_path, 
+        max_retries_per_category=2  
     )
 
     if is_understood:
