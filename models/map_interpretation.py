@@ -453,7 +453,6 @@ if __name__ == "__main__":
     if is_understood:
         print("\nOVERALL SUCCESS: LLM map understanding verified using image and description (if provided).")
         
-        '''
         # Example vehicle actions for your specific map scenario (you'll need to define these)
         vehicle_actions_for_inD_map = [
             "Vehicle 1 (Car) enters from Road 0, intending to turn left onto Road 1.",
@@ -474,7 +473,7 @@ if __name__ == "__main__":
             print(f"Analysis saved to {output_filename}")
         else:
             print("\n--- Vehicle Interaction Analysis Failed ---")
-        '''
+
             
     else:
         print("\nOVERALL FAILURE: LLM map understanding could not be verified.")

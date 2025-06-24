@@ -125,14 +125,12 @@ class ScenarioDescriber:
 
 
     def _timeline_description(self, ego_id, classification):
-        """
-        Generates a simplified, action-focused timeline of events for the ego agent.
-        Intentions and reasons for actions are omitted.
-        """
         ego = self._get_agent_by_id(ego_id)
         events = []
+        key_agents = classification["Key"]
         ego_actions = ego.get("actions", [])
         route_action = self._get_route_action(ego)
+        intersection_end = self.agent_dict[ego_id]["exit_time"]
 
         # Insert intersection entry and exit as events if applicable
         if route_action:
@@ -166,29 +164,67 @@ class ScenarioDescriber:
             if exit_road in self.road_order:
                 events.append((t_exit, f"- Leaves the intersection at t={t_exit:.2f}."))
 
-        # Process other actions like slow_down, speed_up, lane_change
-        for action in ego_actions:
+        # Track previous action state for reasoning
+        previous_action_type = None
+        previous_causes = []
+
+        for i, action in enumerate(ego_actions):
             t_start = action["attributes"]["start_time"]
             act_type = action["type"]
 
             if act_type == "slow_down":
-                # Get action magnitude and check if it's a full stop
+
+                # Decide action magnitude according to acceleration
                 acc = action["attributes"].get("acceleration")
                 adverb = self._acceleration_magnitude(acc)
+
+                # Check if the agents slows down till stopped
                 target_speed = action["attributes"].get("target_speed")
                 stop_phrase = " till stopped" if target_speed < 0.5 else ""
 
-                # Create a simple description of the action without the reason
-                line = f"- {adverb} slows down at t={t_start:.2f}{stop_phrase}."
+                # Set the end time of the slow down action as the next time it starts speeding up
+                t_end = t_start + action["attributes"]["duration"]
+                for a in ego_actions[i+1:]:
+                    if a["type"] == "speed_up":
+                        t_end = a["attributes"]["start_time"]
+                        break
+
+                # 
+                causes = []
+                for aid in key_agents:
+                    a_entry = self.agent_dict[aid]["entry_time"]
+                    a_exit = self.agent_dict[aid]["exit_time"]
+                    if t_end and not (a_exit < t_start or a_entry > t_end):
+                        causes.append(aid)
+
+                if intersection_end:
+                    if t_start < intersection_end:
+                        if causes:
+                            listed = ", ".join(f"{self.agent_dict[c]['type']} {c}" for c in causes)
+                            line = f"- {adverb} slows down at t={t_start:.2f}{stop_phrase} to look out for {listed}."
+                        else:
+                            line = f"- {adverb} slows down at t={t_start:.2f}{stop_phrase} for cautious driving."
+                    else:
+                        line = f"- {adverb} slows down at t={t_start:.2f}{stop_phrase}."
+                else:
+                    line = f"- {adverb} slows down at t={t_start:.2f}{stop_phrase}."
+
+                # Append event then set previous action
                 events.append((t_start, line))
+                previous_action_type = "slow_down"
+                previous_causes = causes
 
             elif act_type == "speed_up":
                 acc = action["attributes"].get("acceleration", 0.0)
                 adverb = self._acceleration_magnitude(acc)
-
-                # Create a simple description of the action without the reason
-                line = f"- {adverb} speeds up at t={t_start:.2f}."
+                if previous_action_type == "slow_down" and previous_causes:
+                    latest = max(previous_causes, key=lambda x: self.agent_dict[x]["exit_time"])
+                    atype = self.agent_dict[latest]["type"]
+                    line = f"- {adverb} speeds up at t={t_start:.2f} since {atype} {latest} has passed the intersection."
+                else:
+                    line = f"- {adverb} speeds up at t={t_start:.2f}."
                 events.append((t_start, line))
+                previous_action_type = "speed_up"
 
             elif act_type == "lane_change":
                 direction = action["attributes"]["direction"]
