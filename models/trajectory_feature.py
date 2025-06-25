@@ -22,7 +22,9 @@ def curvature_from_xy(x, y, time):
     ddx = np.gradient(dx, time)
     ddy = np.gradient(dy, time)
 
-    curvature = np.abs(dx * ddy - dy * ddx) / (dx**2 + dy**2)**1.5
+    epsilon = 1e-8
+    denom = (dx**2 + dy**2)**1.5 + epsilon        
+    curvature = np.abs(dx * ddy - dy * ddx) / denom
     return curvature
 
 
@@ -59,8 +61,6 @@ def find_representative_points_each_segment(df, track_id, turn_thresh=0.1, seg_t
     peak = []
 
     for seg in segments:
-        if(seg[-1]-seg[0]<5):
-            continue
         start_idx = seg[0]
         end_idx = seg[-1]
         seg_curv = curvature[seg]
@@ -77,6 +77,15 @@ def find_representative_points_each_segment(df, track_id, turn_thresh=0.1, seg_t
     rep_points_idx.append(0)
     rep_points_idx.append(len(df_track) - 1)
     rep_points_idx = sorted(list(set(rep_points_idx)))
+    
+    if len(rep_points_idx) < 5:
+        total_len = len(df_track)
+        q1 = total_len // 4
+        median = total_len // 2
+        q3 = (3 * total_len) // 4
+        rep_points_idx.extend([q1, median, q3])
+        rep_points_idx = sorted(set(rep_points_idx))
+    
     rep_points = df_track.iloc[rep_points_idx].copy()
     rep_points['curvature'] = curvature[rep_points_idx]
    
