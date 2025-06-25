@@ -106,7 +106,7 @@ class FileGeneration:
         init = self.__story_init(agents, traj_df)
         speed_ctrl = ['speed_up', 'slow_down', 'reverse']
         land_ctrl = ['lane_change']
-        road_ctrl = ['go_straight', 'turn_right', 'turn_left']
+        road_ctrl = ['go_straight', 'turn_right', 'turn_left', 'follow']
 
         sb = xosc.StoryBoard(
             init,
@@ -120,7 +120,8 @@ class FileGeneration:
         )
 
         story = xosc.Story(name="UnifiedStory")
-        act = xosc.Act(name="UnifiedAct")         
+        act = xosc.Act(name="UnifiedAct")   
+        
 
         for i, agent in enumerate(agents.agents):
 
