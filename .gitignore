@@ -17,3 +17,5 @@ esminiRM_log.txt
 log.txt
 /esmini-full
 /xodr
+data/processed/inD/map/02_frankenburg_questions.json
+data/processed/inD/map/03_heckstrasse_questions.json
