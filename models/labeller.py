@@ -236,13 +236,17 @@ class Labeller:
         """
         Prepend each agent's route-decision actions, marking legality.
         """
+        legalactor = ['car', 'truck_bus']
         for agent in self.scenario["agents"]:
             tid = agent['track_id']
+            print(tid)
             lane_df_track = self.lane_df[self.lane_df.trackId == tid].reset_index(drop=True)
             world_df_track = self.world_df[self.world_df.trackId == tid].reset_index(drop=True)
 
             actions = []
+            getroute = False
             for ra in self._find_route_actions_for_track(tid):
+                getroute = True
                 ent, ext = ra['entry_idx'], ra['exit_idx']
                 # 1) pick non-intersection entry/exit:
                 #    entry_pt = row just before entering
@@ -260,7 +264,6 @@ class Labeller:
                 start_time = float(lane_df_track.loc[entry_row, 'time'])
                 end_time = float(lane_df_track.loc[exit_row, 'time'])
                 legal = self._is_link_legal(entry_pt, exit_pt)
-
                 if legal:
                     actions.append({
                         'type': ra['type'],
@@ -283,7 +286,7 @@ class Labeller:
                         pt = FlowList([int(row[0]), int(row[1]), row[2], row[3], row[4], row[5], row[6]])
                         trajectory.append(pt)
                     actions.append({
-                        'type': ra['type'],
+                        'type': 'follow',
                         'attributes': {
                             'start_time': lane_df_track.loc[0].time,
                             'end_time':   lane_df_track.loc[len(lane_df_track)-1].time,
@@ -291,6 +294,26 @@ class Labeller:
                             'trajectory': trajectory
                         }
                     })
+                    
+            if (agent['type'] not in legalactor) and (not getroute):
+                # build fallback trajectory of represent point points
+                indices = find_representative_points(self.world_df, tid)
+                print("extra trajectory node:", indices)
+                
+                trajectory = []
+                for idx in indices:
+                    row = lane_df_track.loc[idx, ['road_id','lane_id','lane_offset','s','heading']].tolist() + world_df_track.loc[idx, ['x', 'y']].tolist()
+                    pt = FlowList([int(row[0]), int(row[1]), row[2], row[3], row[4], row[5], row[6]])
+                    trajectory.append(pt)
+                actions.append({
+                    'type': 'follow',
+                    'attributes': {
+                        'start_time': lane_df_track.loc[0].time,
+                        'end_time':   lane_df_track.loc[len(lane_df_track)-1].time,
+                        'legal':      False,
+                        'trajectory': trajectory
+                    }
+                })
                     
 
             # prepend these new actions
