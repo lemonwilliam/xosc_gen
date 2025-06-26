@@ -423,10 +423,10 @@ def generate_questions_json(
         er, el = example_maneuver_for_lane_q["entry_road"], example_maneuver_for_lane_q["entry_lane"]
         
         has_r_turn_lane_specific = any(m for m in valid_maneuvers if m["entry_road"]==er and m["entry_lane"]==el and m["turn_type"]=="right")
-        questions["Road relations"].append({"question": f"If a vehicle enters from Road {er} lane {el}, is it allowed to turn right?", "answer": "Yes" if has_r_turn_lane_specific else "No"})
+        questions["Road relations"].append({"question": f"If a vehicle enters from Road {er} lane {el}, is it allowed to turn right? Answer with Yes / No.", "answer": "Yes" if has_r_turn_lane_specific else "No"})
         
         has_l_turn_lane_specific = any(m for m in valid_maneuvers if m["entry_road"]==er and m["entry_lane"]==el and m["turn_type"]=="left")
-        questions["Road relations"].append({"question": f"If a vehicle enters from Road {er} lane {el}, is it allowed to turn left?", "answer": "Yes" if has_l_turn_lane_specific else "No"})
+        questions["Road relations"].append({"question": f"If a vehicle enters from Road {er} lane {el}, is it allowed to turn left? Answer with Yes / No.", "answer": "Yes" if has_l_turn_lane_specific else "No"})
 
     
     # Crossing routes (CSV-based)
@@ -465,7 +465,7 @@ def generate_questions_json(
         q_text = (f"Consider the blue curved lines as potential paths. "
                   f"If one vehicle {turn_action_m1} from Road {m1['entry_road']} to exit onto Road {m1['exit_road']}, "
                   f"and another vehicle {turn_action_m2} from Road {m2['entry_road']} to exit onto Road {m2['exit_road']}, "
-                  f"will their primary paths (blue lines) through the intersection cross?")
+                  f"will their primary paths (blue lines) through the intersection cross?  Answer with Yes / No.")
         # --- END OF MODIFIED QUESTION TEXT LOGIC ---
         
         # Canonical key generation now includes turn types to differentiate questions

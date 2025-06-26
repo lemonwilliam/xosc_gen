@@ -85,17 +85,17 @@ class MapInterpretation:
              
         return validated_data
 
-    def _read_map_description(self, description_path: Optional[str]) -> Optional[str]:
-        """Reads map description from a file path."""
-        if description_path:
+    def _read_text_file(self, file_path: Optional[str], file_description_for_error: str) -> Optional[str]:
+        """Reads text content from a file path."""
+        if file_path:
             try:
-                with open(description_path, 'r', encoding='utf-8') as f:
+                with open(file_path, 'r', encoding='utf-8') as f:
                     return f.read()
             except FileNotFoundError:
-                print(f"Warning: Map description file not found at {description_path}. Proceeding without it.")
+                print(f"Warning: {file_description_for_error} file not found at {file_path}. Proceeding without it.")
                 return None
             except Exception as e:
-                print(f"Warning: Error reading map description file {description_path}: {e}. Proceeding without it.")
+                print(f"Warning: Error reading {file_description_for_error} file {file_path}: {e}. Proceeding without it.")
                 return None
         return None
 
@@ -187,7 +187,7 @@ class MapInterpretation:
             print("Failed to load and encode map image.")
             return False
 
-        self.current_map_description = self._read_map_description(map_description_path)
+        self.current_map_description = self._read_text_file(map_description_path, "Map description")
 
         system_prompt_content = (
             "You are an expert map interpreter. You will be provided with a map diagram and optionally a textual description of the map. Analyze these inputs carefully. "
@@ -327,7 +327,7 @@ class MapInterpretation:
                     print(f"  +++ Category '{category_name}' passed this attempt! +++")
                     passed_this_category = True
                     break
-                elif attempt == max_retries_per_category and correct_rate >= 0.95:
+                elif correct_rate >= 0.95:
                     print(f"  +++ Category '{category_name}' passed this attempt! +++")
                     passed_this_category = True
                     break
@@ -349,58 +349,102 @@ class MapInterpretation:
         return self.map_verified_successfully
 
 
-    def analyze_vehicle_interactions(self, vehicle_actions: List[str]) -> Optional[str]:
+    def analyze_vehicle_interactions(self, 
+                                     agent_actions_file_path: str,
+                                     trigger_conditions_file_path: str) -> Optional[str]:
         """
-        Analyzes vehicle interactions, using established context (image and description).
+        Analyzes agent interactions on the map, using established map context,
+        agent actions from a file, and a list of trigger conditions from another file.
         """
-        if not self.map_verified_successfully: # Removed image check here, as it's part of context
-            print("Error: Map understanding has not been successfully verified for the current map context.")
-            print("Please call `verify_map_understanding()` successfully first.")
+        if not self.map_verified_successfully:
+            print("Error: Map understanding has not been successfully verified.")
             return None
         
-        if not self.current_map_image_base64: # Add a check here just in case, though it should be set if verified
-            print("Error: Map image base64 not found in current context. This should not happen if verification was successful.")
+        if not self.current_map_image_base64:
+            print("Error: Map image base64 not found in current context.")
             return None
 
+        agent_actions_content = self._read_text_file(agent_actions_file_path, "Agent actions")
+        trigger_conditions_content = self._read_text_file(trigger_conditions_file_path, "Trigger conditions definitions")
 
-        actions_text = "\n".join([f"- {action}" for action in vehicle_actions])
-        
-        analysis_prompt_text_parts_list = [] # Will build list of content dicts
+        if not agent_actions_content:
+            print("Error: Cannot proceed without agent actions content.")
+            return None
+        if not trigger_conditions_content:
+            print("Error: Cannot proceed without trigger conditions definitions.")
+            return None
 
-        analysis_intro_text = (
-            "You have previously demonstrated an understanding of the provided map context (which included an image and possibly a textual description) "
-            "by correctly answering questions about its features across several categories. "
-            "Now, considering that same map context and the following vehicle actions, "
-            "please analyze potential interactions between vehicles.\n\n"
-            "Focus on identifying and describing:\n"
-            "1. Conflicts, 2. Potential Collisions, 3. Necessary Yielding Maneuvers, 4. Other safety-critical observations.\n\n"
-            "If no significant interactions or safety concerns are found, please state that clearly.\n\n"
-            "Vehicle Actions:\n"
-            f"{actions_text}\n\n"
-            "Your detailed analysis of interactions:"
+        # Build the detailed prompt for interaction analysis
+        analysis_prompt_parts_list = []
+
+        # Part 1: Introduction and Goal
+        intro_text = (
+            "You have previously demonstrated an understanding of the provided map context (image and possibly description).\n"
+            "Your task now is to analyze a sequence of agent (vehicle, bicycle, pedestrian) actions occurring on this map "
+            "to identify significant interactions between agents. For actions that are part of an interaction (e.g., yielding, "
+            "emergency braking due to another agent, speeding up after a yielding agent passes), "
+            "you must identify the most likely trigger condition from the provided list of 'Action Triggers' and explain your reasoning.\n\n"
+            "Not every action will have an explicit trigger from the list, especially initial actions like 'Enters scenario'. Focus on "
+            "actions that demonstrate a reaction or coordination between agents."
         )
-        analysis_prompt_text_parts_list.append({"type": "text", "text": analysis_intro_text})
+        analysis_prompt_parts_list.append({"type": "text", "text": intro_text})
+
+        # Part 2: Remind of Map Context (Image and Description if available)
+        map_context_reminder_text = "\n--- Map Context Recap ---\n"
+        map_context_reminder_text += "You have already analyzed the following map. Keep its structure in mind.\n"
+        if self.current_map_description:
+            summary_desc = self.current_map_description[:300] + ("..." if len(self.current_map_description) > 300 else "") # Shorter summary
+            map_context_reminder_text += f"Key elements from description: {summary_desc}\n"
         
-        # Re-send image for robustness in this critical analysis step.
-        analysis_prompt_text_parts_list.append(
+        analysis_prompt_parts_list.append({"type": "text", "text": map_context_reminder_text})
+        analysis_prompt_parts_list.append(
              {"type": "image_url", "image_url": {"url": f"data:image/jpeg;base64,{self.current_map_image_base64}"}}
         )
-        # Optionally, re-send description text if it's crucial and short, or a summary.
-        # This reinforces the textual context directly with the task, rather than just relying on history.
-        if self.current_map_description:
-           summary_desc = self.current_map_description[:500] + ("..." if len(self.current_map_description) > 500 else "")
-           analysis_prompt_text_parts_list.append({"type": "text", "text": f"\nReminder of Map Description Context:\n---\n{summary_desc}\n---"})
 
+        # Part 3: Agent Actions
+        agent_actions_header_text = "\n--- Agent Actions Log ---\n"
+        agent_actions_header_text += "Here are the actions performed by agents in the scenario:\n"
+        analysis_prompt_parts_list.append({"type": "text", "text": agent_actions_header_text})
+        analysis_prompt_parts_list.append({"type": "text", "text": agent_actions_content})
+        
+        # Part 4: Trigger Conditions Definitions
+        trigger_conditions_header_text = "\n--- Possible Action Triggers (Choose from this list) ---\n"
+        trigger_conditions_header_text += "When an agent's action is part of an interaction, select the most appropriate trigger from this list:\n"
+        analysis_prompt_parts_list.append({"type": "text", "text": trigger_conditions_header_text})
+        analysis_prompt_parts_list.append({"type": "text", "text": trigger_conditions_content})
 
+        # Part 5: Output Format and Instructions
+        output_instructions_text = (
+            "\n--- Your Analysis Task & Output Format ---\n"
+            "1. Identify sequences of actions that constitute an interaction between two or more agents.\n"
+            "2. For each *reacting* agent in an interaction, pinpoint the specific action(s) that are a response.\n"
+            "3. For these reacting actions, state the most likely 'Action Trigger' from the provided list by its name (e.g., 'Time Headway Condition', 'Storyboard Element State Condition').\n"
+            "4. Briefly explain the interaction and why you chose that trigger for the specific action.\n\n"
+            "Example Output Structure (for each identified interaction):\n"
+            "Interaction between [Agent X] and [Agent Y]:\n"
+            "  - Scenario: [Briefly describe what happened, e.g., Agent Y arrived at intersection first, Agent X approached intending to cross paths.]\n"
+            "  - Agent [Reacting Agent ID]'s action: \"[The specific action string from the log, e.g., Significantly slows down at t=0.32 till stopped.]\"\n"
+            "    - Trigger: [Name of Trigger Condition from the list]\n"
+            "    - Reason: [Your explanation, e.g., To yield to Agent Y which had priority or was already in the conflicting path.]\n"
+            "  - Agent [Reacting Agent ID]'s subsequent action (if part of same interaction event): \"[e.g., Moderately speeds up at t=7.84.]\"\n"
+            "    - Trigger: [Name of Trigger Condition]\n"
+            "    - Reason: [e.g., Agent Y has cleared the conflict zone, allowing Agent X to proceed.]\n\n"
+            "If there are no significant interactions, state that clearly.\n\n"
+            "Begin your analysis now:"
+        )
+        analysis_prompt_parts_list.append({"type": "text", "text": output_instructions_text})
+
+        # Combine with existing conversation history
         messages_for_analysis_call = self.current_conversation_history + [
-            {"role": "user", "content": analysis_prompt_text_parts_list} # Use the list of content dicts
+            {"role": "user", "content": analysis_prompt_parts_list}
         ]
 
-        print("\n--- Requesting Vehicle Interaction Analysis (with map image & description context) ---")
-        llm_analysis_response = self._call_llm_with_history(messages_for_analysis_call, temperature=0.4, max_tokens=1000)
+        print("\n--- Requesting Agent Interaction Analysis ---")
+        # Max tokens needs to be high for this kind of detailed analysis + input text
+        llm_analysis_response = self._call_llm_with_history(messages_for_analysis_call, temperature=0.5, max_tokens=2000) # Increased max_tokens and slightly temp
 
         if "ERROR_API_CALL" not in llm_analysis_response and "ERROR_LLM_NO_CONTENT" not in llm_analysis_response:
-            self.current_conversation_history.append({"role": "user", "content": analysis_prompt_text_parts_list})
+            self.current_conversation_history.append({"role": "user", "content": analysis_prompt_parts_list}) # Add the complex user prompt
             self.current_conversation_history.append({"role": "assistant", "content": llm_analysis_response})
             return llm_analysis_response
         else:
@@ -452,28 +496,28 @@ if __name__ == "__main__":
 
     if is_understood:
         print("\nOVERALL SUCCESS: LLM map understanding verified using image and description (if provided).")
-        
-        # Example vehicle actions for your specific map scenario (you'll need to define these)
-        vehicle_actions_for_inD_map = [
-            "Vehicle 1 (Car) enters from Road 0, intending to turn left onto Road 1.",
-            "Vehicle 2 (Truck) enters from Road 3, intending to go straight onto Road 0.",
-            "Vehicle 3 (Motorcycle) enters from Road 4, intending to turn right onto Road 0.",
-            # Add more actions relevant to the inD dataset map's intersection
-        ]
 
-        print("\n--- Now, analyzing vehicle interactions (with description context) ---")
-        analysis_result = interpreter.analyze_vehicle_interactions(vehicle_actions=vehicle_actions_for_inD_map)
+        '''
+
+        agent_actions_file = "./results/inD/description/08_1250_1600.txt"
+        trigger_conditions_file = "./memos/condition_definition.txt"
+        
+        print("\n--- Now, analyzing agent interactions ---")
+        analysis_result = interpreter.analyze_vehicle_interactions(
+            agent_actions_file_path=agent_actions_file,
+            trigger_conditions_file_path=trigger_conditions_file
+        )
 
         if analysis_result:
-            print("\n--- Vehicle Interaction Analysis Complete ---")
-            # The result is already printed within the method, but you can process it further.
-            output_filename = "vehicle_interaction_analysis_inD_01.txt"
+            print("\n--- Agent Interaction Analysis Complete ---")
+            # The result is already printed by the _call_llm_with_history method within analyze_vehicle_interactions
+            output_filename = "agent_interaction_analysis_output.txt" 
             with open(output_filename, "w", encoding="utf-8") as f:
                 f.write(analysis_result)
-            print(f"Analysis saved to {output_filename}")
+            print(f"Full analysis saved to {output_filename}")
         else:
-            print("\n--- Vehicle Interaction Analysis Failed ---")
-
+            print("\n--- Agent Interaction Analysis Failed ---")
+        '''
             
     else:
         print("\nOVERALL FAILURE: LLM map understanding could not be verified.")

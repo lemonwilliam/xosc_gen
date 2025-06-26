@@ -87,181 +87,181 @@
             "answer": "0"
         },
         {
-            "question": "If a vehicle enters from Road 0 lane 2, is it allowed to turn right?",
+            "question": "If a vehicle enters from Road 0 lane 2, is it allowed to turn right? Answer with Yes / No.",
             "answer": "Yes"
         },
         {
-            "question": "If a vehicle enters from Road 0 lane 2, is it allowed to turn left?",
+            "question": "If a vehicle enters from Road 0 lane 2, is it allowed to turn left? Answer with Yes / No.",
             "answer": "No"
         }
     ],
     "Crossing routes": [
         {
-            "question": "Consider the blue curved lines as potential paths. If one vehicle turns left from Road 0 to exit onto Road 1, and another vehicle turns left from Road 4 to exit onto Road 0, will their primary paths (blue lines) through the intersection cross?",
+            "question": "Consider the blue curved lines as potential paths. If one vehicle turns left from Road 0 to exit onto Road 1, and another vehicle turns left from Road 4 to exit onto Road 0, will their primary paths (blue lines) through the intersection cross?  Answer with Yes / No.",
             "answer": "Yes"
         },
         {
-            "question": "Consider the blue curved lines as potential paths. If one vehicle turns left from Road 0 to exit onto Road 1, and another vehicle turns right from Road 4 to exit onto Road 3, will their primary paths (blue lines) through the intersection cross?",
+            "question": "Consider the blue curved lines as potential paths. If one vehicle turns left from Road 0 to exit onto Road 1, and another vehicle turns right from Road 4 to exit onto Road 3, will their primary paths (blue lines) through the intersection cross?  Answer with Yes / No.",
             "answer": "No"
         },
         {
-            "question": "Consider the blue curved lines as potential paths. If one vehicle turns left from Road 0 to exit onto Road 1, and another vehicle turns left from Road 3 to exit onto Road 4, will their primary paths (blue lines) through the intersection cross?",
+            "question": "Consider the blue curved lines as potential paths. If one vehicle turns left from Road 0 to exit onto Road 1, and another vehicle turns left from Road 3 to exit onto Road 4, will their primary paths (blue lines) through the intersection cross?  Answer with Yes / No.",
             "answer": "No"
         },
         {
-            "question": "Consider the blue curved lines as potential paths. If one vehicle turns left from Road 0 to exit onto Road 1, and another vehicle goes straight from Road 3 to exit onto Road 0, will their primary paths (blue lines) through the intersection cross?",
+            "question": "Consider the blue curved lines as potential paths. If one vehicle turns left from Road 0 to exit onto Road 1, and another vehicle goes straight from Road 3 to exit onto Road 0, will their primary paths (blue lines) through the intersection cross?  Answer with Yes / No.",
             "answer": "Yes"
         },
         {
-            "question": "Consider the blue curved lines as potential paths. If one vehicle turns left from Road 0 to exit onto Road 1, and another vehicle turns right from Road 1 to exit onto Road 0, will their primary paths (blue lines) through the intersection cross?",
+            "question": "Consider the blue curved lines as potential paths. If one vehicle turns left from Road 0 to exit onto Road 1, and another vehicle turns right from Road 1 to exit onto Road 0, will their primary paths (blue lines) through the intersection cross?  Answer with Yes / No.",
             "answer": "No"
         },
         {
-            "question": "Consider the blue curved lines as potential paths. If one vehicle turns left from Road 0 to exit onto Road 1, and another vehicle goes straight from Road 1 to exit onto Road 4, will their primary paths (blue lines) through the intersection cross?",
+            "question": "Consider the blue curved lines as potential paths. If one vehicle turns left from Road 0 to exit onto Road 1, and another vehicle goes straight from Road 1 to exit onto Road 4, will their primary paths (blue lines) through the intersection cross?  Answer with Yes / No.",
             "answer": "Yes"
         },
         {
-            "question": "Consider the blue curved lines as potential paths. If one vehicle turns left from Road 0 to exit onto Road 1, and another vehicle turns left from Road 1 to exit onto Road 3, will their primary paths (blue lines) through the intersection cross?",
+            "question": "Consider the blue curved lines as potential paths. If one vehicle turns left from Road 0 to exit onto Road 1, and another vehicle turns left from Road 1 to exit onto Road 3, will their primary paths (blue lines) through the intersection cross?  Answer with Yes / No.",
             "answer": "Yes"
         },
         {
-            "question": "Consider the blue curved lines as potential paths. If one vehicle turns right from Road 0 to exit onto Road 4, and another vehicle turns left from Road 4 to exit onto Road 0, will their primary paths (blue lines) through the intersection cross?",
+            "question": "Consider the blue curved lines as potential paths. If one vehicle turns right from Road 0 to exit onto Road 4, and another vehicle turns left from Road 4 to exit onto Road 0, will their primary paths (blue lines) through the intersection cross?  Answer with Yes / No.",
             "answer": "No"
         },
         {
-            "question": "Consider the blue curved lines as potential paths. If one vehicle turns right from Road 0 to exit onto Road 4, and another vehicle goes straight from Road 4 to exit onto Road 1, will their primary paths (blue lines) through the intersection cross?",
+            "question": "Consider the blue curved lines as potential paths. If one vehicle turns right from Road 0 to exit onto Road 4, and another vehicle goes straight from Road 4 to exit onto Road 1, will their primary paths (blue lines) through the intersection cross?  Answer with Yes / No.",
             "answer": "No"
         },
         {
-            "question": "Consider the blue curved lines as potential paths. If one vehicle turns right from Road 0 to exit onto Road 4, and another vehicle turns right from Road 4 to exit onto Road 3, will their primary paths (blue lines) through the intersection cross?",
+            "question": "Consider the blue curved lines as potential paths. If one vehicle turns right from Road 0 to exit onto Road 4, and another vehicle turns right from Road 4 to exit onto Road 3, will their primary paths (blue lines) through the intersection cross?  Answer with Yes / No.",
             "answer": "No"
         },
         {
-            "question": "Consider the blue curved lines as potential paths. If one vehicle turns right from Road 0 to exit onto Road 4, and another vehicle goes straight from Road 3 to exit onto Road 0, will their primary paths (blue lines) through the intersection cross?",
+            "question": "Consider the blue curved lines as potential paths. If one vehicle turns right from Road 0 to exit onto Road 4, and another vehicle goes straight from Road 3 to exit onto Road 0, will their primary paths (blue lines) through the intersection cross?  Answer with Yes / No.",
             "answer": "No"
         },
         {
-            "question": "Consider the blue curved lines as potential paths. If one vehicle turns right from Road 0 to exit onto Road 4, and another vehicle turns right from Road 3 to exit onto Road 1, will their primary paths (blue lines) through the intersection cross?",
+            "question": "Consider the blue curved lines as potential paths. If one vehicle turns right from Road 0 to exit onto Road 4, and another vehicle turns right from Road 3 to exit onto Road 1, will their primary paths (blue lines) through the intersection cross?  Answer with Yes / No.",
             "answer": "No"
         },
         {
-            "question": "Consider the blue curved lines as potential paths. If one vehicle turns right from Road 0 to exit onto Road 4, and another vehicle turns right from Road 1 to exit onto Road 0, will their primary paths (blue lines) through the intersection cross?",
+            "question": "Consider the blue curved lines as potential paths. If one vehicle turns right from Road 0 to exit onto Road 4, and another vehicle turns right from Road 1 to exit onto Road 0, will their primary paths (blue lines) through the intersection cross?  Answer with Yes / No.",
             "answer": "No"
         },
         {
-            "question": "Consider the blue curved lines as potential paths. If one vehicle turns right from Road 0 to exit onto Road 4, and another vehicle turns left from Road 1 to exit onto Road 3, will their primary paths (blue lines) through the intersection cross?",
+            "question": "Consider the blue curved lines as potential paths. If one vehicle turns right from Road 0 to exit onto Road 4, and another vehicle turns left from Road 1 to exit onto Road 3, will their primary paths (blue lines) through the intersection cross?  Answer with Yes / No.",
             "answer": "No"
         },
         {
-            "question": "Consider the blue curved lines as potential paths. If one vehicle goes straight from Road 0 to exit onto Road 3, and another vehicle turns left from Road 4 to exit onto Road 0, will their primary paths (blue lines) through the intersection cross?",
+            "question": "Consider the blue curved lines as potential paths. If one vehicle goes straight from Road 0 to exit onto Road 3, and another vehicle turns left from Road 4 to exit onto Road 0, will their primary paths (blue lines) through the intersection cross?  Answer with Yes / No.",
             "answer": "Yes"
         },
         {
-            "question": "Consider the blue curved lines as potential paths. If one vehicle goes straight from Road 0 to exit onto Road 3, and another vehicle goes straight from Road 4 to exit onto Road 1, will their primary paths (blue lines) through the intersection cross?",
+            "question": "Consider the blue curved lines as potential paths. If one vehicle goes straight from Road 0 to exit onto Road 3, and another vehicle goes straight from Road 4 to exit onto Road 1, will their primary paths (blue lines) through the intersection cross?  Answer with Yes / No.",
             "answer": "Yes"
         },
         {
-            "question": "Consider the blue curved lines as potential paths. If one vehicle goes straight from Road 0 to exit onto Road 3, and another vehicle turns left from Road 3 to exit onto Road 4, will their primary paths (blue lines) through the intersection cross?",
+            "question": "Consider the blue curved lines as potential paths. If one vehicle goes straight from Road 0 to exit onto Road 3, and another vehicle turns left from Road 3 to exit onto Road 4, will their primary paths (blue lines) through the intersection cross?  Answer with Yes / No.",
             "answer": "Yes"
         },
         {
-            "question": "Consider the blue curved lines as potential paths. If one vehicle goes straight from Road 0 to exit onto Road 3, and another vehicle goes straight from Road 3 to exit onto Road 0, will their primary paths (blue lines) through the intersection cross?",
+            "question": "Consider the blue curved lines as potential paths. If one vehicle goes straight from Road 0 to exit onto Road 3, and another vehicle goes straight from Road 3 to exit onto Road 0, will their primary paths (blue lines) through the intersection cross?  Answer with Yes / No.",
             "answer": "No"
         },
         {
-            "question": "Consider the blue curved lines as potential paths. If one vehicle goes straight from Road 0 to exit onto Road 3, and another vehicle turns right from Road 3 to exit onto Road 1, will their primary paths (blue lines) through the intersection cross?",
+            "question": "Consider the blue curved lines as potential paths. If one vehicle goes straight from Road 0 to exit onto Road 3, and another vehicle turns right from Road 3 to exit onto Road 1, will their primary paths (blue lines) through the intersection cross?  Answer with Yes / No.",
             "answer": "No"
         },
         {
-            "question": "Consider the blue curved lines as potential paths. If one vehicle goes straight from Road 0 to exit onto Road 3, and another vehicle turns right from Road 1 to exit onto Road 0, will their primary paths (blue lines) through the intersection cross?",
+            "question": "Consider the blue curved lines as potential paths. If one vehicle goes straight from Road 0 to exit onto Road 3, and another vehicle turns right from Road 1 to exit onto Road 0, will their primary paths (blue lines) through the intersection cross?  Answer with Yes / No.",
             "answer": "No"
         },
         {
-            "question": "Consider the blue curved lines as potential paths. If one vehicle goes straight from Road 0 to exit onto Road 3, and another vehicle goes straight from Road 1 to exit onto Road 4, will their primary paths (blue lines) through the intersection cross?",
+            "question": "Consider the blue curved lines as potential paths. If one vehicle goes straight from Road 0 to exit onto Road 3, and another vehicle goes straight from Road 1 to exit onto Road 4, will their primary paths (blue lines) through the intersection cross?  Answer with Yes / No.",
             "answer": "Yes"
         },
         {
-            "question": "Consider the blue curved lines as potential paths. If one vehicle turns left from Road 4 to exit onto Road 0, and another vehicle turns left from Road 3 to exit onto Road 4, will their primary paths (blue lines) through the intersection cross?",
+            "question": "Consider the blue curved lines as potential paths. If one vehicle turns left from Road 4 to exit onto Road 0, and another vehicle turns left from Road 3 to exit onto Road 4, will their primary paths (blue lines) through the intersection cross?  Answer with Yes / No.",
             "answer": "Yes"
         },
         {
-            "question": "Consider the blue curved lines as potential paths. If one vehicle turns left from Road 4 to exit onto Road 0, and another vehicle turns right from Road 3 to exit onto Road 1, will their primary paths (blue lines) through the intersection cross?",
+            "question": "Consider the blue curved lines as potential paths. If one vehicle turns left from Road 4 to exit onto Road 0, and another vehicle turns right from Road 3 to exit onto Road 1, will their primary paths (blue lines) through the intersection cross?  Answer with Yes / No.",
             "answer": "No"
         },
         {
-            "question": "Consider the blue curved lines as potential paths. If one vehicle turns left from Road 4 to exit onto Road 0, and another vehicle goes straight from Road 1 to exit onto Road 4, will their primary paths (blue lines) through the intersection cross?",
+            "question": "Consider the blue curved lines as potential paths. If one vehicle turns left from Road 4 to exit onto Road 0, and another vehicle goes straight from Road 1 to exit onto Road 4, will their primary paths (blue lines) through the intersection cross?  Answer with Yes / No.",
             "answer": "Yes"
         },
         {
-            "question": "Consider the blue curved lines as potential paths. If one vehicle turns left from Road 4 to exit onto Road 0, and another vehicle turns left from Road 1 to exit onto Road 3, will their primary paths (blue lines) through the intersection cross?",
+            "question": "Consider the blue curved lines as potential paths. If one vehicle turns left from Road 4 to exit onto Road 0, and another vehicle turns left from Road 1 to exit onto Road 3, will their primary paths (blue lines) through the intersection cross?  Answer with Yes / No.",
             "answer": "Yes"
         },
         {
-            "question": "Consider the blue curved lines as potential paths. If one vehicle goes straight from Road 4 to exit onto Road 1, and another vehicle turns left from Road 3 to exit onto Road 4, will their primary paths (blue lines) through the intersection cross?",
+            "question": "Consider the blue curved lines as potential paths. If one vehicle goes straight from Road 4 to exit onto Road 1, and another vehicle turns left from Road 3 to exit onto Road 4, will their primary paths (blue lines) through the intersection cross?  Answer with Yes / No.",
             "answer": "Yes"
         },
         {
-            "question": "Consider the blue curved lines as potential paths. If one vehicle goes straight from Road 4 to exit onto Road 1, and another vehicle goes straight from Road 3 to exit onto Road 0, will their primary paths (blue lines) through the intersection cross?",
+            "question": "Consider the blue curved lines as potential paths. If one vehicle goes straight from Road 4 to exit onto Road 1, and another vehicle goes straight from Road 3 to exit onto Road 0, will their primary paths (blue lines) through the intersection cross?  Answer with Yes / No.",
             "answer": "Yes"
         },
         {
-            "question": "Consider the blue curved lines as potential paths. If one vehicle goes straight from Road 4 to exit onto Road 1, and another vehicle turns right from Road 1 to exit onto Road 0, will their primary paths (blue lines) through the intersection cross?",
+            "question": "Consider the blue curved lines as potential paths. If one vehicle goes straight from Road 4 to exit onto Road 1, and another vehicle turns right from Road 1 to exit onto Road 0, will their primary paths (blue lines) through the intersection cross?  Answer with Yes / No.",
             "answer": "No"
         },
         {
-            "question": "Consider the blue curved lines as potential paths. If one vehicle goes straight from Road 4 to exit onto Road 1, and another vehicle goes straight from Road 1 to exit onto Road 4, will their primary paths (blue lines) through the intersection cross?",
+            "question": "Consider the blue curved lines as potential paths. If one vehicle goes straight from Road 4 to exit onto Road 1, and another vehicle goes straight from Road 1 to exit onto Road 4, will their primary paths (blue lines) through the intersection cross?  Answer with Yes / No.",
             "answer": "No"
         },
         {
-            "question": "Consider the blue curved lines as potential paths. If one vehicle goes straight from Road 4 to exit onto Road 1, and another vehicle turns left from Road 1 to exit onto Road 3, will their primary paths (blue lines) through the intersection cross?",
+            "question": "Consider the blue curved lines as potential paths. If one vehicle goes straight from Road 4 to exit onto Road 1, and another vehicle turns left from Road 1 to exit onto Road 3, will their primary paths (blue lines) through the intersection cross?  Answer with Yes / No.",
             "answer": "Yes"
         },
         {
-            "question": "Consider the blue curved lines as potential paths. If one vehicle turns right from Road 4 to exit onto Road 3, and another vehicle turns left from Road 3 to exit onto Road 4, will their primary paths (blue lines) through the intersection cross?",
+            "question": "Consider the blue curved lines as potential paths. If one vehicle turns right from Road 4 to exit onto Road 3, and another vehicle turns left from Road 3 to exit onto Road 4, will their primary paths (blue lines) through the intersection cross?  Answer with Yes / No.",
             "answer": "No"
         },
         {
-            "question": "Consider the blue curved lines as potential paths. If one vehicle turns right from Road 4 to exit onto Road 3, and another vehicle goes straight from Road 3 to exit onto Road 0, will their primary paths (blue lines) through the intersection cross?",
+            "question": "Consider the blue curved lines as potential paths. If one vehicle turns right from Road 4 to exit onto Road 3, and another vehicle goes straight from Road 3 to exit onto Road 0, will their primary paths (blue lines) through the intersection cross?  Answer with Yes / No.",
             "answer": "No"
         },
         {
-            "question": "Consider the blue curved lines as potential paths. If one vehicle turns right from Road 4 to exit onto Road 3, and another vehicle turns right from Road 3 to exit onto Road 1, will their primary paths (blue lines) through the intersection cross?",
+            "question": "Consider the blue curved lines as potential paths. If one vehicle turns right from Road 4 to exit onto Road 3, and another vehicle turns right from Road 3 to exit onto Road 1, will their primary paths (blue lines) through the intersection cross?  Answer with Yes / No.",
             "answer": "No"
         },
         {
-            "question": "Consider the blue curved lines as potential paths. If one vehicle turns right from Road 4 to exit onto Road 3, and another vehicle turns right from Road 1 to exit onto Road 0, will their primary paths (blue lines) through the intersection cross?",
+            "question": "Consider the blue curved lines as potential paths. If one vehicle turns right from Road 4 to exit onto Road 3, and another vehicle turns right from Road 1 to exit onto Road 0, will their primary paths (blue lines) through the intersection cross?  Answer with Yes / No.",
             "answer": "No"
         },
         {
-            "question": "Consider the blue curved lines as potential paths. If one vehicle turns right from Road 4 to exit onto Road 3, and another vehicle goes straight from Road 1 to exit onto Road 4, will their primary paths (blue lines) through the intersection cross?",
+            "question": "Consider the blue curved lines as potential paths. If one vehicle turns right from Road 4 to exit onto Road 3, and another vehicle goes straight from Road 1 to exit onto Road 4, will their primary paths (blue lines) through the intersection cross?  Answer with Yes / No.",
             "answer": "No"
         },
         {
-            "question": "Consider the blue curved lines as potential paths. If one vehicle turns left from Road 3 to exit onto Road 4, and another vehicle turns right from Road 1 to exit onto Road 0, will their primary paths (blue lines) through the intersection cross?",
+            "question": "Consider the blue curved lines as potential paths. If one vehicle turns left from Road 3 to exit onto Road 4, and another vehicle turns right from Road 1 to exit onto Road 0, will their primary paths (blue lines) through the intersection cross?  Answer with Yes / No.",
             "answer": "No"
         },
         {
-            "question": "Consider the blue curved lines as potential paths. If one vehicle turns left from Road 3 to exit onto Road 4, and another vehicle turns left from Road 1 to exit onto Road 3, will their primary paths (blue lines) through the intersection cross?",
+            "question": "Consider the blue curved lines as potential paths. If one vehicle turns left from Road 3 to exit onto Road 4, and another vehicle turns left from Road 1 to exit onto Road 3, will their primary paths (blue lines) through the intersection cross?  Answer with Yes / No.",
             "answer": "Yes"
         },
         {
-            "question": "Consider the blue curved lines as potential paths. If one vehicle goes straight from Road 3 to exit onto Road 0, and another vehicle goes straight from Road 1 to exit onto Road 4, will their primary paths (blue lines) through the intersection cross?",
+            "question": "Consider the blue curved lines as potential paths. If one vehicle goes straight from Road 3 to exit onto Road 0, and another vehicle goes straight from Road 1 to exit onto Road 4, will their primary paths (blue lines) through the intersection cross?  Answer with Yes / No.",
             "answer": "Yes"
         },
         {
-            "question": "Consider the blue curved lines as potential paths. If one vehicle goes straight from Road 3 to exit onto Road 0, and another vehicle turns left from Road 1 to exit onto Road 3, will their primary paths (blue lines) through the intersection cross?",
+            "question": "Consider the blue curved lines as potential paths. If one vehicle goes straight from Road 3 to exit onto Road 0, and another vehicle turns left from Road 1 to exit onto Road 3, will their primary paths (blue lines) through the intersection cross?  Answer with Yes / No.",
             "answer": "Yes"
         },
         {
-            "question": "Consider the blue curved lines as potential paths. If one vehicle turns right from Road 3 to exit onto Road 1, and another vehicle turns right from Road 1 to exit onto Road 0, will their primary paths (blue lines) through the intersection cross?",
+            "question": "Consider the blue curved lines as potential paths. If one vehicle turns right from Road 3 to exit onto Road 1, and another vehicle turns right from Road 1 to exit onto Road 0, will their primary paths (blue lines) through the intersection cross?  Answer with Yes / No.",
             "answer": "No"
         },
         {
-            "question": "Consider the blue curved lines as potential paths. If one vehicle turns right from Road 3 to exit onto Road 1, and another vehicle goes straight from Road 1 to exit onto Road 4, will their primary paths (blue lines) through the intersection cross?",
+            "question": "Consider the blue curved lines as potential paths. If one vehicle turns right from Road 3 to exit onto Road 1, and another vehicle goes straight from Road 1 to exit onto Road 4, will their primary paths (blue lines) through the intersection cross?  Answer with Yes / No.",
             "answer": "No"
         },
         {
-            "question": "Consider the blue curved lines as potential paths. If one vehicle turns right from Road 3 to exit onto Road 1, and another vehicle turns left from Road 1 to exit onto Road 3, will their primary paths (blue lines) through the intersection cross?",
+            "question": "Consider the blue curved lines as potential paths. If one vehicle turns right from Road 3 to exit onto Road 1, and another vehicle turns left from Road 1 to exit onto Road 3, will their primary paths (blue lines) through the intersection cross?  Answer with Yes / No.",
             "answer": "No"
         }
     ]
