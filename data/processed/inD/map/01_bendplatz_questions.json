@@ -1,50 +1,9 @@
 {
-    "Basic structure": [
-        {
-            "question": "How many branching roads does the intersection have?",
-            "answer": "4"
-        },
-        {
-            "question": "How many driving lanes does Road 0 have going towards the intersection?",
-            "answer": "2"
-        },
-        {
-            "question": "How many driving lanes does Road 0 have going away from the intersection?",
-            "answer": "1"
-        },
-        {
-            "question": "How many driving lanes does Road 4 have going towards the intersection?",
-            "answer": "1"
-        },
-        {
-            "question": "How many driving lanes does Road 4 have going away from the intersection?",
-            "answer": "1"
-        },
-        {
-            "question": "How many driving lanes does Road 3 have going towards the intersection?",
-            "answer": "2"
-        },
-        {
-            "question": "How many driving lanes does Road 3 have going away from the intersection?",
-            "answer": "1"
-        },
-        {
-            "question": "How many driving lanes does Road 1 have going towards the intersection?",
-            "answer": "1"
-        },
-        {
-            "question": "How many driving lanes does Road 1 have going away from the intersection?",
-            "answer": "1"
-        }
-    ],
+    "Basic structure": [],
     "Road relations": [
         {
             "question": "If a vehicle enters the intersection from Road 0 then goes straight, what is the ID of the Road it arrives?",
             "answer": "3"
-        },
-        {
-            "question": "If a vehicle enters the intersection from Road 0 then turns left, what is the ID of the Road it arrives?",
-            "answer": "1"
         },
         {
             "question": "If a vehicle enters the intersection from Road 0 then turns right, what is the ID of the Road it arrives?",
@@ -55,20 +14,12 @@
             "answer": "1"
         },
         {
-            "question": "If a vehicle enters the intersection from Road 4 then turns left, what is the ID of the Road it arrives?",
-            "answer": "0"
-        },
-        {
             "question": "If a vehicle enters the intersection from Road 4 then turns right, what is the ID of the Road it arrives?",
             "answer": "3"
         },
         {
             "question": "If a vehicle enters the intersection from Road 3 then goes straight, what is the ID of the Road it arrives?",
             "answer": "0"
-        },
-        {
-            "question": "If a vehicle enters the intersection from Road 3 then turns left, what is the ID of the Road it arrives?",
-            "answer": "4"
         },
         {
             "question": "If a vehicle enters the intersection from Road 3 then turns right, what is the ID of the Road it arrives?",
@@ -79,189 +30,177 @@
             "answer": "4"
         },
         {
-            "question": "If a vehicle enters the intersection from Road 1 then turns left, what is the ID of the Road it arrives?",
-            "answer": "3"
-        },
-        {
             "question": "If a vehicle enters the intersection from Road 1 then turns right, what is the ID of the Road it arrives?",
             "answer": "0"
-        },
-        {
-            "question": "If a vehicle enters from Road 0 lane 2, is it allowed to turn right? Answer with Yes / No.",
-            "answer": "Yes"
-        },
-        {
-            "question": "If a vehicle enters from Road 0 lane 2, is it allowed to turn left? Answer with Yes / No.",
-            "answer": "No"
         }
     ],
     "Crossing routes": [
         {
-            "question": "Consider the blue curved lines as potential paths. If one vehicle turns left from Road 0 to exit onto Road 1, and another vehicle turns left from Road 4 to exit onto Road 0, will their primary paths (blue lines) through the intersection cross?  Answer with Yes / No.",
+            "question": "If one vehicle aim to turns left from Road 0, and another vehicle aim to turns left from Road 4 at the same time, is yielding behavior necessary?  Answer with Yes / No.",
             "answer": "Yes"
         },
         {
-            "question": "Consider the blue curved lines as potential paths. If one vehicle turns left from Road 0 to exit onto Road 1, and another vehicle turns right from Road 4 to exit onto Road 3, will their primary paths (blue lines) through the intersection cross?  Answer with Yes / No.",
+            "question": "If one vehicle aim to turns left from Road 0, and another vehicle aim to turns right from Road 4 at the same time, is yielding behavior necessary?  Answer with Yes / No.",
             "answer": "No"
         },
         {
-            "question": "Consider the blue curved lines as potential paths. If one vehicle turns left from Road 0 to exit onto Road 1, and another vehicle turns left from Road 3 to exit onto Road 4, will their primary paths (blue lines) through the intersection cross?  Answer with Yes / No.",
+            "question": "If one vehicle aim to turns left from Road 0, and another vehicle aim to turns left from Road 3 at the same time, is yielding behavior necessary?  Answer with Yes / No.",
             "answer": "No"
         },
         {
-            "question": "Consider the blue curved lines as potential paths. If one vehicle turns left from Road 0 to exit onto Road 1, and another vehicle goes straight from Road 3 to exit onto Road 0, will their primary paths (blue lines) through the intersection cross?  Answer with Yes / No.",
+            "question": "If one vehicle aim to turns left from Road 0, and another vehicle aim to goes straight from Road 3 at the same time, is yielding behavior necessary?  Answer with Yes / No.",
             "answer": "Yes"
         },
         {
-            "question": "Consider the blue curved lines as potential paths. If one vehicle turns left from Road 0 to exit onto Road 1, and another vehicle turns right from Road 1 to exit onto Road 0, will their primary paths (blue lines) through the intersection cross?  Answer with Yes / No.",
+            "question": "If one vehicle aim to turns left from Road 0, and another vehicle aim to turns right from Road 1 at the same time, is yielding behavior necessary?  Answer with Yes / No.",
             "answer": "No"
         },
         {
-            "question": "Consider the blue curved lines as potential paths. If one vehicle turns left from Road 0 to exit onto Road 1, and another vehicle goes straight from Road 1 to exit onto Road 4, will their primary paths (blue lines) through the intersection cross?  Answer with Yes / No.",
+            "question": "If one vehicle aim to turns left from Road 0, and another vehicle aim to goes straight from Road 1 at the same time, is yielding behavior necessary?  Answer with Yes / No.",
             "answer": "Yes"
         },
         {
-            "question": "Consider the blue curved lines as potential paths. If one vehicle turns left from Road 0 to exit onto Road 1, and another vehicle turns left from Road 1 to exit onto Road 3, will their primary paths (blue lines) through the intersection cross?  Answer with Yes / No.",
+            "question": "If one vehicle aim to turns left from Road 0, and another vehicle aim to turns left from Road 1 at the same time, is yielding behavior necessary?  Answer with Yes / No.",
             "answer": "Yes"
         },
         {
-            "question": "Consider the blue curved lines as potential paths. If one vehicle turns right from Road 0 to exit onto Road 4, and another vehicle turns left from Road 4 to exit onto Road 0, will their primary paths (blue lines) through the intersection cross?  Answer with Yes / No.",
+            "question": "If one vehicle aim to turns right from Road 0, and another vehicle aim to turns left from Road 4 at the same time, is yielding behavior necessary?  Answer with Yes / No.",
             "answer": "No"
         },
         {
-            "question": "Consider the blue curved lines as potential paths. If one vehicle turns right from Road 0 to exit onto Road 4, and another vehicle goes straight from Road 4 to exit onto Road 1, will their primary paths (blue lines) through the intersection cross?  Answer with Yes / No.",
+            "question": "If one vehicle aim to turns right from Road 0, and another vehicle aim to goes straight from Road 4 at the same time, is yielding behavior necessary?  Answer with Yes / No.",
             "answer": "No"
         },
         {
-            "question": "Consider the blue curved lines as potential paths. If one vehicle turns right from Road 0 to exit onto Road 4, and another vehicle turns right from Road 4 to exit onto Road 3, will their primary paths (blue lines) through the intersection cross?  Answer with Yes / No.",
+            "question": "If one vehicle aim to turns right from Road 0, and another vehicle aim to turns right from Road 4 at the same time, is yielding behavior necessary?  Answer with Yes / No.",
             "answer": "No"
         },
         {
-            "question": "Consider the blue curved lines as potential paths. If one vehicle turns right from Road 0 to exit onto Road 4, and another vehicle goes straight from Road 3 to exit onto Road 0, will their primary paths (blue lines) through the intersection cross?  Answer with Yes / No.",
+            "question": "If one vehicle aim to turns right from Road 0, and another vehicle aim to goes straight from Road 3 at the same time, is yielding behavior necessary?  Answer with Yes / No.",
             "answer": "No"
         },
         {
-            "question": "Consider the blue curved lines as potential paths. If one vehicle turns right from Road 0 to exit onto Road 4, and another vehicle turns right from Road 3 to exit onto Road 1, will their primary paths (blue lines) through the intersection cross?  Answer with Yes / No.",
+            "question": "If one vehicle aim to turns right from Road 0, and another vehicle aim to turns right from Road 3 at the same time, is yielding behavior necessary?  Answer with Yes / No.",
             "answer": "No"
         },
         {
-            "question": "Consider the blue curved lines as potential paths. If one vehicle turns right from Road 0 to exit onto Road 4, and another vehicle turns right from Road 1 to exit onto Road 0, will their primary paths (blue lines) through the intersection cross?  Answer with Yes / No.",
+            "question": "If one vehicle aim to turns right from Road 0, and another vehicle aim to turns right from Road 1 at the same time, is yielding behavior necessary?  Answer with Yes / No.",
             "answer": "No"
         },
         {
-            "question": "Consider the blue curved lines as potential paths. If one vehicle turns right from Road 0 to exit onto Road 4, and another vehicle turns left from Road 1 to exit onto Road 3, will their primary paths (blue lines) through the intersection cross?  Answer with Yes / No.",
+            "question": "If one vehicle aim to turns right from Road 0, and another vehicle aim to turns left from Road 1 at the same time, is yielding behavior necessary?  Answer with Yes / No.",
             "answer": "No"
         },
         {
-            "question": "Consider the blue curved lines as potential paths. If one vehicle goes straight from Road 0 to exit onto Road 3, and another vehicle turns left from Road 4 to exit onto Road 0, will their primary paths (blue lines) through the intersection cross?  Answer with Yes / No.",
+            "question": "If one vehicle aim to goes straight from Road 0, and another vehicle aim to turns left from Road 4 at the same time, is yielding behavior necessary?  Answer with Yes / No.",
             "answer": "Yes"
         },
         {
-            "question": "Consider the blue curved lines as potential paths. If one vehicle goes straight from Road 0 to exit onto Road 3, and another vehicle goes straight from Road 4 to exit onto Road 1, will their primary paths (blue lines) through the intersection cross?  Answer with Yes / No.",
+            "question": "If one vehicle aim to goes straight from Road 0, and another vehicle aim to goes straight from Road 4 at the same time, is yielding behavior necessary?  Answer with Yes / No.",
             "answer": "Yes"
         },
         {
-            "question": "Consider the blue curved lines as potential paths. If one vehicle goes straight from Road 0 to exit onto Road 3, and another vehicle turns left from Road 3 to exit onto Road 4, will their primary paths (blue lines) through the intersection cross?  Answer with Yes / No.",
+            "question": "If one vehicle aim to goes straight from Road 0, and another vehicle aim to turns left from Road 3 at the same time, is yielding behavior necessary?  Answer with Yes / No.",
             "answer": "Yes"
         },
         {
-            "question": "Consider the blue curved lines as potential paths. If one vehicle goes straight from Road 0 to exit onto Road 3, and another vehicle goes straight from Road 3 to exit onto Road 0, will their primary paths (blue lines) through the intersection cross?  Answer with Yes / No.",
+            "question": "If one vehicle aim to goes straight from Road 0, and another vehicle aim to goes straight from Road 3 at the same time, is yielding behavior necessary?  Answer with Yes / No.",
             "answer": "No"
         },
         {
-            "question": "Consider the blue curved lines as potential paths. If one vehicle goes straight from Road 0 to exit onto Road 3, and another vehicle turns right from Road 3 to exit onto Road 1, will their primary paths (blue lines) through the intersection cross?  Answer with Yes / No.",
+            "question": "If one vehicle aim to goes straight from Road 0, and another vehicle aim to turns right from Road 3 at the same time, is yielding behavior necessary?  Answer with Yes / No.",
             "answer": "No"
         },
         {
-            "question": "Consider the blue curved lines as potential paths. If one vehicle goes straight from Road 0 to exit onto Road 3, and another vehicle turns right from Road 1 to exit onto Road 0, will their primary paths (blue lines) through the intersection cross?  Answer with Yes / No.",
+            "question": "If one vehicle aim to goes straight from Road 0, and another vehicle aim to turns right from Road 1 at the same time, is yielding behavior necessary?  Answer with Yes / No.",
             "answer": "No"
         },
         {
-            "question": "Consider the blue curved lines as potential paths. If one vehicle goes straight from Road 0 to exit onto Road 3, and another vehicle goes straight from Road 1 to exit onto Road 4, will their primary paths (blue lines) through the intersection cross?  Answer with Yes / No.",
+            "question": "If one vehicle aim to goes straight from Road 0, and another vehicle aim to goes straight from Road 1 at the same time, is yielding behavior necessary?  Answer with Yes / No.",
             "answer": "Yes"
         },
         {
-            "question": "Consider the blue curved lines as potential paths. If one vehicle turns left from Road 4 to exit onto Road 0, and another vehicle turns left from Road 3 to exit onto Road 4, will their primary paths (blue lines) through the intersection cross?  Answer with Yes / No.",
+            "question": "If one vehicle aim to turns left from Road 4, and another vehicle aim to turns left from Road 3 at the same time, is yielding behavior necessary?  Answer with Yes / No.",
             "answer": "Yes"
         },
         {
-            "question": "Consider the blue curved lines as potential paths. If one vehicle turns left from Road 4 to exit onto Road 0, and another vehicle turns right from Road 3 to exit onto Road 1, will their primary paths (blue lines) through the intersection cross?  Answer with Yes / No.",
+            "question": "If one vehicle aim to turns left from Road 4, and another vehicle aim to turns right from Road 3 at the same time, is yielding behavior necessary?  Answer with Yes / No.",
             "answer": "No"
         },
         {
-            "question": "Consider the blue curved lines as potential paths. If one vehicle turns left from Road 4 to exit onto Road 0, and another vehicle goes straight from Road 1 to exit onto Road 4, will their primary paths (blue lines) through the intersection cross?  Answer with Yes / No.",
+            "question": "If one vehicle aim to turns left from Road 4, and another vehicle aim to goes straight from Road 1 at the same time, is yielding behavior necessary?  Answer with Yes / No.",
             "answer": "Yes"
         },
         {
-            "question": "Consider the blue curved lines as potential paths. If one vehicle turns left from Road 4 to exit onto Road 0, and another vehicle turns left from Road 1 to exit onto Road 3, will their primary paths (blue lines) through the intersection cross?  Answer with Yes / No.",
+            "question": "If one vehicle aim to turns left from Road 4, and another vehicle aim to turns left from Road 1 at the same time, is yielding behavior necessary?  Answer with Yes / No.",
             "answer": "Yes"
         },
         {
-            "question": "Consider the blue curved lines as potential paths. If one vehicle goes straight from Road 4 to exit onto Road 1, and another vehicle turns left from Road 3 to exit onto Road 4, will their primary paths (blue lines) through the intersection cross?  Answer with Yes / No.",
+            "question": "If one vehicle aim to goes straight from Road 4, and another vehicle aim to turns left from Road 3 at the same time, is yielding behavior necessary?  Answer with Yes / No.",
             "answer": "Yes"
         },
         {
-            "question": "Consider the blue curved lines as potential paths. If one vehicle goes straight from Road 4 to exit onto Road 1, and another vehicle goes straight from Road 3 to exit onto Road 0, will their primary paths (blue lines) through the intersection cross?  Answer with Yes / No.",
+            "question": "If one vehicle aim to goes straight from Road 4, and another vehicle aim to goes straight from Road 3 at the same time, is yielding behavior necessary?  Answer with Yes / No.",
             "answer": "Yes"
         },
         {
-            "question": "Consider the blue curved lines as potential paths. If one vehicle goes straight from Road 4 to exit onto Road 1, and another vehicle turns right from Road 1 to exit onto Road 0, will their primary paths (blue lines) through the intersection cross?  Answer with Yes / No.",
+            "question": "If one vehicle aim to goes straight from Road 4, and another vehicle aim to turns right from Road 1 at the same time, is yielding behavior necessary?  Answer with Yes / No.",
             "answer": "No"
         },
         {
-            "question": "Consider the blue curved lines as potential paths. If one vehicle goes straight from Road 4 to exit onto Road 1, and another vehicle goes straight from Road 1 to exit onto Road 4, will their primary paths (blue lines) through the intersection cross?  Answer with Yes / No.",
+            "question": "If one vehicle aim to goes straight from Road 4, and another vehicle aim to goes straight from Road 1 at the same time, is yielding behavior necessary?  Answer with Yes / No.",
             "answer": "No"
         },
         {
-            "question": "Consider the blue curved lines as potential paths. If one vehicle goes straight from Road 4 to exit onto Road 1, and another vehicle turns left from Road 1 to exit onto Road 3, will their primary paths (blue lines) through the intersection cross?  Answer with Yes / No.",
+            "question": "If one vehicle aim to goes straight from Road 4, and another vehicle aim to turns left from Road 1 at the same time, is yielding behavior necessary?  Answer with Yes / No.",
             "answer": "Yes"
         },
         {
-            "question": "Consider the blue curved lines as potential paths. If one vehicle turns right from Road 4 to exit onto Road 3, and another vehicle turns left from Road 3 to exit onto Road 4, will their primary paths (blue lines) through the intersection cross?  Answer with Yes / No.",
+            "question": "If one vehicle aim to turns right from Road 4, and another vehicle aim to turns left from Road 3 at the same time, is yielding behavior necessary?  Answer with Yes / No.",
             "answer": "No"
         },
         {
-            "question": "Consider the blue curved lines as potential paths. If one vehicle turns right from Road 4 to exit onto Road 3, and another vehicle goes straight from Road 3 to exit onto Road 0, will their primary paths (blue lines) through the intersection cross?  Answer with Yes / No.",
+            "question": "If one vehicle aim to turns right from Road 4, and another vehicle aim to goes straight from Road 3 at the same time, is yielding behavior necessary?  Answer with Yes / No.",
             "answer": "No"
         },
         {
-            "question": "Consider the blue curved lines as potential paths. If one vehicle turns right from Road 4 to exit onto Road 3, and another vehicle turns right from Road 3 to exit onto Road 1, will their primary paths (blue lines) through the intersection cross?  Answer with Yes / No.",
+            "question": "If one vehicle aim to turns right from Road 4, and another vehicle aim to turns right from Road 3 at the same time, is yielding behavior necessary?  Answer with Yes / No.",
             "answer": "No"
         },
         {
-            "question": "Consider the blue curved lines as potential paths. If one vehicle turns right from Road 4 to exit onto Road 3, and another vehicle turns right from Road 1 to exit onto Road 0, will their primary paths (blue lines) through the intersection cross?  Answer with Yes / No.",
+            "question": "If one vehicle aim to turns right from Road 4, and another vehicle aim to turns right from Road 1 at the same time, is yielding behavior necessary?  Answer with Yes / No.",
             "answer": "No"
         },
         {
-            "question": "Consider the blue curved lines as potential paths. If one vehicle turns right from Road 4 to exit onto Road 3, and another vehicle goes straight from Road 1 to exit onto Road 4, will their primary paths (blue lines) through the intersection cross?  Answer with Yes / No.",
+            "question": "If one vehicle aim to turns right from Road 4, and another vehicle aim to goes straight from Road 1 at the same time, is yielding behavior necessary?  Answer with Yes / No.",
             "answer": "No"
         },
         {
-            "question": "Consider the blue curved lines as potential paths. If one vehicle turns left from Road 3 to exit onto Road 4, and another vehicle turns right from Road 1 to exit onto Road 0, will their primary paths (blue lines) through the intersection cross?  Answer with Yes / No.",
+            "question": "If one vehicle aim to turns left from Road 3, and another vehicle aim to turns right from Road 1 at the same time, is yielding behavior necessary?  Answer with Yes / No.",
             "answer": "No"
         },
         {
-            "question": "Consider the blue curved lines as potential paths. If one vehicle turns left from Road 3 to exit onto Road 4, and another vehicle turns left from Road 1 to exit onto Road 3, will their primary paths (blue lines) through the intersection cross?  Answer with Yes / No.",
+            "question": "If one vehicle aim to turns left from Road 3, and another vehicle aim to turns left from Road 1 at the same time, is yielding behavior necessary?  Answer with Yes / No.",
             "answer": "Yes"
         },
         {
-            "question": "Consider the blue curved lines as potential paths. If one vehicle goes straight from Road 3 to exit onto Road 0, and another vehicle goes straight from Road 1 to exit onto Road 4, will their primary paths (blue lines) through the intersection cross?  Answer with Yes / No.",
+            "question": "If one vehicle aim to goes straight from Road 3, and another vehicle aim to goes straight from Road 1 at the same time, is yielding behavior necessary?  Answer with Yes / No.",
             "answer": "Yes"
         },
         {
-            "question": "Consider the blue curved lines as potential paths. If one vehicle goes straight from Road 3 to exit onto Road 0, and another vehicle turns left from Road 1 to exit onto Road 3, will their primary paths (blue lines) through the intersection cross?  Answer with Yes / No.",
+            "question": "If one vehicle aim to goes straight from Road 3, and another vehicle aim to turns left from Road 1 at the same time, is yielding behavior necessary?  Answer with Yes / No.",
             "answer": "Yes"
         },
         {
-            "question": "Consider the blue curved lines as potential paths. If one vehicle turns right from Road 3 to exit onto Road 1, and another vehicle turns right from Road 1 to exit onto Road 0, will their primary paths (blue lines) through the intersection cross?  Answer with Yes / No.",
+            "question": "If one vehicle aim to turns right from Road 3, and another vehicle aim to turns right from Road 1 at the same time, is yielding behavior necessary?  Answer with Yes / No.",
             "answer": "No"
         },
         {
-            "question": "Consider the blue curved lines as potential paths. If one vehicle turns right from Road 3 to exit onto Road 1, and another vehicle goes straight from Road 1 to exit onto Road 4, will their primary paths (blue lines) through the intersection cross?  Answer with Yes / No.",
+            "question": "If one vehicle aim to turns right from Road 3, and another vehicle aim to goes straight from Road 1 at the same time, is yielding behavior necessary?  Answer with Yes / No.",
             "answer": "No"
         },
         {
-            "question": "Consider the blue curved lines as potential paths. If one vehicle turns right from Road 3 to exit onto Road 1, and another vehicle turns left from Road 1 to exit onto Road 3, will their primary paths (blue lines) through the intersection cross?  Answer with Yes / No.",
+            "question": "If one vehicle aim to turns right from Road 3, and another vehicle aim to turns left from Road 1 at the same time, is yielding behavior necessary?  Answer with Yes / No.",
             "answer": "No"
         }
     ]

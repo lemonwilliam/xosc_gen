@@ -29,6 +29,7 @@ class MapInterpretation:
             model: The OpenAI model to use.
         """
         self.categorized_qa_pairs = self._load_qa_from_json(qa_json_path) # MODIFIED: Load QAs
+        self.common_sense = self._read_text_file("./memos/common_sense.txt", "Common sense")
         
         self.model = model
         
@@ -186,32 +187,21 @@ class MapInterpretation:
         if not self.current_map_image_base64: 
             print("Failed to load and encode map image.")
             return False
+    
+
+        system_prompt = self._read_text_file("./memos/system_prompt.txt", "System prompt")
+        self.current_conversation_history.append({"role": "system", "content": system_prompt})
 
         self.current_map_description = self._read_text_file(map_description_path, "Map description")
-
-        system_prompt_content = (
-            "You are an expert map interpreter. You will be provided with a map diagram and optionally a textual description of the map. Analyze these inputs carefully. "
-            "You will then be asked questions about specific categories related to the map. "
-            "For each set of questions, provide your answers *only* as a JSON list of strings, corresponding to the order of the questions."
-            "Do not add any other explanatory text before or after the JSON list itself."
-        )
-        self.current_conversation_history.append({"role": "system", "content": system_prompt_content})
         
         initial_user_prompt_parts = []
-        initial_user_prompt_text_intro = "Here is a map diagram"
-        if self.current_map_description:
-            initial_user_prompt_text_intro += " and its textual description. Please analyze both."
-            initial_user_prompt_parts.append({"type": "text", "text": initial_user_prompt_text_intro})
-            initial_user_prompt_parts.append({"type": "text", "text": f"\nMap Description:\n---\n{self.current_map_description}\n---"})
-        else:
-            initial_user_prompt_text_intro += ". Red boxed numbers represent Road IDs and black boxed numbers represent lane ids. Please analyze it."
-            initial_user_prompt_parts.append({"type": "text", "text": initial_user_prompt_text_intro})
+        initial_user_prompt_parts.append({"type": "text", "text": "Here is the common sense for a road user."})
+        initial_user_prompt_parts.append({"type": "text", "text": f"\nCommon Sense:\n---\n{self.common_sense}\n---"})
+        initial_user_prompt_parts.append({"type": "text", "text": "Here is the map diagram and its corrsponding structured description. Please utilize both to gain understanding on the map."})
+        initial_user_prompt_parts.append({"type": "text", "text": f"\nMap Description:\n---\n{self.current_map_description}\n---"})
 
         initial_user_prompt_parts.append(
             {"type": "image_url", "image_url": {"url": f"data:image/jpeg;base64,{self.current_map_image_base64}"}}
-        )
-        initial_user_prompt_parts.append(
-             {"type": "text", "text": "\nI will now ask you questions about it in categories."}
         )
 
         self.current_conversation_history.append({"role": "user", "content": initial_user_prompt_parts})
@@ -254,8 +244,9 @@ class MapInterpretation:
                     )
 
                 prompt_lines.extend([
-                    "Please answer the following questions based *only* on the previously provided map image and its description (if any).",
-                    "Provide your answers as a JSON list of strings, in the same order as the questions.\n",
+                    "Please answer the following questions based on the previously provided map image and its description.",
+                    "Provide your answers *only* as a JSON list of strings, corresponding to the order of the questions.",
+                    "Do not add any other explanatory text before or after the JSON list itself.\n",
                     "Questions:"
                 ])
                 for i, q_text in enumerate(question_texts):
@@ -327,7 +318,7 @@ class MapInterpretation:
                     print(f"  +++ Category '{category_name}' passed this attempt! +++")
                     passed_this_category = True
                     break
-                elif correct_rate >= 0.95:
+                elif correct_rate >= 95.0:
                     print(f"  +++ Category '{category_name}' passed this attempt! +++")
                     passed_this_category = True
                     break

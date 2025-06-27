@@ -158,9 +158,9 @@ def get_turn_type(entry_road_id: int, exit_road_id: int, road_id_to_ccw_index: d
     idx_entry, idx_exit = road_id_to_ccw_index[entry_road_id], road_id_to_ccw_index[exit_road_id]
     diff = (idx_exit - idx_entry + 4) % 4
     if entry_road_id == exit_road_id: return "U-turn"
-    if diff == 1: return "right"
+    if diff == 1: return "right turn"
     if diff == 2: return "straight"
-    if diff == 3: return "left"
+    if diff == 3: return "left turn"
     return None
 
 def extract_maneuvers(
@@ -330,13 +330,12 @@ def generate_text_description(
     valid_maneuvers: list[dict]
 ) -> str:
     text_parts = ["Interpretation Rules for the Map Diagram:",
-                  "- Vehicles heading towards the intersection drive on the right side of the road.", 
+                  "- To vehicles heading towards the intersection, they drive on the right side of the road.", 
                   "- Colored zones represent drivable lanes of the surrounding roads of the intersection.",
                   "- Red boxed numbers represent Road IDs.", 
                   "- Black boxed numbers represent lane ids.",
-                  "- The blue curved lines in the intersection represent all possible legal routes through the intersection.",
-                  "- For a given maneuver (e.g., 'from Road X to Road Y'), assume the vehicle follows the most direct and conventional blue curved path.",
-                  "- When asked if paths cross, carefully trace the two described maneuvers using these blue lines and determine if they overlap in the central intersection area.",
+                  "- Lanes with ids closest to zero are the innermost lanes, vice versa.",
+                  "- The blue curved lines in the intersection represent all legal routes through the intersection.",
                   "\nRoads:"]
 
     for r_id in ordered_arterial_road_ids:
@@ -346,7 +345,7 @@ def generate_text_description(
         dir_lanes = []
         if details.get('driving_towards_ids'): dir_lanes.append(f"{len(details['driving_towards_ids'])} driving lane(s) (id: {', '.join(map(str, details['driving_towards_ids']))})")
         if details.get('biking_towards_ids'): dir_lanes.append(f"{len(details['biking_towards_ids'])} biking lane(s) (id: {', '.join(map(str, details['biking_towards_ids']))})")
-        if dir_lanes: desc_clauses.append(f"{', '.join(dir_lanes)} going towards the intersection")
+        if dir_lanes: desc_clauses.append(f"{', '.join(dir_lanes)} approaching the intersection")
 
         dir_lanes = []
         if details.get('driving_away_ids'): dir_lanes.append(f"{len(details['driving_away_ids'])} driving lane(s) (id: {', '.join(map(str, details['driving_away_ids']))})")
@@ -357,16 +356,19 @@ def generate_text_description(
         
         text_parts.append(f"- Road ID {r_id} has {', '.join(desc_clauses)}" if desc_clauses else f"- Road ID {r_id} has no relevant lanes.")
 
-    text_parts.append("\nIntersection permissions:")
+    text_parts.append("\nLane permissions:")
     perms_by_entry = {}
     for m in valid_maneuvers:
         key = (m["entry_road"], m["entry_lane"])
         if key not in perms_by_entry: perms_by_entry[key] = []
-        perms_by_entry[key].append(f"{m['turn_type']} to Road ID {m['exit_road']} lane {m['exit_lane']}")
+        perms_by_entry[key].append(f"{m['turn_type']}")
     
     for (entry_r, entry_l), perm_list in sorted(perms_by_entry.items()):
         perm_list.sort()
-        text_parts.append(f"- Road ID {entry_r} lane {entry_l} can {', or '.join(perm_list)}")
+        if len(perm_list) == 1:
+            text_parts.append(f"- Road ID {entry_r} lane {entry_l} : {perm_list[0]} ONLY")
+        elif len(perm_list) > 1:
+            text_parts.append(f"- Road ID {entry_r} lane {entry_l} : {', '.join(perm_list)}")
         
     return "\n".join(text_parts)
 
@@ -374,59 +376,25 @@ def generate_text_description(
 # --- generate_questions_json (Modified for CSV-based crossing) ---
 def generate_questions_json(
     ordered_arterial_road_ids: list[int],
-    road_lane_details_map: dict[int, dict],
     valid_maneuvers: list[dict], # This now contains detailed maneuver info
     roads_dict: dict[int, ET.Element] # For checking sidewalk type of connecting roads
 ) -> dict:
     questions = {"Basic structure": [], "Road relations": [], "Crossing routes": []}
-
-    # Basic structure
-    questions["Basic structure"].append({"question": "How many branching roads does the intersection have?", "answer": str(len(ordered_arterial_road_ids))})
-    for r_id in ordered_arterial_road_ids:
-        details = road_lane_details_map.get(r_id, {})
-        questions["Basic structure"].append({"question": f"How many driving lanes does Road {r_id} have going towards the intersection?", "answer": str(len(details.get('driving_towards_ids',[])))})
-        questions["Basic structure"].append({"question": f"How many driving lanes does Road {r_id} have going away from the intersection?", "answer": str(len(details.get('driving_away_ids',[])))})
 
     # Road relations
     for r_id in ordered_arterial_road_ids:
         # Go straight
         s_man = next((m for m in valid_maneuvers if m["entry_road"] == r_id and m["turn_type"] == "straight"), None)
         ans = str(s_man["exit_road"]) if s_man else "This maneuver is not directly possible."
-        questions["Road relations"].append({"question": f"If a vehicle enters the intersection from Road {r_id} then goes straight, what is the ID of the Road it arrives?", "answer": ans}) # Corrected typo "intesection"
-        
-        # Turn Left
-        l_man = next((m for m in valid_maneuvers if m["entry_road"] == r_id and m["turn_type"] == "left"), None)
-        l_ans = str(l_man["exit_road"]) if l_man else "This maneuver is not directly possible."
-        questions["Road relations"].append({
-            "question": f"If a vehicle enters the intersection from Road {r_id} then turns left, what is the ID of the Road it arrives?",
-            "answer": l_ans
-        })
+        questions["Road relations"].append({"question": f"If a vehicle enters the intersection from Road {r_id} then goes straight, what is the ID of the Road it arrives?", "answer": ans})
 
         # Turn Right
-        r_man = next((m for m in valid_maneuvers if m["entry_road"] == r_id and m["turn_type"] == "right"), None)
+        r_man = next((m for m in valid_maneuvers if m["entry_road"] == r_id and m["turn_type"] == "right turn"), None)
         r_ans = str(r_man["exit_road"]) if r_man else "This maneuver is not directly possible."
         questions["Road relations"].append({
             "question": f"If a vehicle enters the intersection from Road {r_id} then turns right, what is the ID of the Road it arrives?",
             "answer": r_ans
         })
-
-    if valid_maneuvers:
-        # Pick an example maneuver for lane-specific permission questions
-        example_maneuver_for_lane_q = None
-        for m_ex in valid_maneuvers: # Try to find a maneuver that allows a right turn for a more interesting "Yes"
-            if any(vm for vm in valid_maneuvers if vm["entry_road"] == m_ex["entry_road"] and vm["entry_lane"] == m_ex["entry_lane"] and vm["turn_type"] == "right"):
-                example_maneuver_for_lane_q = m_ex
-                break
-        if not example_maneuver_for_lane_q: # Fallback to the first maneuver if none found
-            example_maneuver_for_lane_q = valid_maneuvers[0]
-
-        er, el = example_maneuver_for_lane_q["entry_road"], example_maneuver_for_lane_q["entry_lane"]
-        
-        has_r_turn_lane_specific = any(m for m in valid_maneuvers if m["entry_road"]==er and m["entry_lane"]==el and m["turn_type"]=="right")
-        questions["Road relations"].append({"question": f"If a vehicle enters from Road {er} lane {el}, is it allowed to turn right? Answer with Yes / No.", "answer": "Yes" if has_r_turn_lane_specific else "No"})
-        
-        has_l_turn_lane_specific = any(m for m in valid_maneuvers if m["entry_road"]==er and m["entry_lane"]==el and m["turn_type"]=="left")
-        questions["Road relations"].append({"question": f"If a vehicle enters from Road {er} lane {el}, is it allowed to turn left? Answer with Yes / No.", "answer": "Yes" if has_l_turn_lane_specific else "No"})
 
     
     # Crossing routes (CSV-based)
@@ -453,8 +421,8 @@ def generate_questions_json(
 
         # --- MODIFIED QUESTION TEXT LOGIC ---
         def get_turn_action_phrase(turn_type_str):
-            if turn_type_str == 'left': return "turns left"
-            if turn_type_str == 'right': return "turns right"
+            if turn_type_str == 'left turn': return "turns left"
+            if turn_type_str == 'right turn': return "turns right"
             if turn_type_str == 'straight': return "goes straight"
             if turn_type_str == 'U-turn': return "makes a U-turn"
             return f"moves ({turn_type_str})" # Fallback
@@ -462,10 +430,9 @@ def generate_questions_json(
         turn_action_m1 = get_turn_action_phrase(m1['turn_type'])
         turn_action_m2 = get_turn_action_phrase(m2['turn_type'])
 
-        q_text = (f"Consider the blue curved lines as potential paths. "
-                  f"If one vehicle {turn_action_m1} from Road {m1['entry_road']} to exit onto Road {m1['exit_road']}, "
-                  f"and another vehicle {turn_action_m2} from Road {m2['entry_road']} to exit onto Road {m2['exit_road']}, "
-                  f"will their primary paths (blue lines) through the intersection cross?  Answer with Yes / No.")
+        q_text = (f"If one vehicle aim to {turn_action_m1} from Road {m1['entry_road']}, "
+                  f"and another vehicle aim to {turn_action_m2} from Road {m2['entry_road']} at the same time, "
+                  f"is yielding behavior necessary?  Answer with Yes / No.")
         # --- END OF MODIFIED QUESTION TEXT LOGIC ---
         
         # Canonical key generation now includes turn types to differentiate questions
@@ -579,8 +546,7 @@ def main():
     with open(txt_out_path, "w") as f: f.write(text_desc)
     print(f"Text description: {txt_out_path}")
 
-    questions_data = generate_questions_json(ordered_arterial_ids, road_lane_details_map,
-                                             valid_maneuvers, roads_dict)
+    questions_data = generate_questions_json(ordered_arterial_ids, valid_maneuvers, roads_dict)
     with open(json_q_path, "w") as f: json.dump(questions_data, f, indent=4)
     print(f"JSON questions: {json_q_path}")
 
