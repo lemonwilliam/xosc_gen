@@ -379,7 +379,7 @@ def generate_questions_json(
     valid_maneuvers: list[dict], # This now contains detailed maneuver info
     roads_dict: dict[int, ET.Element] # For checking sidewalk type of connecting roads
 ) -> dict:
-    questions = {"Basic structure": [], "Road relations": [], "Crossing routes": []}
+    questions = {"Road relations": [], "Crossing routes": []}
 
     # Road relations
     for r_id in ordered_arterial_road_ids:

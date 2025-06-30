@@ -5,12 +5,20 @@ import json
 import random
 import os
 import re # For robust JSON parsing
-from typing import List, Dict, Any, Tuple, Optional, Union, Set
+from typing import List, Dict, Any, Optional, Tuple
 
-# --- Configuration ---
+# --- LangChain Imports ---
+from langchain_openai import ChatOpenAI
+from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
+from langchain_core.output_parsers import StrOutputParser
+from langchain_core.chat_history import InMemoryChatMessageHistory
+from langchain_core.runnables.history import RunnableWithMessageHistory
+from langchain_core.messages import SystemMessage, HumanMessage, AIMessage
+from langchain.callbacks import get_openai_callback
+
 # Set OPENAI_API_KEY as an environment variable or pass it to the constructor.
 
-class MapInterpretation:
+class SceneInterpretation:
     def __init__(self, 
                  qa_json_path: str, # MODIFIED: Takes path to QA JSON file
                  api_key: Optional[str] = None, 
@@ -28,23 +36,50 @@ class MapInterpretation:
             api_key: Your OpenAI API key.
             model: The OpenAI model to use.
         """
-        self.categorized_qa_pairs = self._load_qa_from_json(qa_json_path) # MODIFIED: Load QAs
-        self.common_sense = self._read_text_file("./memos/common_sense.txt", "Common sense")
+        self.categorized_qa_pairs = self._load_qa_from_json(qa_json_path)
+        self.common_sense = self._read_text_file("./memos/common_sense.txt", "Common sense")   
+        self.model_name = model
         
-        self.model = model
-        
-        resolved_api_key = api_key or os.getenv("OPENAI_API_KEY")
-        if not resolved_api_key:
-            raise ValueError("OpenAI API key not found. Set OPENAI_API_KEY environment variable or pass it as an argument.")
-        self.client = openai.OpenAI(api_key=resolved_api_key)
+        # --- LangChain Setup ---
+        # 1. Initialize the LLM
+        self.llm = ChatOpenAI(
+            model=self.model_name, 
+            api_key=api_key or os.getenv("OPENAI_API_KEY"),
+            temperature=0.1 # Set a default temperature
+        )
 
-        self.current_conversation_history: List[Dict[str, Any]] = []
+        # 2. Create a prompt template with a placeholder for history
+        self.prompt_template = ChatPromptTemplate.from_messages([
+            MessagesPlaceholder(variable_name="history"),
+            ("user", "{input}")
+        ])
+        
+        # 3. Create the main chain
+        chain = self.prompt_template | self.llm | StrOutputParser()
+
+        # 4. Set up the message history store
+        # This dictionary will hold history objects for different sessions
+        self.message_stores = {}
+
+        # 5. Wrap the chain in RunnableWithMessageHistory
+        self.conversational_chain = RunnableWithMessageHistory(
+            chain,
+            # A function to get the message history for a given session_id
+            lambda session_id: self.message_stores.get(session_id, InMemoryChatMessageHistory()),
+            input_messages_key="input",
+            history_messages_key="history",
+        )
         self.current_map_image_base64: Optional[str] = None
         self.current_map_description: Optional[str] = None
         self.map_verified_successfully: bool = False
+
+        self.verification_token_usage: Dict[str, int] = {
+            'prompt_tokens': 0, 
+            'completion_tokens': 0, 
+            'total_tokens': 0
+        }
         
-        # MODIFIED: Print statement reflects loading from JSON
-        print(f"MapInterpretation initialized with {len(self.categorized_qa_pairs)} QA categories from '{qa_json_path}', using model {self.model}.")
+        print(f"MapInterpretation initialized with {len(self.categorized_qa_pairs)} QA categories from '{qa_json_path}', using model {self.model_name}.")
 
     def _load_qa_from_json(self, qa_json_path: str) -> Dict[str, List[Dict[str, str]]]: # NEW METHOD
         """Loads categorized QA pairs from a JSON file."""
@@ -122,26 +157,6 @@ class MapInterpretation:
     def _normalize_answer(self, answer: str) -> str:
         return answer.lower().strip()
 
-    def _call_llm_with_history(self, messages_to_send: List[Dict[str, Any]], temperature: float = 0.2, max_tokens: int = 500) -> str:
-        # Changed type hint for messages_to_send to List[Dict[str, Any]] for broader compatibility
-        print(f"\n--- Sending to LLM ({self.model}) ---")
-        try:
-            response = self.client.chat.completions.create(
-                model=self.model,
-                messages=messages_to_send, # type: ignore 
-                max_tokens=max_tokens,
-                temperature=temperature
-            )
-            llm_response_content = response.choices[0].message.content
-            if llm_response_content is None:
-                print("LLM returned None content.")
-                return "ERROR_LLM_NO_CONTENT"
-            # print(f"LLM Raw Response: {llm_response_content[:500]}{'...' if llm_response_content and len(llm_response_content) > 500 else ''}")
-            return llm_response_content
-        except Exception as e:
-            print(f"Error during LLM API call: {e}")
-            return "ERROR_API_CALL"
-
     def _parse_llm_json_list_response(self, raw_llm_response: str, num_expected_answers: int) -> List[str]:
         llm_answers_list: List[str] = []
         if "ERROR_API_CALL" in raw_llm_response or "ERROR_LLM_NO_CONTENT" in raw_llm_response :
@@ -169,43 +184,47 @@ class MapInterpretation:
     def verify_map_understanding(self, 
                                  image_path_or_url: str,
                                  map_description_path: Optional[str] = None,
-                                 max_retries_per_category: int = 2) -> bool:
+                                 max_retries_per_category: int = 2) -> Tuple[bool, Dict[str, int]]:
         """
         Verifies LLM's understanding using image and optional text description.
         LLM answers ALL questions in a category. Retries on a per-category basis 
         if answers are incorrect, re-presenting all questions for that category.
         """
-        self.current_conversation_history = []
         self.map_verified_successfully = False
+
+        # Reset token counter for this run
+        self.verification_token_usage = {'prompt_tokens': 0, 'completion_tokens': 0, 'total_tokens': 0}
+
+        # Use the image path as a unique session ID for this conversation
+        session_id = image_path_or_url 
+        self.message_stores[session_id] = InMemoryChatMessageHistory()
         
         try:
             self.current_map_image_base64 = self._encode_image_to_base64(image_path_or_url)
         except IOError as e: 
             print(f"Critical error loading image: {e}")
-            return False
+            return False, self.verification_token_usage
 
-        if not self.current_map_image_base64: 
-            print("Failed to load and encode map image.")
-            return False
-    
-
+        # --- Initial Briefing using LangChain message types ---
         system_prompt = self._read_text_file("./memos/system_prompt.txt", "System prompt")
-        self.current_conversation_history.append({"role": "system", "content": system_prompt})
-
         self.current_map_description = self._read_text_file(map_description_path, "Map description")
         
-        initial_user_prompt_parts = []
-        initial_user_prompt_parts.append({"type": "text", "text": "Here is the common sense for a road user."})
-        initial_user_prompt_parts.append({"type": "text", "text": f"\nCommon Sense:\n---\n{self.common_sense}\n---"})
-        initial_user_prompt_parts.append({"type": "text", "text": "Here is the map diagram and its corrsponding structured description. Please utilize both to gain understanding on the map."})
-        initial_user_prompt_parts.append({"type": "text", "text": f"\nMap Description:\n---\n{self.current_map_description}\n---"})
-
-        initial_user_prompt_parts.append(
+        initial_user_prompt_parts = [
+            {"type": "text", "text": "Here is the common sense for a road user."},
+            {"type": "text", "text": f"\nCommon Sense:\n---\n{self.common_sense}\n---"},
+            {"type": "text", "text": "Here is the map diagram and its corrsponding structured description. Please utilize both to gain understanding on the map."},
+            {"type": "text", "text": f"\nMap Description:\n---\n{self.current_map_description}\n---"},
             {"type": "image_url", "image_url": {"url": f"data:image/jpeg;base64,{self.current_map_image_base64}"}}
-        )
+        ]
 
-        self.current_conversation_history.append({"role": "user", "content": initial_user_prompt_parts})
-        self.current_conversation_history.append({"role": "assistant", "content": "Understood. I have analyzed the provided map information. I am ready for your questions."})
+        # Manually add the initial messages to the history for this session
+        initial_messages = [
+            SystemMessage(content=system_prompt),
+            HumanMessage(content=initial_user_prompt_parts),
+            AIMessage(content="Understood. I have analyzed the provided information. I am ready for your questions.")
+        ]
+        self.message_stores[session_id].add_messages(initial_messages)
+
 
         all_categories_passed = True
         for category_name, qa_list_for_category in self.categorized_qa_pairs.items():
@@ -215,7 +234,6 @@ class MapInterpretation:
                 continue
 
             passed_this_category = False
-            # MODIFICATION: Store details of incorrect answers from the PREVIOUS attempt for this category
             incorrect_details_from_previous_attempt: List[Dict[str, str]] = [] 
 
             for attempt in range(max_retries_per_category + 1):
@@ -252,19 +270,28 @@ class MapInterpretation:
                 for i, q_text in enumerate(question_texts):
                     prompt_lines.append(f"{i+1}. {q_text}")
                 prompt_lines.append("\nYour JSON response:")
+
                 category_user_prompt_text = "\n".join(prompt_lines)
 
-                messages_for_this_call = self.current_conversation_history + [
-                    {"role": "user", "content": category_user_prompt_text} 
-                ]
+                # Call the LLM using the LangChain runnable
+                print(f"\n--- Sending to LLM via LangChain ({self.model_name}) ---")
+
+                raw_llm_response = ""
+                # Use the LangChain callback to track token usage
+                with get_openai_callback() as cb:
+                    response = self.conversational_chain.invoke(
+                        {"input": category_user_prompt_text},
+                        config={"configurable": {"session_id": session_id}}
+                    )
+                    raw_llm_response = response
+                    
+                    # Accumulate token usage
+                    self.verification_token_usage['prompt_tokens'] += cb.prompt_tokens
+                    self.verification_token_usage['completion_tokens'] += cb.completion_tokens
+                    self.verification_token_usage['total_tokens'] += cb.total_tokens
+                    print(f"    Tokens for this call: {cb.total_tokens} (Prompt: {cb.prompt_tokens}, Completion: {cb.completion_tokens})")
                 
-                estimated_max_tokens = 150 + (len(current_questions_being_asked) * 35) + (len(incorrect_details_from_previous_attempt) * 70) # Adjust for longer retry prompt
-                raw_llm_response = self._call_llm_with_history(messages_for_this_call, temperature=0.1, max_tokens=estimated_max_tokens) # Temperature could be slightly higher for retries if needed
-
-                self.current_conversation_history.append({"role": "user", "content": category_user_prompt_text})
-                self.current_conversation_history.append({"role": "assistant", "content": raw_llm_response})
-
-                llm_answers_list = self._parse_llm_json_list_response(raw_llm_response, len(current_questions_being_asked))
+                llm_answers_list = self._parse_llm_json_list_response(raw_llm_response, len(qa_list_for_category))
                 
                 num_correct_in_this_attempt = 0
                 total_questions_in_attempt = len(current_questions_being_asked)
@@ -336,8 +363,18 @@ class MapInterpretation:
                 break 
 
         self.map_verified_successfully = all_categories_passed
-        # ... (rest of the method)
-        return self.map_verified_successfully
+        
+        # Print a final summary of token usage
+        print("\n--- Verification Phase Token Usage Summary ---")
+        print(f"Total Prompt Tokens:     {self.verification_token_usage['prompt_tokens']}")
+        print(f"Total Completion Tokens: {self.verification_token_usage['completion_tokens']}")
+        print(f"Total Tokens Consumed:   {self.verification_token_usage['total_tokens']}")
+        print("--------------------------------------------")
+        
+        # Clean up the message store for this session if desired
+        del self.message_stores[session_id]
+
+        return self.map_verified_successfully, self.verification_token_usage
 
 
     def analyze_vehicle_interactions(self, 
@@ -463,9 +500,10 @@ if __name__ == "__main__":
         # map_description_file_path = None
 
     try:
-        interpreter = MapInterpretation(
+        interpreter = SceneInterpretation(
             qa_json_path=qa_json_path,
             # api_key="sk-..." # Optionally pass API key here if not in env
+            model="gpt-4o"
         )
     except ValueError as e:
         print(f"Initialization Error: {e}")
@@ -474,16 +512,13 @@ if __name__ == "__main__":
         print(f"An unexpected error occurred during initialization: {e}")
         exit()
 
-
-    print(f"\nStarting categorized map verification for: {map_image_path}")
-    if map_description_path:
-        print(f"Using map description from: {map_description_path}")
-    
-    is_understood = interpreter.verify_map_understanding(
+    is_understood, token_info = interpreter.verify_map_understanding(
         image_path_or_url=map_image_path,
         map_description_path=map_description_path, 
         max_retries_per_category=2  
     )
+
+    print(f"\nVerification process finished. Final Token Usage: {token_info['total_tokens']} tokens.")
 
     if is_understood:
         print("\nOVERALL SUCCESS: LLM map understanding verified using image and description (if provided).")

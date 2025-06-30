@@ -1,5 +1,4 @@
 {
-    "Basic structure": [],
     "Road relations": [
         {
             "question": "If a vehicle enters the intersection from Road 0 then goes straight, what is the ID of the Road it arrives?",
