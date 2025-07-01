@@ -5,7 +5,7 @@ import yaml
 
 from models.labeller import Labeller
 from models.description import ScenarioDescriber
-from models.map_interpretation import MapInterpretation
+from models.scenario_interpretation import SceneInterpretation
 from models.file_generation import FileGeneration
 from scripts.esmini_process import EsminiSimulator
 from scripts.scoring import Scorer
@@ -123,24 +123,29 @@ def main(args):
     with open(behavior_log_path, "w") as f:
         f.write("\n\n".join(descriptions))
 
-    '''
+    
     # Step 2.5: Use OpenAI API to acquire trigger conditions for actions
-    interpreter = MapInterpretation()
-    image_url = "https://raw.githubusercontent.com/lemonwilliam/xosc_gen/refs/heads/william/data/processed/inD/map/01_bendplatz_graph.jpeg"
-    map_description = interpreter.analyze_map_image(image_url)
-    if map_description:
-        print("\nMap Description:\n", map_description)
+    #  Initialize the Interpreter Engine
+    try:
+        interpreter = SceneInterpretation(model="gpt-4o")
+    except Exception as e:
+        print(f"FATAL: Failed to initialize MapInterpretation engine: {e}")
+        exit(1)
+
+    # Run the End-to-End Pipeline
+    # Call the main pipeline method on the instance
+    success = interpreter.run_analysis_pipeline(
+        map_location = loc,
+        agent_actions_path=behavior_log_path,
+        output_yaml_path=""
+    )
+
+    # Report Final Status
+    if success:
+        print("\n✅ Pipeline completed successfully.")
     else:
-        print("Failed to interpret the map image.")
-
-    interpreter.feed_map_understanding_to_memory(map_description)
-
-    with open(behavior_log_path , "r") as f:
-        behavior_log = f.read()
-
-    result = interpreter.analyze_agent_behaviors(behavior_log=behavior_log)
-    print(result)
-    '''
+        print("\n❌ Pipeline failed. Please check the logs above for errors.")
+    
 
     # Step 3: Generate initial OpenSCENARIO file
     print("\n🔹 Step 3: XOSC File Generation")

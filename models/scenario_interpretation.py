@@ -1,8 +1,7 @@
-import openai
 import base64
 import requests
 import json
-import random
+import yaml
 import os
 import re # For robust JSON parsing
 from typing import List, Dict, Any, Optional, Tuple
@@ -20,7 +19,6 @@ from langchain.callbacks import get_openai_callback
 
 class SceneInterpretation:
     def __init__(self, 
-                 qa_json_path: str, # MODIFIED: Takes path to QA JSON file
                  api_key: Optional[str] = None, 
                  model: str = "gpt-4o"):
         """
@@ -36,7 +34,7 @@ class SceneInterpretation:
             api_key: Your OpenAI API key.
             model: The OpenAI model to use.
         """
-        self.categorized_qa_pairs = self._load_qa_from_json(qa_json_path)
+
         self.common_sense = self._read_text_file("./memos/common_sense.txt", "Common sense")   
         self.model_name = model
         
@@ -79,7 +77,6 @@ class SceneInterpretation:
             'total_tokens': 0
         }
         
-        print(f"MapInterpretation initialized with {len(self.categorized_qa_pairs)} QA categories from '{qa_json_path}', using model {self.model_name}.")
 
     def _load_qa_from_json(self, qa_json_path: str) -> Dict[str, List[Dict[str, str]]]: # NEW METHOD
         """Loads categorized QA pairs from a JSON file."""
@@ -182,8 +179,7 @@ class SceneInterpretation:
 
     # Verify_map_understanding
     def verify_map_understanding(self, 
-                                 image_path_or_url: str,
-                                 map_description_path: Optional[str] = None,
+                                 map_location: str,
                                  max_retries_per_category: int = 2) -> Tuple[bool, Dict[str, int]]:
         """
         Verifies LLM's understanding using image and optional text description.
@@ -195,20 +191,28 @@ class SceneInterpretation:
         # Reset token counter for this run
         self.verification_token_usage = {'prompt_tokens': 0, 'completion_tokens': 0, 'total_tokens': 0}
 
+        map_image_path = f"./data/processed/inD/map/{map_location}_graph.jpeg"
+        map_description_path = f"./data/processed/inD/map/{map_location}_description.txt"
+        qa_json_path = f"./data/processed/inD/map/{map_location}_questions.json"
+        print(f"Map Image: {map_image_path}")
+        if map_description_path:
+            print(f"Map Description: {map_description_path}")
+
         # Use the image path as a unique session ID for this conversation
-        session_id = image_path_or_url 
+        session_id = map_image_path
         self.message_stores[session_id] = InMemoryChatMessageHistory()
         
         try:
-            self.current_map_image_base64 = self._encode_image_to_base64(image_path_or_url)
+            self.current_map_image_base64 = self._encode_image_to_base64(map_image_path)
         except IOError as e: 
             print(f"Critical error loading image: {e}")
             return False, self.verification_token_usage
+        
+        self.current_map_description = self._read_text_file(map_description_path, "Map description")
+        categorized_qa_pairs = self._load_qa_from_json(qa_json_path)
 
         # --- Initial Briefing using LangChain message types ---
-        system_prompt = self._read_text_file("./memos/system_prompt.txt", "System prompt")
-        self.current_map_description = self._read_text_file(map_description_path, "Map description")
-        
+        system_prompt = self._read_text_file("./memos/system_prompt.txt", "System prompt")  
         initial_user_prompt_parts = [
             {"type": "text", "text": "Here is the common sense for a road user."},
             {"type": "text", "text": f"\nCommon Sense:\n---\n{self.common_sense}\n---"},
@@ -225,9 +229,8 @@ class SceneInterpretation:
         ]
         self.message_stores[session_id].add_messages(initial_messages)
 
-
         all_categories_passed = True
-        for category_name, qa_list_for_category in self.categorized_qa_pairs.items():
+        for category_name, qa_list_for_category in categorized_qa_pairs.items():
             print(f"\n--- Verifying Category: {category_name} ---")
             if not qa_list_for_category:
                 print(f"    No questions to ask for '{category_name}'. Marking as passed (vacuously true).")
@@ -378,172 +381,176 @@ class SceneInterpretation:
 
 
     def analyze_vehicle_interactions(self, 
+                                     session_id: str,
                                      agent_actions_file_path: str,
-                                     trigger_conditions_file_path: str) -> Optional[str]:
+                                    ) -> Optional[Tuple[str, Dict[str, int]]]:
         """
-        Analyzes agent interactions on the map, using established map context,
-        agent actions from a file, and a list of trigger conditions from another file.
+        Analyzes agent interactions by loading a prompt template from a file and generating a structured YAML output.
         """
         if not self.map_verified_successfully:
-            print("Error: Map understanding has not been successfully verified.")
+            print("Error: Map understanding has not been successfully verified. Cannot analyze interactions.")
             return None
         
-        if not self.current_map_image_base64:
-            print("Error: Map image base64 not found in current context.")
+        # --- NEW: Read the prompt template from the specified file ---
+        prompt_template_content = self._read_text_file('./memos/interaction_prompt.txt', "YAML prompt template")
+        if not prompt_template_content:
+            print(f"Error: Could not load the prompt template.")
             return None
 
         agent_actions_content = self._read_text_file(agent_actions_file_path, "Agent actions")
-        trigger_conditions_content = self._read_text_file(trigger_conditions_file_path, "Trigger conditions definitions")
-
         if not agent_actions_content:
             print("Error: Cannot proceed without agent actions content.")
             return None
-        if not trigger_conditions_content:
-            print("Error: Cannot proceed without trigger conditions definitions.")
-            return None
-
-        # Build the detailed prompt for interaction analysis
-        analysis_prompt_parts_list = []
-
-        # Part 1: Introduction and Goal
-        intro_text = (
-            "You have previously demonstrated an understanding of the provided map context (image and possibly description).\n"
-            "Your task now is to analyze a sequence of agent (vehicle, bicycle, pedestrian) actions occurring on this map "
-            "to identify significant interactions between agents. For actions that are part of an interaction (e.g., yielding, "
-            "emergency braking due to another agent, speeding up after a yielding agent passes), "
-            "you must identify the most likely trigger condition from the provided list of 'Action Triggers' and explain your reasoning.\n\n"
-            "Not every action will have an explicit trigger from the list, especially initial actions like 'Enters scenario'. Focus on "
-            "actions that demonstrate a reaction or coordination between agents."
-        )
-        analysis_prompt_parts_list.append({"type": "text", "text": intro_text})
-
-        # Part 2: Remind of Map Context (Image and Description if available)
-        map_context_reminder_text = "\n--- Map Context Recap ---\n"
-        map_context_reminder_text += "You have already analyzed the following map. Keep its structure in mind.\n"
-        if self.current_map_description:
-            summary_desc = self.current_map_description[:300] + ("..." if len(self.current_map_description) > 300 else "") # Shorter summary
-            map_context_reminder_text += f"Key elements from description: {summary_desc}\n"
         
-        analysis_prompt_parts_list.append({"type": "text", "text": map_context_reminder_text})
-        analysis_prompt_parts_list.append(
-             {"type": "image_url", "image_url": {"url": f"data:image/jpeg;base64,{self.current_map_image_base64}"}}
+        # --- NEW: Format the prompt by inserting the agent actions log ---
+        full_analysis_prompt = prompt_template_content.format(
+            agent_actions_log=agent_actions_content
         )
-
-        # Part 3: Agent Actions
-        agent_actions_header_text = "\n--- Agent Actions Log ---\n"
-        agent_actions_header_text += "Here are the actions performed by agents in the scenario:\n"
-        analysis_prompt_parts_list.append({"type": "text", "text": agent_actions_header_text})
-        analysis_prompt_parts_list.append({"type": "text", "text": agent_actions_content})
         
-        # Part 4: Trigger Conditions Definitions
-        trigger_conditions_header_text = "\n--- Possible Action Triggers (Choose from this list) ---\n"
-        trigger_conditions_header_text += "When an agent's action is part of an interaction, select the most appropriate trigger from this list:\n"
-        analysis_prompt_parts_list.append({"type": "text", "text": trigger_conditions_header_text})
-        analysis_prompt_parts_list.append({"type": "text", "text": trigger_conditions_content})
-
-        # Part 5: Output Format and Instructions
-        output_instructions_text = (
-            "\n--- Your Analysis Task & Output Format ---\n"
-            "1. Identify sequences of actions that constitute an interaction between two or more agents.\n"
-            "2. For each *reacting* agent in an interaction, pinpoint the specific action(s) that are a response.\n"
-            "3. For these reacting actions, state the most likely 'Action Trigger' from the provided list by its name (e.g., 'Time Headway Condition', 'Storyboard Element State Condition').\n"
-            "4. Briefly explain the interaction and why you chose that trigger for the specific action.\n\n"
-            "Example Output Structure (for each identified interaction):\n"
-            "Interaction between [Agent X] and [Agent Y]:\n"
-            "  - Scenario: [Briefly describe what happened, e.g., Agent Y arrived at intersection first, Agent X approached intending to cross paths.]\n"
-            "  - Agent [Reacting Agent ID]'s action: \"[The specific action string from the log, e.g., Significantly slows down at t=0.32 till stopped.]\"\n"
-            "    - Trigger: [Name of Trigger Condition from the list]\n"
-            "    - Reason: [Your explanation, e.g., To yield to Agent Y which had priority or was already in the conflicting path.]\n"
-            "  - Agent [Reacting Agent ID]'s subsequent action (if part of same interaction event): \"[e.g., Moderately speeds up at t=7.84.]\"\n"
-            "    - Trigger: [Name of Trigger Condition]\n"
-            "    - Reason: [e.g., Agent Y has cleared the conflict zone, allowing Agent X to proceed.]\n\n"
-            "If there are no significant interactions, state that clearly.\n\n"
-            "Begin your analysis now:"
-        )
-        analysis_prompt_parts_list.append({"type": "text", "text": output_instructions_text})
-
-        # Combine with existing conversation history
-        messages_for_analysis_call = self.current_conversation_history + [
-            {"role": "user", "content": analysis_prompt_parts_list}
+        # We can now create the final prompt parts list directly
+        analysis_prompt_parts_list = [
+             {"type": "text", "text": full_analysis_prompt}
         ]
 
-        print("\n--- Requesting Agent Interaction Analysis ---")
-        # Max tokens needs to be high for this kind of detailed analysis + input text
-        llm_analysis_response = self._call_llm_with_history(messages_for_analysis_call, temperature=0.5, max_tokens=2000) # Increased max_tokens and slightly temp
+        # --- The rest of the method remains the same ---
+        print("\n--- Requesting Structured YAML Interaction Analysis via LangChain ---")
+        
+        analysis_result = None
+        analysis_tokens = {}
+        
+        with get_openai_callback() as cb:
+            response = self.conversational_chain.invoke(
+                {"input": analysis_prompt_parts_list},
+                config={"configurable": {"session_id": session_id}}
+            )
+            analysis_result = response
+            analysis_tokens = {
+                "prompt_tokens": cb.prompt_tokens,
+                "completion_tokens": cb.completion_tokens,
+                "total_tokens": cb.total_tokens,
+            }
+            print(f"Analysis Tokens: {analysis_tokens['total_tokens']} (Prompt: {analysis_tokens['prompt_tokens']}, Completion: {analysis_tokens['completion_tokens']})")
 
-        if "ERROR_API_CALL" not in llm_analysis_response and "ERROR_LLM_NO_CONTENT" not in llm_analysis_response:
-            self.current_conversation_history.append({"role": "user", "content": analysis_prompt_parts_list}) # Add the complex user prompt
-            self.current_conversation_history.append({"role": "assistant", "content": llm_analysis_response})
-            return llm_analysis_response
+        if analysis_result:
+            try:
+                match = re.search(r"```yaml\s*([\s\S]*?)\s*```", analysis_result)
+                if match:
+                    yaml_content = match.group(1)
+                else:
+                    yaml_content = analysis_result
+                
+                parsed_yaml = yaml.safe_load(yaml_content)
+                print("Successfully parsed the generated YAML output.")
+                return analysis_result, analysis_tokens
+            except yaml.YAMLError as e:
+                print(f"Warning: LLM output was not valid YAML. Error: {e}")
+                return analysis_result, analysis_tokens
         else:
             print("Failed to get interaction analysis from LLM.")
             return None
+        
+
+    def run_analysis_pipeline(self,
+                              map_location: str,
+                              agent_actions_path: str,
+                              output_yaml_path: str = "agent_interaction_analysis.yaml"
+                             ) -> bool:
+        """
+        Orchestrates the full map interpretation and scenario analysis pipeline.
+        This method is the primary entry point for running the end-to-end process.
+
+        Args:
+            map_location: The name of the map of this scenario.
+            agent_actions_file_path: Path to the agent actions log for this run.
+            output_yaml_path: Path to save the final YAML analysis output.
+
+        Returns:
+            True if the pipeline completed successfully, False otherwise.
+        """
+
+        # --- 1. Verification Phase ---
+        print(f"\n===== Starting Verification Phase =====")
+        
+        is_understood, verification_tokens = self.verify_map_understanding(
+            map_location=map_location,
+            max_retries_per_category=2  
+        )
+        
+        print(f"\nVerification token usage: {verification_tokens['total_tokens']} tokens.")
+
+        if not is_understood:
+            print("\n❌ VERIFICATION FAILED: LLM map understanding could not be verified. Halting pipeline.")
+            return False
+        
+        print("\n✅ VERIFICATION SUCCESS: LLM map understanding verified.")
+
+        # --- 2. Analysis Phase ---
+        print(f"\n===== Starting Analysis Phase =====")
+        print(f"Agent Actions: {agent_actions_path}")
+        
+        # The session_id is the unique identifier for the conversation, which we've set as the map image path
+        session_id = map_location
+        
+        analysis_result_tuple = self.analyze_vehicle_interactions(
+            session_id=session_id,
+            agent_actions_file_path=agent_actions_path
+        )
+
+        if not analysis_result_tuple:
+            print("\n❌ ANALYSIS FAILED: Could not generate interaction analysis.")
+            return False
+
+        # --- 3. Output and Save Results ---
+        analysis_yaml_string, analysis_tokens = analysis_result_tuple
+        
+        print(f"Analysis token usage: {analysis_tokens['total_tokens']} tokens.")
+        print("\n--- Generated Analysis ---")
+        
+        # Extract the YAML part for cleaner printing and saving
+        match = re.search(r"```yaml\s*([\s\S]*?)\s*```", analysis_yaml_string)
+        if match:
+            clean_yaml = match.group(1).strip()
+        else:
+            clean_yaml = analysis_yaml_string.strip()
+        
+        print(clean_yaml) 
+        
+        try:
+            with open(output_yaml_path, "w", encoding="utf-8") as f:
+                f.write(clean_yaml)
+            print(f"\n✅ ANALYSIS SUCCESS: Full analysis saved to {output_yaml_path}")
+        except IOError as e:
+            print(f"\n❌ FAILED TO SAVE: Could not write analysis to '{output_yaml_path}': {e}")
+            return False
+        
+        return True
 
 # --- Example Usage ---
 if __name__ == "__main__":
+    # --- Configuration ---
+    # Define paths for all required input files.
+    # This makes it easy to switch between different scenarios.
+    MAP_LOCATION = "01_bendplatz"
+    AGENT_ACTIONS_FILE = "./results/inD/description/08_1250_1600.txt"
+    OUTPUT_YAML_FILE = "agent_interaction_analysis.yaml"
 
-    # Define paths for inputs
-    qa_json_path = "./data/processed/inD/map/01_bendplatz_questions.json"
-    map_image_path = "./data/processed/inD/map/01_bendplatz_graph.jpeg"
-    map_description_path = "./data/processed/inD/map/01_bendplatz_description.txt"
-
-    # Check if files exist
-    if not os.path.exists(qa_json_path):
-        print(f"Error: Map image file not found at '{qa_json_path}'. Please check the path.")
-        exit()
-    if not os.path.exists(map_image_path):
-        print(f"Error: Map image file not found at '{map_image_path}'. Please check the path.")
-        exit()
-    if not os.path.exists(map_description_path):
-        print(f"Warning: Map description file not found at '{map_description_path}'. Proceeding without description.")
-        # Set to None if you want to proceed without it, or handle as an error if description is mandatory.
-        # map_description_file_path = None
-
+    # --- 1. Initialize the Interpreter Engine ---
     try:
-        interpreter = SceneInterpretation(
-            qa_json_path=qa_json_path,
-            # api_key="sk-..." # Optionally pass API key here if not in env
-            model="gpt-4o"
-        )
-    except ValueError as e:
-        print(f"Initialization Error: {e}")
-        exit()
+        interpreter = SceneInterpretation(model="gpt-4o")
     except Exception as e:
-        print(f"An unexpected error occurred during initialization: {e}")
-        exit()
+        print(f"FATAL: Failed to initialize MapInterpretation engine: {e}")
+        exit(1)
 
-    is_understood, token_info = interpreter.verify_map_understanding(
-        image_path_or_url=map_image_path,
-        map_description_path=map_description_path, 
-        max_retries_per_category=2  
+    # --- 2. Run the End-to-End Pipeline ---
+    # Call the main pipeline method on the instance
+    success = interpreter.run_analysis_pipeline(
+        map_location = MAP_LOCATION,
+        agent_actions_path=AGENT_ACTIONS_FILE,
+        output_yaml_path=OUTPUT_YAML_FILE
     )
 
-    print(f"\nVerification process finished. Final Token Usage: {token_info['total_tokens']} tokens.")
-
-    if is_understood:
-        print("\nOVERALL SUCCESS: LLM map understanding verified using image and description (if provided).")
-
-        '''
-
-        agent_actions_file = "./results/inD/description/08_1250_1600.txt"
-        trigger_conditions_file = "./memos/condition_definition.txt"
-        
-        print("\n--- Now, analyzing agent interactions ---")
-        analysis_result = interpreter.analyze_vehicle_interactions(
-            agent_actions_file_path=agent_actions_file,
-            trigger_conditions_file_path=trigger_conditions_file
-        )
-
-        if analysis_result:
-            print("\n--- Agent Interaction Analysis Complete ---")
-            # The result is already printed by the _call_llm_with_history method within analyze_vehicle_interactions
-            output_filename = "agent_interaction_analysis_output.txt" 
-            with open(output_filename, "w", encoding="utf-8") as f:
-                f.write(analysis_result)
-            print(f"Full analysis saved to {output_filename}")
-        else:
-            print("\n--- Agent Interaction Analysis Failed ---")
-        '''
-            
+    # --- 3. Report Final Status ---
+    if success:
+        print("\n✅ Pipeline completed successfully.")
     else:
-        print("\nOVERALL FAILURE: LLM map understanding could not be verified.")
+        print("\n❌ Pipeline failed. Please check the logs above for errors.")

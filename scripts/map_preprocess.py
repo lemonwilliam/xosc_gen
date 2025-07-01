@@ -243,86 +243,6 @@ def extract_maneuvers(
     return maneuvers
 
 
-# --- Geometry Helper Functions (Simplified for brevity, assuming previous detailed versions) ---
-
-def on_segment(p, q, r):
-    return (q[0] <= max(p[0], r[0]) and q[0] >= min(p[0], r[0]) and \
-            q[1] <= max(p[1], r[1]) and q[1] >= min(p[1], r[1]))
-
-def orientation(p, q, r):
-    val = (q[1] - p[1]) * (r[0] - q[0]) - (q[0] - p[0]) * (r[1] - q[1])
-    if val == 0: return 0
-    return 1 if val > 0 else 2
-
-def do_segments_intersect(p1, q1, p2, q2):
-    o1, o2 = orientation(p1, q1, p2), orientation(p1, q1, q2)
-    o3, o4 = orientation(p2, q2, p1), orientation(p2, q2, q1)
-    if o1 != o2 and o3 != o4: return True
-    if o1 == 0 and on_segment(p1, p2, q1): return True
-    if o2 == 0 and on_segment(p1, q2, q1): return True
-    if o3 == 0 and on_segment(p2, p1, q2): return True
-    if o4 == 0 and on_segment(p2, q1, q2): return True
-    return False
-
-# --- New Function to Load Lane Paths from Visualizer's CSV ---
-_parsed_csv_lane_data = {} # Cache for CSV data: {(road_id_str, lane_id_str): [(x,y), ...]}
-
-def load_lane_paths_from_csv(csv_file_path: str):
-    """
-    Parses the visualizer's CSV file and stores lane centerline points.
-    This should be called once.
-    """
-    global _parsed_csv_lane_data
-    if _parsed_csv_lane_data: # Already loaded
-        return
-
-    try:
-        with open(csv_file_path, 'r') as f:
-            reader = csv.reader(f, skipinitialspace=True)
-            current_lane_key = None
-            for row in reader:
-                if not row: continue
-                if row[0] == 'lane':
-                    road_id_str = row[1]
-                    # lane_section_idx = row[2] # Not strictly needed for path lookup by road/lane ID
-                    lane_id_str_csv = row[3]
-                    # lane_type_csv = row[4] if len(row) > 4 else "driving" # visualizer's type
-                    
-                    # We are interested in paths of connecting roads' lanes
-                    current_lane_key = (road_id_str, lane_id_str_csv)
-                    if current_lane_key not in _parsed_csv_lane_data:
-                        _parsed_csv_lane_data[current_lane_key] = []
-                elif current_lane_key and len(row) >= 2:
-                    try:
-                        x, y = float(row[0]), float(row[1])
-                        _parsed_csv_lane_data[current_lane_key].append((x, y))
-                    except ValueError:
-                        # print(f"Warning: Skipping malformed coordinate in CSV: {row}")
-                        pass
-    except FileNotFoundError:
-        print(f"Error: Visualizer CSV file not found at {csv_file_path}. Crossing detection will be limited.")
-    except Exception as e:
-        print(f"Error reading visualizer CSV {csv_file_path}: {e}")
-
-def get_lane_segments_from_csv_data(road_id: int, lane_id_on_road: int) -> list[tuple[tuple[float,float], tuple[float,float]]]:
-    """
-    Retrieves lane path segments from the pre-parsed CSV data.
-    `lane_id_on_road` is the ID of the lane on the specified `road_id` (typically a connectingRoad).
-    """
-    global _parsed_csv_lane_data
-    lane_key = (str(road_id), str(lane_id_on_road)) # CSV uses string IDs
-    
-    points = _parsed_csv_lane_data.get(lane_key, [])
-    if len(points) < 2:
-        # print(f"Warning: Not enough points in CSV for lane path: road {road_id}, lane {lane_id_on_road}")
-        return []
-    
-    segments = []
-    for i in range(len(points) - 1):
-        segments.append((points[i], points[i+1]))
-    return segments
-
-
 # --- generate_text_description (Assumed to be the refined version from previous response) ---
 def generate_text_description(
     ordered_arterial_road_ids: list[int],
@@ -379,7 +299,8 @@ def generate_questions_json(
     valid_maneuvers: list[dict], # This now contains detailed maneuver info
     roads_dict: dict[int, ET.Element] # For checking sidewalk type of connecting roads
 ) -> dict:
-    questions = {"Road relations": [], "Crossing routes": []}
+    #questions = {"Road relations": [], "Crossing routes": []}
+    questions = {"Road relations": []}
 
     # Road relations
     for r_id in ordered_arterial_road_ids:
@@ -398,64 +319,6 @@ def generate_questions_json(
 
     
     # Crossing routes (CSV-based)
-    non_sidewalk_maneuvers = []
-    for m in valid_maneuvers:
-        conn_road_elem = roads_dict.get(m["connecting_road_id"]) 
-        if conn_road_elem:
-            is_sidewalk_path = any(l.get('type') == 'sidewalk' for l in conn_road_elem.findall('.//lane'))
-            if not is_sidewalk_path:
-                non_sidewalk_maneuvers.append(m)
-        else:
-            non_sidewalk_maneuvers.append(m) 
-
-    # Remove the debug print for m in non_sidewalk_maneuvers:
-    # for m in non_sidewalk_maneuvers:
-    #     print(m)
-
-    generated_q_keys = set()
-    for m1, m2 in itertools.combinations(non_sidewalk_maneuvers, 2):
-        if m1["entry_road"] == m2["entry_road"] or \
-           m1["exit_road"] == m2["exit_road"] or \
-           m1["connecting_road_id"] == m2["connecting_road_id"]:
-            continue
-
-        # --- MODIFIED QUESTION TEXT LOGIC ---
-        def get_turn_action_phrase(turn_type_str):
-            if turn_type_str == 'left turn': return "turns left"
-            if turn_type_str == 'right turn': return "turns right"
-            if turn_type_str == 'straight': return "goes straight"
-            if turn_type_str == 'U-turn': return "makes a U-turn"
-            return f"moves ({turn_type_str})" # Fallback
-
-        turn_action_m1 = get_turn_action_phrase(m1['turn_type'])
-        turn_action_m2 = get_turn_action_phrase(m2['turn_type'])
-
-        q_text = (f"If one vehicle aim to {turn_action_m1} from Road {m1['entry_road']}, "
-                  f"and another vehicle aim to {turn_action_m2} from Road {m2['entry_road']} at the same time, "
-                  f"is yielding behavior necessary?  Answer with Yes / No.")
-        # --- END OF MODIFIED QUESTION TEXT LOGIC ---
-        
-        # Canonical key generation now includes turn types to differentiate questions
-        # for the same road pair but different maneuvers.
-        route1_key_elements = (str(m1['entry_road']), str(m1['exit_road']), m1['turn_type'])
-        route2_key_elements = (str(m2['entry_road']), str(m2['exit_road']), m2['turn_type'])
-        # Sort individual route elements and then sort the pair of routes
-        canonical_q_key = tuple(sorted((route1_key_elements, route2_key_elements)))
-
-
-        if canonical_q_key in generated_q_keys: continue
-        generated_q_keys.add(canonical_q_key)
-
-        path1_segments = get_lane_segments_from_csv_data(m1["connecting_road_id"], m1["lane_on_connecting_road"])
-        path2_segments = get_lane_segments_from_csv_data(m2["connecting_road_id"], m2["lane_on_connecting_road"])
-
-        if not path1_segments or not path2_segments:
-            questions["Crossing routes"].append({"question": q_text, "answer": "No"}) 
-            continue
-
-        intersects = any(do_segments_intersect(s1p1, s1q1, s2p2, s2q2)
-                         for s1p1, s1q1 in path1_segments for s2p2, s2q2 in path2_segments)
-        questions["Crossing routes"].append({"question": q_text, "answer": "Yes" if intersects else "No"})
         
     return questions
 
@@ -465,7 +328,6 @@ def main():
     parser.add_argument("--dataset", "-d", default="inD", help="Dataset name")
     parser.add_argument("--map_id", "-m", default="01_bendplatz", help="Map ID")
     parser.add_argument("--junction", "-j", default=None, help="Target Junction ID")
-    parser.add_argument("--viz_csv", "-v", help="Path to the visualizer's preprocessed CSV track file for crossing detection.") # New argument
     args = parser.parse_args()
 
     base_dir = "./data"
@@ -492,17 +354,6 @@ def main():
     
     target_junction_elem = root_elem.find(f".//junction[@id='{target_junction_id_str}']")
     if not target_junction_elem: raise ValueError(f"Junction {target_junction_id_str} not found.")
-
-    # Load CSV data if path provided
-    if args.viz_csv:
-        if os.path.exists(args.viz_csv):
-            print(f"Loading lane paths from visualizer CSV: {args.viz_csv}")
-            load_lane_paths_from_csv(args.viz_csv)
-        else:
-            print(f"Warning: Visualizer CSV path provided but file not found: {args.viz_csv}. Crossing detection will be limited.")
-    else:
-        print("Warning: No visualizer CSV path provided (--viz_csv). Crossing detection accuracy might be limited or based on heuristics if CSV data is unavailable.")
-
 
     all_junctions_map_data = get_all_junctions_data(root_elem, roads_dict) # Ensure this is the refined function
     arterial_roads_info = collect_arterial_roads(root_elem, target_junction_id_str)

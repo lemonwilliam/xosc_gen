@@ -349,26 +349,6 @@ class FileGeneration:
                            
                         
                         valid_event = True
-                    '''
-                    elif condition_type == "DistanceCondition":
-                        entityCondition = xosc.DistanceCondition(
-                            value=condition_attrs["distance"],
-                            freespace=False,
-                            alongRoute=False,
-                            rule=condition_attrs["rule"]
-                        )
-                        event.add_trigger(
-                            xosc.EntityTrigger(
-                                name=condition_type,
-                                delay=0,
-                                conditionedge=xosc.ConditionEdge.rising,
-                                entitycondition=entityCondition,
-                                triggerentity=agents.agentNames[int(condition_attrs["target_agent"])],
-                                triggeringrule="any"
-                            )
-                        )
-                        valid_event = True
-                    '''
                     if valid_event:
                         maneuver.add_event(event)
                         valid_maneuver = True
