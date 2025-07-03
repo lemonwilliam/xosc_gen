@@ -42,8 +42,8 @@ def split_segments(indices):
 
 def find_representative_points_each_segment(df, track_id, turn_thresh=0.1, seg_thresh=0.0):
     df_track = df[df['trackId'] == track_id].copy().reset_index(drop=True)
-    x = df_track['x'].values
-    y = df_track['y'].values
+    x = df_track['world_x'].values
+    y = df_track['world_y'].values
     time = df_track['time'].values
 
     curvature = curvature_from_xy(x, y, time)

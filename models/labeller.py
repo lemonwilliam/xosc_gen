@@ -15,7 +15,7 @@ def flow_list_representer(dumper, data):
 
 
 class Labeller:
-    def __init__(self, meta_path: str, map_yaml_path: str, gt_trajectory_path: str, wc_trajectory_path: str):
+    def __init__(self, meta_path: str, map_yaml_path: str, gt_trajectory_path: str):
 
         yaml.add_representer(FlowList, flow_list_representer)
         # 1) load metadata
@@ -25,8 +25,7 @@ class Labeller:
         with open(map_yaml_path, 'r') as f:
             self.map_data = yaml.safe_load(f)['Junctions']
         # 3) load trajectory
-        self.lane_df = pd.read_csv(gt_trajectory_path)
-        self.world_df = pd.read_csv(wc_trajectory_path)
+        self.trajectory_df = pd.read_csv(gt_trajectory_path)
 
         # 4) initialize scenario dict
         self.scenario = {
@@ -40,7 +39,7 @@ class Labeller:
 
         for agent in self.metadata['agents']:
             tid = agent['track_id']
-            agent_traj = self.lane_df[self.lane_df.trackId == tid].reset_index(drop=True)
+            agent_traj = self.trajectory_df[self.trajectory_df.trackId == tid].reset_index(drop=True)
             init_row = agent_traj.loc[0]
             self.scenario['agents'].append({
                 'track_id': agent['track_id'],
@@ -55,9 +54,9 @@ class Labeller:
         """
         Returns a list of dicts, each with:
          - 'type': decision type
-         - 'entry_idx', 'exit_idx': integer row positions in self.lane_df
+         - 'entry_idx', 'exit_idx': integer row positions in self.trajectory_df
         """
-        df = self.lane_df[self.lane_df.trackId == track_id].reset_index(drop=True)
+        df = self.trajectory_df[self.trajectory_df.trackId == track_id].reset_index(drop=True)
         actions = []
 
         for junction in self.map_data.values():
@@ -126,7 +125,7 @@ class Labeller:
         """
         for agent in self.scenario["agents"]:
             tid = agent['track_id']
-            df = self.lane_df[self.lane_df.trackId == tid].reset_index(drop=True)
+            df = self.trajectory_df[self.trajectory_df.trackId == tid].reset_index(drop=True)
             times = df['time'].values
             vels  = df['velocity'].values
 
@@ -181,7 +180,7 @@ class Labeller:
         """
         for agent in self.scenario["agents"]:
             tid = agent['track_id']
-            df = self.lane_df[self.lane_df.trackId == tid].reset_index(drop=True)
+            df = self.trajectory_df[self.trajectory_df.trackId == tid].reset_index(drop=True)
             times = df['time'].values
             roads = df['road_id'].values
             lanes = df['lane_id'].values
@@ -240,8 +239,7 @@ class Labeller:
         for agent in self.scenario["agents"]:
             tid = agent['track_id']
             print(tid)
-            lane_df_track = self.lane_df[self.lane_df.trackId == tid].reset_index(drop=True)
-            world_df_track = self.world_df[self.world_df.trackId == tid].reset_index(drop=True)
+            df_track = self.trajectory_df[self.trajectory_df.trackId == tid].reset_index(drop=True)
 
             actions = []
             getroute = False
@@ -252,17 +250,17 @@ class Labeller:
                 #    entry_pt = row just before entering
                 #    exit_pt  = row just after leaving
                 entry_row = max(ent-1, 0)
-                exit_row  = min(ext+1, len(lane_df_track)-1)
+                exit_row  = min(ext+1, len(df_track)-1)
 
-                ep = lane_df_track.loc[entry_row, ['road_id','lane_id','lane_offset','s','heading']].tolist()
-                xp = lane_df_track.loc[exit_row, ['road_id','lane_id','lane_offset','s','heading']].tolist()
+                ep = df_track.loc[entry_row, ['road_id','lane_id','lane_offset','s','heading']].tolist()
+                xp = df_track.loc[exit_row, ['road_id','lane_id','lane_offset','s','heading']].tolist()
 
                 # cast ids to int
                 entry_pt = FlowList([int(ep[0]), int(ep[1]), ep[2], ep[3], ep[4]])
                 exit_pt  = FlowList([int(xp[0]), int(xp[1]), xp[2], xp[3], xp[4]])
 
-                start_time = float(lane_df_track.loc[entry_row, 'time'])
-                end_time = float(lane_df_track.loc[exit_row, 'time'])
+                start_time = float(df_track.loc[entry_row, 'time'])
+                end_time = float(df_track.loc[exit_row, 'time'])
                 legal = self._is_link_legal(entry_pt, exit_pt)
                 if legal:
                     actions.append({
@@ -277,19 +275,19 @@ class Labeller:
                     })
                 else:
                     # build fallback trajectory of represent point points
-                    indices = find_representative_points(self.world_df, tid)
+                    indices = find_representative_points(self.trajectory_df, tid)
                     print("trajectory node:", indices)
                     
                     trajectory = []
                     for idx in indices:
-                        row = lane_df_track.loc[idx, ['road_id','lane_id','lane_offset','s','heading']].tolist() + world_df_track.loc[idx, ['x', 'y']].tolist()
+                        row = df_track.loc[idx, ['road_id','lane_id','lane_offset','s','heading','world_x','world_y']].tolist()
                         pt = FlowList([int(row[0]), int(row[1]), row[2], row[3], row[4], row[5], row[6]])
                         trajectory.append(pt)
                     actions.append({
                         'type': 'follow',
                         'attributes': {
-                            'start_time': lane_df_track.loc[0].time,
-                            'end_time':   lane_df_track.loc[len(lane_df_track)-1].time,
+                            'start_time': df_track.loc[0].time,
+                            'end_time':   df_track.loc[len(df_track)-1].time,
                             'legal':      False,
                             'trajectory': trajectory
                         }
@@ -297,19 +295,19 @@ class Labeller:
                     
             if (agent['type'] not in legalactor) and (not getroute):
                 # build fallback trajectory of represent point points
-                indices = find_representative_points(self.world_df, tid)
+                indices = find_representative_points(self.trajectory_df, tid)
                 print("extra trajectory node:", indices)
                 
                 trajectory = []
                 for idx in indices:
-                    row = lane_df_track.loc[idx, ['road_id','lane_id','lane_offset','s','heading']].tolist() + world_df_track.loc[idx, ['x', 'y']].tolist()
+                    row = df_track.loc[idx, ['road_id','lane_id','lane_offset','s','heading','world_x','world_y']].tolist()
                     pt = FlowList([int(row[0]), int(row[1]), row[2], row[3], row[4], row[5], row[6]])
                     trajectory.append(pt)
                 actions.append({
                     'type': 'follow',
                     'attributes': {
-                        'start_time': lane_df_track.loc[0].time,
-                        'end_time':   lane_df_track.loc[len(lane_df_track)-1].time,
+                        'start_time': df_track.loc[0].time,
+                        'end_time':   df_track.loc[len(df_track)-1].time,
                         'legal':      False,
                         'trajectory': trajectory
                     }

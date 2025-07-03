@@ -24,13 +24,13 @@ class Visualization:
         gen = self.gen_df[self.gen_df["trackId"] == tid]
 
         axs[0].cla()
-        axs[0].plot(gt["time"], gt["x"], label="Ground Truth", color='blue')
+        axs[0].plot(gt["time"], gt["world_x"], label="Ground Truth", color='blue')
         axs[0].plot(gen["time"], gen["x"], label="Generated", linestyle="--", color='orange')
         axs[0].set_title("X Coordinate")
         axs[0].legend()
 
         axs[1].cla()
-        axs[1].plot(gt["time"], gt["y"], label="Ground Truth", color='blue')
+        axs[1].plot(gt["time"], gt["world_y"], label="Ground Truth", color='blue')
         axs[1].plot(gen["time"], gen["y"], label="Generated", linestyle="--", color='orange')
         axs[1].set_title("Y Coordinate")
         axs[1].legend()

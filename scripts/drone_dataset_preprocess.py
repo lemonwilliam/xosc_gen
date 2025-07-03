@@ -76,9 +76,11 @@ def filter_trajectory(trajectory_csv, overlapping_track_ids, t1, t2, x_offset, y
     velocities = np.sqrt(df_overlap["lonVelocity"] ** 2 + df_overlap["latVelocity"] ** 2).round(3)
 
     # Assemble final DataFrame
-    df_lane = pd.DataFrame({
+    df_output = pd.DataFrame({
         "trackId": df_overlap["trackId"],
         "time": df_overlap["time"].round(2),
+        "world_x": df_overlap["xCenter"].round(3),
+        "world_y": df_overlap["yCenter"].round(3),
         "road_id": road_ids,
         "lane_id": lane_ids,
         "lane_offset": lane_offsets,
@@ -87,19 +89,10 @@ def filter_trajectory(trajectory_csv, overlapping_track_ids, t1, t2, x_offset, y
         "velocity": velocities
     })
 
-    df_world = pd.DataFrame({
-        "trackId": df_overlap["trackId"],
-        "time": df_overlap["time"].round(2),
-        "x": df_overlap["xCenter"].round(3),
-        "y": df_overlap["yCenter"].round(3),
-        "heading": df_overlap["heading"].round(3),
-        "velocity": velocities
-    })
-
-    return df_lane, df_world
+    return df_output
 
 
-def export_meta_to_yaml(tracks_meta_path, overlapping_track_ids, args, loc, output_path="scenario_metadata.yaml"):
+def export_meta_to_yaml(tracks_meta_path, overlapping_track_ids, args, loc, offsets, output_path="scenario_metadata.yaml"):
     """
     Extract agent metadata and scenario-wide metadata, and write to a YAML file.
     """
@@ -112,6 +105,8 @@ def export_meta_to_yaml(tracks_meta_path, overlapping_track_ids, args, loc, outp
     scenario_dict = {
         "dataset": args.dataset,
         "location": loc,
+        "x_offset": float(offsets[0]),
+        "y_offset": float(offsets[1]),
         "duration": (args.end_time - args.start_time + 25) / 25,
         "agents": []
     }
@@ -157,7 +152,7 @@ if __name__ == "__main__":
         "--end_time", 
         "-et", 
         type=int, 
-        default="299", 
+        default="300", 
         help="End timestamp of the interval"
     )
     args = parser.parse_args()
@@ -189,18 +184,15 @@ if __name__ == "__main__":
     overlapping_ids = find_involved_tracks(tracksMeta_path, t1, t2)
 
     # 3. Filter and preprocess the frame-level trajectory CSV, write to respective directories
-    df_lane, df_world = filter_trajectory(trajectory_path, overlapping_ids, t1, t2, x_offset, y_offset, map_path)
-    output_path_lane = f"./data/processed/{args.dataset}/trajectory/lane/{args.scenario_id}_{t1}_{t2}.csv"
-    output_path_world = f"./data/processed/{args.dataset}/trajectory/world/{args.scenario_id}_{t1}_{t2}.csv"
-    os.makedirs(os.path.dirname(output_path_lane), exist_ok=True)
-    os.makedirs(os.path.dirname(output_path_world), exist_ok=True)
-    df_lane.to_csv(output_path_lane, index=False)
-    df_world.to_csv(output_path_world, index=False)
-    print(f"Overlapping track frames saved to {output_path_lane}")
+    df_output = filter_trajectory(trajectory_path, overlapping_ids, t1, t2, x_offset, y_offset, map_path)
+    output_path = f"./data/processed/{args.dataset}/trajectory/{args.scenario_id}_{t1}_{t2}.csv"
+    os.makedirs(os.path.dirname(output_path), exist_ok=True)
+    df_output.to_csv(output_path, index=False)
+    print(f"Overlapping track frames saved to {output_path}")
     
     # 4. Write the relevant slices of metadata to another YAML file
     output_meta_path = f"./data/processed/{args.dataset}/metadata/{args.scenario_id}_{t1}_{t2}.yaml"
     os.makedirs(os.path.dirname(output_meta_path), exist_ok=True)
-    export_meta_to_yaml(tracksMeta_path, overlapping_ids, args, loc, output_meta_path)
+    export_meta_to_yaml(tracksMeta_path, overlapping_ids, args, loc, [x_offset, y_offset], output_meta_path)
 
     

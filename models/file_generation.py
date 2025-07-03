@@ -12,10 +12,11 @@ from geomdl import operations
 from scripts.world_to_lane import CoordProjector
 
 
-class Agents:
+class ScenarioInfo:
     def __init__(self):
         self.agents = None
         self.agentNames = []
+        self.interactions = None
     
 
 class FileGeneration:
@@ -41,42 +42,42 @@ class FileGeneration:
             parameter_declarations.add_parameter(i)
         return parameter_declarations
     
-    def __entites_def(self, agents, agent_categories):
+    def __entites_def(self, scenario, agent_categories):
         entities = xosc.Entities()
         # scale_prop = xosc.Property(name="scale", value="0.5") # create a “scale” property (0.5 = half size)
         # mode_prop  = xosc.Property(name="scaleMode", value="None") # disable any automatic BB→model or model→BB resizing
-        agents.agentNames = []
-        for agent in agents.agents:
-            agents.agentNames.append(f"Agent{agent['track_id']}")
+        scenario.agentNames = []
+        for agent in scenario.agents:
+            scenario.agentNames.append(f"Agent{agent['track_id']}")
             if agent["type"] == "car":
                 if agent['track_id'] in agent_categories['Ego']:
                     agentObject = xosc.CatalogReference(catalogname="VehicleCatalog", entryname="$EgoVehicle")
-                    entities.add_scenario_object(name = agents.agentNames[-1], entityobject=agentObject)
+                    entities.add_scenario_object(name = scenario.agentNames[-1], entityobject=agentObject)
                 elif agent['track_id'] in agent_categories['Key']:
                     agentObject = xosc.CatalogReference(catalogname="VehicleCatalog", entryname="$KeyVehicle")
-                    entities.add_scenario_object(name = agents.agentNames[-1], entityobject=agentObject)
+                    entities.add_scenario_object(name = scenario.agentNames[-1], entityobject=agentObject)
                 elif agent['track_id'] in agent_categories['Affected']:
                     agentObject = xosc.CatalogReference(catalogname="VehicleCatalog", entryname="$AffectedVehicle")
-                    entities.add_scenario_object(name = agents.agentNames[-1], entityobject=agentObject)
+                    entities.add_scenario_object(name = scenario.agentNames[-1], entityobject=agentObject)
                 else:
                     agentObject = xosc.CatalogReference(catalogname="VehicleCatalog", entryname="$UnrelatedVehicle")
-                    entities.add_scenario_object(name = agents.agentNames[-1], entityobject=agentObject)
+                    entities.add_scenario_object(name = scenario.agentNames[-1], entityobject=agentObject)
             elif agent["type"] == "bicycle":
                 agentObject = xosc.CatalogReference(catalogname="VehicleCatalog", entryname="$Bicycle")
-                entities.add_scenario_object(name = agents.agentNames[-1], entityobject=agentObject)
+                entities.add_scenario_object(name = scenario.agentNames[-1], entityobject=agentObject)
             elif agent["type"] == "pedestrian":
                 agentObject = xosc.CatalogReference(catalogname="PedestrianCatalog", entryname="$Pedestrian")
-                entities.add_scenario_object(name = agents.agentNames[-1], entityobject=agentObject)
+                entities.add_scenario_object(name = scenario.agentNames[-1], entityobject=agentObject)
             elif agent["type"] == "truck_bus":
                 agentObject = xosc.CatalogReference(catalogname="VehicleCatalog", entryname="$Truck")
-                entities.add_scenario_object(name = agents.agentNames[-1], entityobject=agentObject)
+                entities.add_scenario_object(name = scenario.agentNames[-1], entityobject=agentObject)
                 
         return entities
     
-    def __story_init(self, agents, traj_df):
+    def __story_init(self, scenario, traj_df):
         init = xosc.Init()
         # Spawn agents if they are in the scenario initially
-        for i, agent in enumerate(agents.agents):
+        for i, agent in enumerate(scenario.agents):
 
             tid = agent["track_id"]
             agent_traj = traj_df[traj_df.trackId == tid].reset_index(drop=True)
@@ -84,7 +85,7 @@ class FileGeneration:
 
             if init_row.time == 0:                
                 init.add_init_action(
-                    agents.agentNames[i],
+                    scenario.agentNames[i],
                     xosc.TeleportAction(
                         xosc.LanePosition(
                             init_row.s, 
@@ -96,14 +97,98 @@ class FileGeneration:
                     )
                 )
                 init.add_init_action(
-                    agents.agentNames[i],
+                    scenario.agentNames[i],
                     xosc.AbsoluteSpeedAction(init_row.velocity, xosc.TransitionDynamics(xosc.DynamicsShapes.step, xosc.DynamicsDimension.time, 0))
                 )
 
         return init
     
-    def __write_story(self, agents, agent_categories, traj_df, duration):
-        init = self.__story_init(agents, traj_df)
+    def __get_condition(self, track_id, action_attrs, all_interactions, raw_trajectory):
+
+        rules = {
+            "lessThan": xosc.Rule.lessThan,
+            "equalTo": xosc.Rule.equalTo,
+            "greaterThan": xosc.Rule.greaterThan
+        }
+
+        states = {
+            "started": xosc.StoryboardElementState,
+            "finished": xosc.StoryboardElementState
+        }
+
+        for interaction in all_interactions:
+            if interaction["agent"] == track_id and interaction["timestamp"] == action_attrs["start_time"]:
+                e = interaction.get("details", {}).get("interacts_with")
+                r = interaction.get("details", {}).get("rule")
+                s = interaction.get("details", {}).get("state")
+                v = interaction.get("details", {}).get("value")                     
+                if interaction["trigger"] == "Time Headway Condition":
+                    condition = xosc.TimeHeadwayCondition(
+                        entity = f"Agent{e}",
+                        value = ,
+                        rule = rules[r],
+                        alongroute = False,
+                        freespace = False,
+                        distance_type = xosc.RelativeDistanceType.euclidianDistance,
+                        coordinate_system = xosc.CoordinateSystem.entity
+                    )
+                elif interaction["trigger"] == "Speed Condition":
+                    condition = xosc.SpeedCondition(
+                        value = v, 
+                        rule = rules[r]
+                    )
+                elif interaction["trigger"] == "Relative Speed Condition":
+                    condition = xosc.RelativeSpeedCondition(
+                        value = , 
+                        rule = rules[r], 
+                        entity = f"Agent{e}"
+                    )
+                elif interaction["trigger"] == "Relative Distance Condition":
+
+                    condition = xosc.RelativeDistanceCondition(
+                        value =,
+                        rule = rules[r],
+                        dist_type = xosc.RelativeDistanceType.euclidianDistance,
+                        entity = f"Agent{e}",
+                        alongroute = False,
+                        freespace = False,
+                        routing_algorithm = None
+                    )
+                    return
+                elif interaction["trigger"] == "React to Passing Intersection":
+                    condition = xosc.StoryboardElementStateCondition(
+                        element = xosc.StoryboardElementType.event,
+                        reference = , 
+                        state = states[s],
+                    )
+                    return condition, "StoryboardElementStateCondition"
+                elif interaction["trigger"] == "React to Lane Change":
+                    condition = xosc.StoryboardElementStateCondition(
+                        element = xosc.StoryboardElementType.event,
+                        reference = , 
+                        state = states[s],
+                    )
+                    return condition, "StoryboardElementStateCondition"
+                elif interaction["trigger"] == "React to Speed Change":
+                    condition = xosc.StoryboardElementStateCondition(
+                        element = xosc.StoryboardElementType.event,
+                        reference = , 
+                        state = states[s],
+                    )
+                    return condition, "StoryboardElementStateCondition"
+                else:
+                    print("Non existent condition type")
+                    break
+                
+        condition = xosc.SimulationTimeCondition(
+            value=action_attrs["start_time"],
+            rule=xosc.Rule.greaterThan
+        )
+
+        return condition, "SimulationTimeCondition"
+    
+    def __write_story(self, scenario, traj_df, duration):
+        init = self.__story_init(scenario, traj_df)
         speed_ctrl = ['speed_up', 'slow_down', 'reverse']
         land_ctrl = ['lane_change']
         road_ctrl = ['go_straight', 'turn_right', 'turn_left', 'follow']
@@ -123,7 +208,7 @@ class FileGeneration:
         act = xosc.Act(name="UnifiedAct")   
         
 
-        for i, agent in enumerate(agents.agents):
+        for i, agent in enumerate(scenario.agents):
 
             tid = agent["track_id"]
             agent_traj = traj_df[traj_df.trackId == tid].reset_index(drop=True)
@@ -141,7 +226,7 @@ class FileGeneration:
             ## ➡️ First: Initialize agents that did not get teleported in Init
             if init_row.time != 0:
                 spawn_event = xosc.Event(
-                    f"Spawn_{agents.agentNames[i]}",
+                    f"Spawn_{scenario.agentNames[i]}",
                     xosc.Priority.parallel,
                     maxexecution=1
                 )
@@ -150,7 +235,7 @@ class FileGeneration:
                 spawn_event.add_action(
                     "SpawnAgent", 
                     xosc.AddEntityAction(
-                        entityref = agents.agentNames[i],
+                        entityref = scenario.agentNames[i],
                         position = xosc.LanePosition(
                             init_row.s, 
                             init_row.lane_offset, 
@@ -198,7 +283,7 @@ class FileGeneration:
                 # Longitudinal action
                 if action_type in speed_ctrl:
                     event = xosc.Event(
-                        f"{agents.agentNames[i]}_SpeedEvent{speed_event_count}",
+                        f"{scenario.agentNames[i]}_SpeedEvent{speed_event_count}",
                         xosc.Priority.parallel,
                         maxexecution=1
                     )
@@ -212,7 +297,7 @@ class FileGeneration:
                 # Lateral Action
                 elif action_type in land_ctrl:
                     event = xosc.Event(
-                        f"{agents.agentNames[i]}_LateralEvent{lateral_event_count}",
+                        f"{scenario.agentNames[i]}_LateralEvent{lateral_event_count}",
                         xosc.Priority.parallel,
                         maxexecution=1
                     )
@@ -227,7 +312,7 @@ class FileGeneration:
                 # Route Decision Action
                 elif action_type in road_ctrl:
                     event = xosc.Event(
-                        f"{agents.agentNames[i]}_RouteEvent{route_event_count}",
+                        f"{scenario.agentNames[i]}_RouteEvent{route_event_count}",
                         xosc.Priority.parallel,
                         maxexecution=1
                     )
@@ -285,30 +370,25 @@ class FileGeneration:
                 if valid_action:
                     # Reach timestamp
                     if action_type in speed_ctrl or action_type in land_ctrl:
-                        if tid in agent_categories["Ego"]:
-                            timeCondition = xosc.SimulationTimeCondition(
-                                value=attrs["start_time"],
-                                rule="greaterThan"
-                            )
+                        condition, condition_type = self.__get_condition(tid, attrs, scenario.interactions, traj_df)
+                        if condition_type == "SimulationTimeCondition" or condition_type == "StoryboardElementStateCondition":
                             event.add_trigger(
                                 xosc.ValueTrigger(
-                                    name="SimulationTimeCondition",
+                                    name=condition_type,
                                     delay=0,
                                     conditionedge=xosc.ConditionEdge.rising,
-                                    valuecondition=timeCondition
+                                    valuecondition=condition
                                 )
                             )
                         else:
-                            timeCondition = xosc.SimulationTimeCondition(
-                                value=attrs["start_time"],
-                                rule="greaterThan"
-                            )
                             event.add_trigger(
-                                xosc.ValueTrigger(
-                                    name="SimulationTimeCondition",
+                                xosc.EntityTrigger(
+                                    name=condition_type,
                                     delay=0,
                                     conditionedge=xosc.ConditionEdge.rising,
-                                    valuecondition=timeCondition
+                                    entitycondition=condition,
+                                    triggerentity=scenario.agentNames[i],
+                                    triggeringrule="any"
                                 )
                             )
                         valid_event = True
@@ -327,7 +407,7 @@ class FileGeneration:
                                     delay=0,
                                     conditionedge=xosc.ConditionEdge.rising,
                                     entitycondition=positionCondition,
-                                    triggerentity=agents.agentNames[i],
+                                    triggerentity=scenario.agentNames[i],
                                     triggeringrule="any"
                                 )
                             )   
@@ -355,13 +435,13 @@ class FileGeneration:
             
             if assign_trajectory:
                 despawn_event = xosc.Event(
-                        f"Despawn_{agents.agentNames[i]}_Event",
+                        f"Despawn_{scenario.agentNames[i]}_Event",
                         xosc.Priority.parallel,
                         maxexecution=1
                 )
                 despawn_event.add_action(
-                    f"Despawn_{agents.agentNames[i]}_Action",
-                    xosc.DeleteEntityAction(entityref = agents.agentNames[i])
+                    f"Despawn_{scenario.agentNames[i]}_Action",
+                    xosc.DeleteEntityAction(entityref = scenario.agentNames[i])
                 )
                 despawn_event.add_trigger(
                     xosc.ValueTrigger(
@@ -370,7 +450,7 @@ class FileGeneration:
                         conditionedge = xosc.ConditionEdge.rising,
                         valuecondition = xosc.StoryboardElementStateCondition(
                             element="event",
-                            reference =  f"{agents.agentNames[i]}_RouteEvent{route_event_count-1}",
+                            reference =  f"{scenario.agentNames[i]}_RouteEvent{route_event_count-1}",
                             state = xosc.StoryboardElementState.completeState
                         )
                     )
@@ -379,13 +459,13 @@ class FileGeneration:
                 valid_maneuver = True
             elif end_row.time < duration:
                 despawn_event = xosc.Event(
-                        f"Despawn_{agents.agentNames[i]}_Event",
+                        f"Despawn_{scenario.agentNames[i]}_Event",
                         xosc.Priority.parallel,
                         maxexecution=1
                 )
                 despawn_event.add_action(
-                    f"Despawn_{agents.agentNames[i]}_Action",
-                    xosc.DeleteEntityAction(entityref = agents.agentNames[i])
+                    f"Despawn_{scenario.agentNames[i]}_Action",
+                    xosc.DeleteEntityAction(entityref = scenario.agentNames[i])
                 )
                 despawn_event.add_trigger(
                     xosc.ValueTrigger(
@@ -423,7 +503,7 @@ class FileGeneration:
 
             if valid_maneuver:
                 mg = xosc.ManeuverGroup("MG_{}".format(agent["track_id"]), maxexecution=1)
-                mg.add_actor(agents.agentNames[i])
+                mg.add_actor(scenario.agentNames[i])
                 mg.add_maneuver(maneuver)
                 act.add_maneuver_group(mg)
         
@@ -433,23 +513,23 @@ class FileGeneration:
     
 
     
-    def parse_scenario_description(self, scenario_dict, gt_trajectory_path, agent_categories, output_paths):
+    def parse_scenario_description(self, agent_dict, interaction_dict, gt_trajectory_path, agent_categories, output_paths):
         #init/catalog
-        agents = Agents()
-        agents.agents = scenario_dict["scenario"]["agents"]
-        description = scenario_dict.get("scenario", {}).get("description", "No description")
-        author = scenario_dict.get("scenario", {}).get("author", "Unknown")
-        road = xosc.RoadNetwork(roadfile="../../xodr/{}/{}.xodr".format(scenario_dict["scenario"]["dataset"], scenario_dict["scenario"]["location"]))
+        scenario = ScenarioInfo()
+        scenario.agents = agent_dict["scenario"]["agents"]
+        scenario.interactions = interaction_dict["Interactions"]
+        author = agent_dict.get("scenario", {}).get("author", "Unknown")
+        road = xosc.RoadNetwork(roadfile="../../xodr/{}/{}.xodr".format(agent_dict["scenario"]["dataset"], agent_dict["scenario"]["location"]))
         catalog = xosc.Catalog()
         catalog.add_catalog("VehicleCatalog", "../Catalogs/Vehicles")
         catalog.add_catalog("PedestrianCatalog", "../Catalogs/Pedestrians")
         catalog.add_catalog("ControllerCatalog", "../Catalogs/Controllers")
         
         parameter_declarations = self.__parameter_def()       
-        entities = self.__entites_def(agents, agent_categories)
+        entities = self.__entites_def(scenario, agent_categories)
 
         traj_df = pd.read_csv(gt_trajectory_path)
-        sb = self.__write_story(agents, agent_categories, traj_df, scenario_dict["scenario"]["duration"])
+        sb = self.__write_story(scenario, traj_df, agent_dict["scenario"]["duration"])
 
         scenario = xosc.Scenario(
             name = "GeneratedScenario",

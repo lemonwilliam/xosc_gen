@@ -53,7 +53,7 @@ class ScenarioDescriber:
         seg = df[(df.trackId == tid) & (df.time >= t_start) & (df.time <= t_end)]
         if len(seg) < 2:
             return None
-        coords = seg[["x", "y"]].values
+        coords = seg[["world_x", "world_y"]].values
         return LineString(coords)
 
     def _classify_agents(self, ego_id):

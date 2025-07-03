@@ -39,41 +39,24 @@ def main(args):
     '''
 
     # Load scenario metadata
-    recording_id = args.scenario_id.split("_")[0]
-    scenario_meta_path = f"./data/raw/{args.dataset}/data/{recording_id}_recordingMeta.csv"
+    metadata_path = f"data/processed/{args.dataset}/metadata/{args.scenario_id}.yaml"
     try:
-        scenario_meta = pd.read_csv(scenario_meta_path)
-    except Exception as e:
-        print(f"Error loading scenario metadata: {e}")
-        return
-
-    # Load tracks metadata
-    tracks_meta_path = f"data/processed/{args.dataset}/metadata/{args.scenario_id}.yaml"
-    try:
-        with open(tracks_meta_path, "r") as f:
-            tracks_meta = yaml.safe_load(f)
+        with open(metadata_path, "r") as f:
+            metadata = yaml.safe_load(f)
     except Exception as e:
         print(f"Error loading tracks metadata: {e}")
         return
     
-    # Load ground truth tracks (lane coordinates)
-    gt_trajectory_path = f"data/processed/{args.dataset}/trajectory/lane/{args.scenario_id}.csv"
+    # Load ground truth tracks
+    gt_trajectory_path = f"data/processed/{args.dataset}/trajectory/{args.scenario_id}.csv"
     try:
         gt_trajectory = pd.read_csv(gt_trajectory_path)
     except Exception as e:
         print(f"Error loading ground truth tracks: {e}")
         return
     
-    # Load world coordinate tracks (lane coordinates)
-    wc_trajectory_path = f"data/processed/{args.dataset}/trajectory/world/{args.scenario_id}.csv"
-    try:
-        wc_trajectory = pd.read_csv(wc_trajectory_path)
-    except Exception as e:
-        print(f"Error loading world coordinate tracks: {e}")
-        return
-    
     # Load map information
-    loc = tracks_meta['location']
+    loc = metadata['location']
     map_intersection_path = f"data/processed/{args.dataset}/map/{loc}.yaml"
     try:
         with open(map_intersection_path, "r") as f:
@@ -85,26 +68,25 @@ def main(args):
 
     # Step 1: Label individual agent actions using raw trajectory
     print("\n🔹 Step 1: Label individual actions")
-    output_yaml_path = os.path.join(f"results/{args.dataset}/yaml/", f"{args.scenario_id}.yaml")
+    scenario_yaml_path = f"results/{args.dataset}/yaml/{args.scenario_id}.yaml"
     labeller = Labeller(
-        meta_path=tracks_meta_path,
+        meta_path=metadata_path,
         map_yaml_path=map_intersection_path,
-        gt_trajectory_path=gt_trajectory_path,
-        wc_trajectory_path = wc_trajectory_path
+        gt_trajectory_path=gt_trajectory_path
     )
     labeller.label()
-    labeller.save(output_yaml_path)
+    labeller.save(scenario_yaml_path)
     print(f"✅ Route secision actions added to YAML file\n")
 
 
     # Step 2: Create scenario descriptions for all relevant agents
-    full_scenario_yaml = yaml.safe_load(open(output_yaml_path))
-    all_agents = full_scenario_yaml["scenario"]["agents"]
+    scenario_yaml = yaml.safe_load(open(scenario_yaml_path))
+    all_agents = scenario_yaml["scenario"]["agents"]
     descriptions = []
 
     describer = ScenarioDescriber(
-        scenario_yaml_path = output_yaml_path,
-        trajectory_csv_path = f"data/processed/{args.dataset}/trajectory/world/{args.scenario_id}.csv",
+        scenario_yaml_path = scenario_yaml_path,
+        trajectory_csv_path = gt_trajectory_path,
         map_yaml_path = map_intersection_path
     )
 
@@ -134,10 +116,11 @@ def main(args):
 
     # Run the End-to-End Pipeline
     # Call the main pipeline method on the instance
+    interactions_yaml_path = f"results/{args.dataset}/yaml/{args.scenario_id}_inter.yaml"
     success = interpreter.run_analysis_pipeline(
         map_location = loc,
         agent_actions_path=behavior_log_path,
-        output_yaml_path=""
+        output_yaml_path=interactions_yaml_path
     )
 
     # Report Final Status
@@ -150,12 +133,14 @@ def main(args):
     # Step 3: Generate initial OpenSCENARIO file
     print("\n🔹 Step 3: XOSC File Generation")
     filegen_model = FileGeneration()
-    scenario_description_path = f"results/{args.dataset}/yaml/{args.scenario_id}.yaml"
     output_xosc_paths = [f"results/{args.dataset}/xosc/{args.scenario_id}_gen.xosc", f"esmini/resources/xosc/{args.dataset}/{args.scenario_id}_gen.xosc"]
-    with open(scenario_description_path, "r") as f:
-        yaml_dict = yaml.safe_load(f)
+    with open(scenario_yaml_path, "r") as f:
+        agent_dict = yaml.safe_load(f)
+    with open(interactions_yaml_path, "r") as f:
+        interaction_dict = yaml.safe_load(f)
     filegen_model.parse_scenario_description(
-        scenario_dict = yaml_dict, 
+        agent_dict = agent_dict,
+        interaction_dict = interaction_dict,
         gt_trajectory_path = gt_trajectory_path, 
         agent_categories = describer.agent_classifications[args.ego_id], 
         output_paths = output_xosc_paths
@@ -171,8 +156,8 @@ def main(args):
     scorer = Scorer()
 
     # Load UTM offset from recording metadata
-    x_offset = scenario_meta['xUtmOrigin'][0]
-    y_offset = scenario_meta['yUtmOrigin'][0]
+    x_offset = metadata.get("x_offset")
+    y_offset = metadata.get("y_offset")
 
     gt_ids = gt_trajectory["trackId"].unique().tolist()
     id_mapping = dict(zip(list(range(len(gt_ids))), gt_ids))
