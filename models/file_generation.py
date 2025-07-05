@@ -6,10 +6,8 @@ from scenariogeneration import xosc, prettyprint
 import xml.etree.ElementTree as ET
 from collections import defaultdict
 from xml.dom import minidom
-from geomdl import knotvector, BSpline
+from geomdl import knotvector, BSpline, operations
 from geomdl.visualization import VisMPL
-from geomdl import operations
-from scripts.world_to_lane import CoordProjector
 
 
 class ScenarioInfo:
@@ -103,6 +101,92 @@ class FileGeneration:
 
         return init
     
+    def __relative_speed(self, df, track_id_a, track_id_b, time_target):
+        """
+        Compute the relative speed between two agents at a given time.
+        
+        Parameters:
+            df (pd.DataFrame): The full trajectory dataframe.
+            track_id_a (int): Track ID of the first vehicle.
+            track_id_b (int): Track ID of the second vehicle.
+            time_target (float): The time at which to compute relative speed.
+        
+        Returns:
+            float: The relative speed in m/s. Returns None if data is missing.
+        """
+        # Filter rows for each vehicle at the specified time
+        row_a = df[(df["trackId"] == track_id_a) & (df["time"] == time_target)]
+        row_b = df[(df["trackId"] == track_id_b) & (df["time"] == time_target)]
+        
+        if row_a.empty or row_b.empty:
+            print(f"Missing data at time {time_target} for one of the trackIds.")
+            return None
+
+        # Extract values
+        heading_a = np.deg2rad(row_a.iloc[0]["heading"])
+        speed_a = row_a.iloc[0]["velocity"]
+        vx_a = speed_a * np.cos(heading_a)
+        vy_a = speed_a * np.sin(heading_a)
+
+        heading_b = np.deg2rad(row_b.iloc[0]["heading"])
+        speed_b = row_b.iloc[0]["velocity"]
+        vx_b = speed_b * np.cos(heading_b)
+        vy_b = speed_b * np.sin(heading_b)
+
+        # Compute relative velocity vector and its magnitude
+        rel_vx = vx_a - vx_b
+        rel_vy = vy_a - vy_b
+        relative_speed = np.sqrt(rel_vx**2 + rel_vy**2)
+
+        return relative_speed
+    
+    def __distance(self, df, track_id_a, track_id_b, time_target):
+        """
+        Compute the Euclidean distance between two agents at a given time.
+
+        Parameters:
+            df (pd.DataFrame): The full trajectory dataframe.
+            track_id_a (int): Track ID of the first vehicle.
+            track_id_b (int): Track ID of the second vehicle.
+            time_target (float): The time at which to compute the distance.
+
+        Returns:
+            float: Euclidean distance in meters. Returns None if data is missing.
+        """
+        row_a = df[(df["trackId"] == track_id_a) & (df["time"] == time_target)]
+        row_b = df[(df["trackId"] == track_id_b) & (df["time"] == time_target)]
+
+        if row_a.empty or row_b.empty:
+            print(f"Missing data at time {time_target} for one of the trackIds.")
+            return None
+
+        x_a, y_a = row_a.iloc[0]["world_x"], row_a.iloc[0]["world_y"]
+        x_b, y_b = row_b.iloc[0]["world_x"], row_b.iloc[0]["world_y"]
+
+        return np.sqrt((x_a - x_b) ** 2 + (y_a - y_b) ** 2)
+    
+    def __time_headway(self, df, follower_id, leader_id, time_target):
+        """
+        Compute the time headway between two vehicles using distance and relative speed.
+
+        Parameters:
+            df (pd.DataFrame): The full trajectory dataframe.
+            follower_id (int): Track ID of the following vehicle.
+            leader_id (int): Track ID of the leading vehicle.
+            time_target (float): Timestamp to evaluate.
+
+        Returns:
+            float: Time headway in seconds. Returns None if not computable or relative speed is zero or negative.
+        """
+        distance = self.__distance(df, follower_id, leader_id, time_target)
+        rel_speed = self.__relative_speed(df, follower_id, leader_id, time_target)
+
+        if distance is None or rel_speed is None:
+            return None
+        if rel_speed <= 0:
+            return float('inf')  # Vehicles are not approaching
+        return distance / rel_speed
+    
     def __get_condition(self, track_id, action_attrs, all_interactions, raw_trajectory):
 
         rules = {
@@ -111,21 +195,18 @@ class FileGeneration:
             "greaterThan": xosc.Rule.greaterThan
         }
 
-        states = {
-            "started": xosc.StoryboardElementState,
-            "finished": xosc.StoryboardElementState
-        }
-
         for interaction in all_interactions:
-            if interaction["agent"] == track_id and interaction["timestamp"] == action_attrs["start_time"]:
+            a = interaction.get("agent")
+            t = interaction.get("timestamp")
+            if a == track_id and t == action_attrs["start_time"]:
                 e = interaction.get("details", {}).get("interacts_with")
                 r = interaction.get("details", {}).get("rule")
-                s = interaction.get("details", {}).get("state")
-                v = interaction.get("details", {}).get("value")                     
+                v = interaction.get("details", {}).get("speed")
+                d = interaction.get("details", {}).get("duration")                   
                 if interaction["trigger"] == "Time Headway Condition":
                     condition = xosc.TimeHeadwayCondition(
                         entity = f"Agent{e}",
-                        value = ,
+                        value = self.__time_headway(raw_trajectory, a, e, t),
                         rule = rules[r],
                         alongroute = False,
                         freespace = False,
@@ -139,14 +220,13 @@ class FileGeneration:
                     )
                 elif interaction["trigger"] == "Relative Speed Condition":
                     condition = xosc.RelativeSpeedCondition(
-                        value = , 
+                        value = self.__relative_speed(raw_trajectory, a, e, t), 
                         rule = rules[r], 
                         entity = f"Agent{e}"
                     )
                 elif interaction["trigger"] == "Relative Distance Condition":
-
                     condition = xosc.RelativeDistanceCondition(
-                        value =,
+                        value = self.__distance(raw_trajectory, a, e, t),
                         rule = rules[r],
                         dist_type = xosc.RelativeDistanceType.euclidianDistance,
                         entity = f"Agent{e}",
@@ -155,25 +235,9 @@ class FileGeneration:
                         routing_algorithm = None
                     )
                     return
-                elif interaction["trigger"] == "React to Passing Intersection":
-                    condition = xosc.StoryboardElementStateCondition(
-                        element = xosc.StoryboardElementType.event,
-                        reference = , 
-                        state = states[s],
-                    )
-                    return condition, "StoryboardElementStateCondition"
-                elif interaction["trigger"] == "React to Lane Change":
-                    condition = xosc.StoryboardElementStateCondition(
-                        element = xosc.StoryboardElementType.event,
-                        reference = , 
-                        state = states[s],
-                    )
-                    return condition, "StoryboardElementStateCondition"
-                elif interaction["trigger"] == "React to Speed Change":
-                    condition = xosc.StoryboardElementStateCondition(
-                        element = xosc.StoryboardElementType.event,
-                        reference = , 
-                        state = states[s],
+                elif interaction["trigger"] == "Stand Still Condition":
+                    condition = xosc.StandStillCondition(
+                        duration = d
                     )
                     return condition, "StoryboardElementStateCondition"
                 else:

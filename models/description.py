@@ -3,12 +3,13 @@ import yaml
 import numpy as np
 from shapely.geometry import LineString
 
-
 class ScenarioDescriber:
     def __init__(self, scenario_yaml_path, trajectory_csv_path, map_yaml_path):
         with open(scenario_yaml_path, "r") as f:
             self.agents = yaml.safe_load(f)["scenario"]["agents"]     
         self.road_order = self._load_map_description(map_yaml_path)
+        # Note: We assume the trajectory CSV is sorted by time for each agent.
+        # It must also contain a 'speed' column in m/s.
         self.trajectory = pd.read_csv(trajectory_csv_path)
         self.agent_dict = self._build_agent_dict()
         self.agent_classifications = {}
@@ -38,9 +39,8 @@ class ScenarioDescriber:
             agent_dict[track_id] = {
                 "entry_time": entry_time,
                 "exit_time": exit_time,
-                "type": agent["type"]  # <- store type here
+                "type": agent["type"]
             }
-
         return agent_dict
 
     def _get_route_action(self, agent):
@@ -48,6 +48,24 @@ class ScenarioDescriber:
             if action["type"] in ["go_straight", "turn_left", "turn_right"]:
                 return action
         return None
+
+    def _ms_to_kmh(self, speed_ms):
+        """Converts speed from meters per second to kilometers per hour."""
+        return speed_ms * 3.6
+
+    def _get_speed_at_time(self, tid, t):
+        """
+        Gets the speed of an agent at a specific time from the trajectory data.
+        Returns the speed in m/s.
+        """
+        # Find the last recorded data point at or just before the given time 't'
+        segment = self.trajectory[(self.trajectory.trackId == tid) & (self.trajectory.time <= t)]
+        if segment.empty:
+            # If no data point is found (e.g., time 't' is before the agent appears),
+            # return None.
+            return None
+        # Return the speed from the last row of the filtered segment
+        return segment.iloc[-1]["velocity"]
 
     def _trajectory_linestring(self, df, tid, t_start, t_end):
         seg = df[(df.trackId == tid) & (df.time >= t_start) & (df.time <= t_end)]
@@ -63,7 +81,6 @@ class ScenarioDescriber:
             "Affected": [],
             "Unrelated": []
         }
-
         ego_entry = self.agent_dict[ego_id]["entry_time"]
         ego_exit = self.agent_dict[ego_id]["exit_time"]
 
@@ -100,7 +117,6 @@ class ScenarioDescriber:
                 classification["Key"].append(tid)
             else:
                 classification["Affected"].append(tid)
-
         return classification
     
     def _acceleration_magnitude(self, value):
@@ -117,24 +133,26 @@ class ScenarioDescriber:
         t0 = ego["enter_simulation_time"]
         road, lane = ego["initial_position"][:2]
         agent_type = self.agent_dict[ego_id]["type"]
+        
+        # Get initial speed, convert to km/h, and add to sentence.
+        initial_speed_ms = ego.get("initial_speed", 0.0)
+        initial_speed_kmh = self._ms_to_kmh(initial_speed_ms)
+        speed_phrase = f"at {initial_speed_kmh:.1f} km/h"
+
+        # Use .lower() to match example output ("car 20:")
+        header = f"{agent_type.lower()} {ego_id}:"
 
         if road in self.road_order:
-            return f"{agent_type} {ego_id}:\n- Enters the scenario at t={t0:.2f}, starting from road {road}, lane {lane}."
+            return f"{header}\n- Enters the scenario at t={t0:.2f}, starting from road {road}, lane {lane} {speed_phrase}."
         else:
-            return f"{agent_type} {ego_id}:\n- Enters the scenario at t={t0:.2f}, starting inside the intersection."
-
+            return f"{header}\n- Enters the scenario at t={t0:.2f}, starting inside the intersection {speed_phrase}."
 
     def _timeline_description(self, ego_id, classification):
-        """
-        Generates a simplified, action-focused timeline of events for the ego agent.
-        Intentions and reasons for actions are omitted.
-        """
         ego = self._get_agent_by_id(ego_id)
         events = []
         ego_actions = ego.get("actions", [])
         route_action = self._get_route_action(ego)
 
-        # Insert intersection entry and exit as events if applicable
         if route_action:
             attr = route_action["attributes"]
             t_entry = attr["start_time"]
@@ -166,28 +184,39 @@ class ScenarioDescriber:
             if exit_road in self.road_order:
                 events.append((t_exit, f"- Leaves the intersection at t={t_exit:.2f}."))
 
-        # Process other actions like slow_down, speed_up, lane_change
         for action in ego_actions:
             t_start = action["attributes"]["start_time"]
             act_type = action["type"]
 
-            if act_type == "slow_down":
-                # Get action magnitude and check if it's a full stop
-                acc = action["attributes"].get("acceleration")
-                adverb = self._acceleration_magnitude(acc)
-                target_speed = action["attributes"].get("target_speed")
-                stop_phrase = " till stopped" if target_speed < 0.5 else ""
-
-                # Create a simple description of the action without the reason
-                line = f"- {adverb} slows down at t={t_start:.2f}{stop_phrase}."
-                events.append((t_start, line))
-
-            elif act_type == "speed_up":
+            if act_type == "slow_down" or act_type == "speed_up":
+                # --- MODIFICATION START ---
                 acc = action["attributes"].get("acceleration", 0.0)
                 adverb = self._acceleration_magnitude(acc)
+                target_speed_ms = action["attributes"].get("target_speed")
+                duration = action["attributes"].get("duration")
 
-                # Create a simple description of the action without the reason
-                line = f"- {adverb} speeds up at t={t_start:.2f}."
+                # Build the time phrase first
+                if duration is not None:
+                    t_end = t_start + duration
+                    time_phrase = f"from t={t_start:.2f} to t={t_end:.2f}"
+                else:
+                    time_phrase = f"at t={t_start:.2f}" # Fallback if no duration
+
+                speed_before_ms = self._get_speed_at_time(ego_id, t_start)
+                verb = "slows down" if act_type == "slow_down" else "speeds up"
+
+                if speed_before_ms is None or target_speed_ms is None:
+                    # Fallback to a simpler description if speed data is incomplete
+                    line = f"- {adverb} {verb} {time_phrase}."
+                else:
+                    # Build the full, detailed description
+                    speed_before_kmh = self._ms_to_kmh(speed_before_ms)
+                    speed_after_kmh = self._ms_to_kmh(target_speed_ms)
+                    stop_phrase = " till stopped" if target_speed_ms < 0.5 else ""
+
+                    line = (f"- {adverb} {verb} {time_phrase}, from {speed_before_kmh:.1f} km/h "
+                            f"to {speed_after_kmh:.1f} km/h{stop_phrase}.")
+                # --- MODIFICATION END ---
                 events.append((t_start, line))
 
             elif act_type == "lane_change":
@@ -195,16 +224,16 @@ class ScenarioDescriber:
                 line = f"- Changes lane to the {direction}."
                 events.append((t_start, line))
 
-        # Sort all events chronologically
         sorted_lines = [line for _, line in sorted(events)]
         return sorted_lines
     
     def generate_description(self, ego_id):
         classification = self._classify_agents(ego_id)
         self.agent_classifications[ego_id] = classification
-        lines = [
-            self._initial_description(ego_id)
-        ]
+        
+        # _initial_description now returns the header and the first line
+        initial_lines = self._initial_description(ego_id).split('\n')
+        
+        lines = initial_lines
         lines += self._timeline_description(ego_id, classification)
         return "\n".join(filter(None, lines))
-

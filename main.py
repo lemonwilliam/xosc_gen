@@ -21,20 +21,6 @@ def main(args):
     """
 
     '''
-
-    # Define paths and load essential knowledge
-    task_desc_path = "memos/dm_task.txt"
-    condition_definition_path = "memos/condition_definition.txt"
-
-    with open(task_desc_path , "r") as f:
-        task_description = f.read()
-    with open(trigger_definition_path, "r") as f:
-        condition_definitions = f.read()
-
-    desc_model = gptDescription(api_key=None, task_description=task_description, action_definitions=action_definitions, trigger_definitions=trigger_definitions)
-    '''
-
-    '''
     Define input data paths and load
     '''
 
@@ -128,8 +114,9 @@ def main(args):
         print("\n✅ Pipeline completed successfully.")
     else:
         print("\n❌ Pipeline failed. Please check the logs above for errors.")
-    
 
+    '''
+    
     # Step 3: Generate initial OpenSCENARIO file
     print("\n🔹 Step 3: XOSC File Generation")
     filegen_model = FileGeneration()
@@ -181,6 +168,8 @@ def main(args):
         gen_csv_path=f"./results/{args.dataset}/trajectory/{args.scenario_id}_gen.csv"
     )
     vis.interactive_view()
+
+    '''
 
     '''
     # Step 5–7: Reflection loop for refinement
