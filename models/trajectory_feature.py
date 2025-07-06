@@ -90,6 +90,8 @@ def find_representative_points_each_segment(df, track_id, turn_thresh=0.1, seg_t
     rep_points['curvature'] = curvature[rep_points_idx]
    
     peak = sorted(list(set(peak)))
+
+    '''
     
     # debug graph
     if __debug__:
@@ -119,6 +121,8 @@ def find_representative_points_each_segment(df, track_id, turn_thresh=0.1, seg_t
         plt.grid(True)
         plt.tight_layout()
         plt.show()
+
+    '''
 
     return rep_points
 

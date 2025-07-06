@@ -154,7 +154,9 @@ class FileGeneration:
             float: Euclidean distance in meters. Returns None if data is missing.
         """
         row_a = df[(df["trackId"] == track_id_a) & (df["time"] == time_target)]
+        print(row_a)
         row_b = df[(df["trackId"] == track_id_b) & (df["time"] == time_target)]
+        print(row_b)
 
         if row_a.empty or row_b.empty:
             print(f"Missing data at time {time_target} for one of the trackIds.")
@@ -213,28 +215,31 @@ class FileGeneration:
                         distance_type = xosc.RelativeDistanceType.euclidianDistance,
                         coordinate_system = xosc.CoordinateSystem.entity
                     )
+                    return condition, "TimeHeadwayCondition"
                 elif interaction["trigger"] == "Speed Condition":
                     condition = xosc.SpeedCondition(
                         value = v, 
                         rule = rules[r]
                     )
+                    return condition, "SpeedCondition"
                 elif interaction["trigger"] == "Relative Speed Condition":
                     condition = xosc.RelativeSpeedCondition(
                         value = self.__relative_speed(raw_trajectory, a, e, t), 
                         rule = rules[r], 
                         entity = f"Agent{e}"
                     )
+                    return condition, "RelativeSpeedCondition"
                 elif interaction["trigger"] == "Relative Distance Condition":
                     condition = xosc.RelativeDistanceCondition(
                         value = self.__distance(raw_trajectory, a, e, t),
                         rule = rules[r],
-                        dist_type = xosc.RelativeDistanceType.euclidianDistance,
+                        dist_type = xosc.RelativeDistanceType.cartesianDistance,
                         entity = f"Agent{e}",
                         alongroute = False,
                         freespace = False,
                         routing_algorithm = None
                     )
-                    return
+                    return condition, "RelativeDistanceCondition"
                 elif interaction["trigger"] == "Stand Still Condition":
                     condition = xosc.StandStillCondition(
                         duration = d
@@ -435,7 +440,7 @@ class FileGeneration:
                     # Reach timestamp
                     if action_type in speed_ctrl or action_type in land_ctrl:
                         condition, condition_type = self.__get_condition(tid, attrs, scenario.interactions, traj_df)
-                        if condition_type == "SimulationTimeCondition" or condition_type == "StoryboardElementStateCondition":
+                        if condition_type == "SimulationTimeCondition":
                             event.add_trigger(
                                 xosc.ValueTrigger(
                                     name=condition_type,

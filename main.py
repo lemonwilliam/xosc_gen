@@ -91,7 +91,8 @@ def main(args):
     with open(behavior_log_path, "w") as f:
         f.write("\n\n".join(descriptions))
 
-    
+
+
     # Step 2.5: Use OpenAI API to acquire trigger conditions for actions
     #  Initialize the Interpreter Engine
     try:
@@ -115,7 +116,8 @@ def main(args):
     else:
         print("\n❌ Pipeline failed. Please check the logs above for errors.")
 
-    '''
+
+    # interactions_yaml_path = f"results/{args.dataset}/yaml/{args.scenario_id}_inter.yaml"
     
     # Step 3: Generate initial OpenSCENARIO file
     print("\n🔹 Step 3: XOSC File Generation")
@@ -158,18 +160,17 @@ def main(args):
     )
 
     fde_score = scorer.compute_fde(
-        gt_csv_path = f"./data/processed/{args.dataset}/trajectory/world/{args.scenario_id}.csv",
+        gt_csv_path = f"./data/processed/{args.dataset}/trajectory/{args.scenario_id}.csv",
         gen_csv_path = f"./results/{args.dataset}/trajectory/{args.scenario_id}_gen.csv"
     )
     print("FDE score:", fde_score)
 
     vis = Visualization(
-        gt_csv_path=f"./data/processed/{args.dataset}/trajectory/world/{args.scenario_id}.csv", 
+        gt_csv_path=f"./data/processed/{args.dataset}/trajectory/{args.scenario_id}.csv", 
         gen_csv_path=f"./results/{args.dataset}/trajectory/{args.scenario_id}_gen.csv"
     )
     vis.interactive_view()
 
-    '''
 
     '''
     # Step 5–7: Reflection loop for refinement

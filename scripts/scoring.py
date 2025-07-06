@@ -30,7 +30,7 @@ class Scorer:
 
             # Final positions
             gt_final = gt_traj.iloc[-1][['world_x', 'world_y']].values
-            gen_final = gen_traj.iloc[-1][['world_x', 'world_y']].values
+            gen_final = gen_traj.iloc[-1][['x', 'y']].values
 
             # Euclidean distance
             fde = np.linalg.norm(gt_final - gen_final)
