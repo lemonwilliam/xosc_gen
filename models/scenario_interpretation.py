@@ -177,6 +177,14 @@ class SceneInterpretation:
             return ["ERROR_JSON_DECODE"] * num_expected_answers
         return llm_answers_list
 
+    def cleanup_session(self, session_id: str):
+        """
+        Removes the message history for a given session_id to free up memory.
+        """
+        if session_id in self.message_stores:
+            del self.message_stores[session_id]
+            print(f"\nCleaned up message history for session: {session_id}")
+    
     # Verify_map_understanding
     def verify_map_understanding(self, 
                                  map_location: str,
@@ -199,7 +207,7 @@ class SceneInterpretation:
             print(f"Map Description: {map_description_path}")
 
         # Use the image path as a unique session ID for this conversation
-        session_id = map_image_path
+        session_id = map_location
         self.message_stores[session_id] = InMemoryChatMessageHistory()
         
         try:
@@ -373,9 +381,6 @@ class SceneInterpretation:
         print(f"Total Completion Tokens: {self.verification_token_usage['completion_tokens']}")
         print(f"Total Tokens Consumed:   {self.verification_token_usage['total_tokens']}")
         print("--------------------------------------------")
-        
-        # Clean up the message store for this session if desired
-        del self.message_stores[session_id]
 
         return self.map_verified_successfully, self.verification_token_usage
 

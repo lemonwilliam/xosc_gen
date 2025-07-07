@@ -116,7 +116,9 @@ class FileGeneration:
         """
         # Filter rows for each vehicle at the specified time
         row_a = df[(df["trackId"] == track_id_a) & (df["time"] == time_target)]
+        print(row_a)
         row_b = df[(df["trackId"] == track_id_b) & (df["time"] == time_target)]
+        print(row_b)
         
         if row_a.empty or row_b.empty:
             print(f"Missing data at time {time_target} for one of the trackIds.")
@@ -411,12 +413,13 @@ class FileGeneration:
                         curve.knotvector = knotvector.generate(curve.degree, curve.ctrlpts_size)
                         operations.refine_knotvector(curve, [1])
                         
+                        '''
                         if __debug__:
                             curve.vis = VisMPL.VisCurve2D()
                             curve.render()
                             print("curve point:", curve.ctrlpts)
                             print("curve knot:", curve.knotvector)
-                        
+                        '''
                             
                         nurbs = xosc.Nurbs(order=order) # Create Nurbs objects
                         for cc in curve.ctrlpts:

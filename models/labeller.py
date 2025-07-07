@@ -41,10 +41,12 @@ class Labeller:
             tid = agent['track_id']
             agent_traj = self.trajectory_df[self.trajectory_df.trackId == tid].reset_index(drop=True)
             init_row = agent_traj.loc[0]
+            end_row = agent_traj.loc[len(agent_traj)-1]
             self.scenario['agents'].append({
                 'track_id': agent['track_id'],
                 'type': agent['class'],
                 'enter_simulation_time': init_row.time,
+                'exit_simulation_time': end_row.time,
                 'initial_position': FlowList([int(init_row.road_id), int(init_row.lane_id), init_row.lane_offset, init_row.s, init_row.heading]),
                 'initial_speed': init_row.velocity,
                 'actions': []

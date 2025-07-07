@@ -62,7 +62,7 @@ def main(args):
     )
     labeller.label()
     labeller.save(scenario_yaml_path)
-    print(f"✅ Route secision actions added to YAML file\n")
+    print(f"✅ Individual vehicle actions added to YAML file\n")
 
 
     # Step 2: Create scenario descriptions for all relevant agents
@@ -115,6 +115,8 @@ def main(args):
         print("\n✅ Pipeline completed successfully.")
     else:
         print("\n❌ Pipeline failed. Please check the logs above for errors.")
+
+    interpreter.cleanup_session(session_id=loc)
 
 
     # interactions_yaml_path = f"results/{args.dataset}/yaml/{args.scenario_id}_inter.yaml"

@@ -221,9 +221,11 @@ class ScenarioDescriber:
 
             elif act_type == "lane_change":
                 direction = action["attributes"]["direction"]
-                line = f"- Changes lane to the {direction}."
+                line = f"- Changes lane to the {direction} at t={t_start:.2f}."
                 events.append((t_start, line))
 
+        exit_time = ego["exit_simulation_time"]
+        events.append((exit_time, f"- Exits the scenario at t={exit_time:.2f}."))
         sorted_lines = [line for _, line in sorted(events)]
         return sorted_lines
     
