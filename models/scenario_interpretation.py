@@ -396,7 +396,7 @@ class SceneInterpretation:
             print("Error: Map understanding has not been successfully verified. Cannot analyze interactions.")
             return None
         
-        # --- NEW: Read the prompt template from the specified file ---
+        # Read the prompt template from the specified file ---
         prompt_template_content = self._read_text_file('./memos/interaction_prompt.txt', "YAML prompt template")
         if not prompt_template_content:
             print(f"Error: Could not load the prompt template.")
@@ -407,19 +407,16 @@ class SceneInterpretation:
             print("Error: Cannot proceed without agent actions content.")
             return None
         
-        # --- NEW: Format the prompt by inserting the agent actions log ---
+        # Format the prompt by inserting the agent actions log ---
         full_analysis_prompt = prompt_template_content.format(
             agent_actions_log=agent_actions_content
         )
         
-        # We can now create the final prompt parts list directly
         analysis_prompt_parts_list = [
              {"type": "text", "text": full_analysis_prompt}
         ]
 
-        # --- The rest of the method remains the same ---
         print("\n--- Requesting Structured YAML Interaction Analysis via LangChain ---")
-        
         analysis_result = None
         analysis_tokens = {}
         
@@ -493,7 +490,7 @@ class SceneInterpretation:
         print(f"\n===== Starting Analysis Phase =====")
         print(f"Agent Actions: {agent_actions_path}")
         
-        # The session_id is the unique identifier for the conversation, which we've set as the map image path
+        # The session_id is the unique identifier for the conversation, which we've set as the map location
         session_id = map_location
         
         analysis_result_tuple = self.analyze_vehicle_interactions(

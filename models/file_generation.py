@@ -98,6 +98,16 @@ class FileGeneration:
                     scenario.agentNames[i],
                     xosc.AbsoluteSpeedAction(init_row.velocity, xosc.TransitionDynamics(xosc.DynamicsShapes.step, xosc.DynamicsDimension.time, 0))
                 )
+                for action in agent["actions"]:
+                    action_type = action["type"]
+                    attrs = action["attributes"]
+                    if(attrs["start_time"] == agent["enter_simulation_time"]):
+                        action_name, action_obj = self.__build_action(tid, action_type, attrs)
+                        if action_obj is not None:
+                            init.add_init_action(
+                                scenario.agentNames[i], 
+                                action_obj
+                            )               
 
         return init
     
@@ -205,14 +215,13 @@ class FileGeneration:
             if a == track_id and t == action_attrs["start_time"]:
                 e = interaction.get("details", {}).get("interacts_with")
                 r = interaction.get("details", {}).get("rule")
-                v = interaction.get("details", {}).get("speed")
-                d = interaction.get("details", {}).get("duration")                   
+                v = interaction.get("details", {}).get("speed")               
                 if interaction["trigger"] == "Time Headway Condition":
                     condition = xosc.TimeHeadwayCondition(
                         entity = f"Agent{e}",
                         value = self.__time_headway(raw_trajectory, a, e, t),
                         rule = rules[r],
-                        alongroute = False,
+                        alongroute = True,
                         freespace = False,
                         distance_type = xosc.RelativeDistanceType.euclidianDistance,
                         coordinate_system = xosc.CoordinateSystem.entity
@@ -237,16 +246,11 @@ class FileGeneration:
                         rule = rules[r],
                         dist_type = xosc.RelativeDistanceType.cartesianDistance,
                         entity = f"Agent{e}",
-                        alongroute = False,
+                        alongroute = True,
                         freespace = False,
                         routing_algorithm = None
                     )
                     return condition, "RelativeDistanceCondition"
-                elif interaction["trigger"] == "Stand Still Condition":
-                    condition = xosc.StandStillCondition(
-                        duration = d
-                    )
-                    return condition, "StoryboardElementStateCondition"
                 else:
                     print("Non existent condition type")
                     break
@@ -257,6 +261,60 @@ class FileGeneration:
         )
 
         return condition, "SimulationTimeCondition"
+    
+    def __build_action(self, agent_id, action_type, attrs):
+        if action_type in ["speed_up", "slow_down", "reverse"]:
+            dynamics = xosc.TransitionDynamics("linear", "time", attrs["duration"])
+            return action_type, xosc.AbsoluteSpeedAction(attrs["target_speed"], dynamics)
+        
+        elif action_type == "lane_change":
+            dynamics = xosc.TransitionDynamics(xosc.DynamicsShapes.cubic, "time", 2.0)
+            return action_type, xosc.AbsoluteLaneChangeAction(attrs["target_lane"], dynamics)
+        
+        elif action_type in ["go_straight", "turn_left", "turn_right", "follow"]:
+            if attrs.get("legal", True):
+                route = xosc.Route(f"Agent_{agent_id}_route", False)
+                sp, ep = attrs['entry_point'], attrs['exit_point']
+                start_pos = xosc.LanePosition(sp[3], sp[2], sp[1], sp[0], xosc.Orientation(h=np.deg2rad(sp[4])))
+                end_pos = xosc.LanePosition(ep[3], ep[2], ep[1], ep[0], xosc.Orientation(h=np.deg2rad(ep[4])))
+                route.add_waypoint(start_pos, xosc.RouteStrategy().shortest)
+                route.add_waypoint(end_pos, xosc.RouteStrategy().shortest)
+                return "SetRoute", xosc.AssignRouteAction(route)
+            else:
+                order = 3
+                curve  = BSpline.Curve()
+                curve.degree = order - 1
+                representpts = []
+                
+                for wp in attrs['trajectory']:
+                    representpts.append([wp[5], wp[6]])
+                curve.ctrlpts = representpts
+                # Compute and add knots based on number of control points and degree
+                curve.knotvector = knotvector.generate(curve.degree, curve.ctrlpts_size)
+                operations.refine_knotvector(curve, [1])
+                
+                '''
+                if __debug__:
+                    curve.vis = VisMPL.VisCurve2D()
+                    curve.render()
+                    print("curve point:", curve.ctrlpts)
+                    print("curve knot:", curve.knotvector)
+                '''
+                    
+                nurbs = xosc.Nurbs(order=order) # Create Nurbs objects
+                for cc in curve.ctrlpts:
+                    nurbs.add_control_point(xosc.ControlPoint(xosc.WorldPosition(x=cc[0], y=cc[1])))
+                nurbs.add_knots(curve.knotvector)
+
+                # Create Trajectory Object and assign nurbs
+                traj = xosc.Trajectory("Agent_{}_trajectory".format(agent_id), False)
+                traj.add_shape(nurbs)
+
+                return "FollowTrajectory", xosc.FollowTrajectoryAction(traj, following_mode="position")
+        else:
+            print(f"[WARN] Unsupported action type: {action_type}")
+            return None, None
+
     
     def __write_story(self, scenario, traj_df, duration):
         init = self.__story_init(scenario, traj_df)
@@ -325,6 +383,16 @@ class FileGeneration:
                     )
                 )
 
+                for action in agent["actions"]:
+
+                    action_type = action["type"]
+                    attrs = action["attributes"]
+
+                    if(attrs["start_time"] == agent["enter_simulation_time"]):
+                        action_name, action_obj = self.__build_action(tid, action_type, attrs)
+                        if action_obj is not None:
+                            spawn_event.add_action(action_name, action_obj)
+
                 # 3) Finally, trigger the entire block at the right time
                 spawn_event.add_trigger(
                     xosc.ValueTrigger(
@@ -346,10 +414,16 @@ class FileGeneration:
                 action_type = action["type"]
                 attrs = action["attributes"]
 
+                if(attrs["start_time"] == agent["enter_simulation_time"]):
+                    continue
+
                 valid_action = False
                 valid_event = False
 
                 ## ➡️ First determine the Action of the event
+                action_name, action_obj = self.__build_action(tid, action_type, attrs)
+                if action_obj is not None:
+                    valid_action = True
 
                 # Longitudinal action
                 if action_type in speed_ctrl:
@@ -359,12 +433,8 @@ class FileGeneration:
                         maxexecution=1
                     )
                     speed_event_count += 1
-                    dynamics = xosc.TransitionDynamics("linear", "time", attrs["duration"])
-                    event.add_action(
-                        action_type,
-                        xosc.AbsoluteSpeedAction(attrs["target_speed"], dynamics)
-                    )
-                    valid_action = True
+                    event.add_action(action_name, action_obj)
+                    
                 # Lateral Action
                 elif action_type in land_ctrl:
                     event = xosc.Event(
@@ -373,13 +443,8 @@ class FileGeneration:
                         maxexecution=1
                     )
                     lateral_event_count += 1
-                    lane_id = attrs['target_lane']
-                    dynamics = xosc.TransitionDynamics(xosc.DynamicsShapes.cubic, "time", 2.0)
-                    event.add_action(
-                        action_type,
-                        xosc.AbsoluteLaneChangeAction(lane_id, dynamics)
-                    )
-                    valid_action = True
+                    event.add_action(action_name, action_obj)
+                    
                 # Route Decision Action
                 elif action_type in road_ctrl:
                     event = xosc.Event(
@@ -388,53 +453,7 @@ class FileGeneration:
                         maxexecution=1
                     )
                     route_event_count += 1
-                    if attrs['legal']:
-                        route = xosc.Route("Agent_{}_route".format(tid), False)
-                        sp, ep = attrs['entry_point'], attrs['exit_point']
-                        route_start = xosc.LanePosition(sp[3], sp[2], sp[1], sp[0], xosc.Orientation(h=np.deg2rad(sp[4])))
-                        route_end = xosc.LanePosition(ep[3], ep[2], ep[1], ep[0], xosc.Orientation(h=np.deg2rad(ep[4])))
-                        route.add_waypoint(route_start, xosc.RouteStrategy().shortest)
-                        route.add_waypoint(route_end, xosc.RouteStrategy().shortest)
-                        event.add_action(
-                            "SetRoute",
-                            xosc.AssignRouteAction(route)
-                        )                           
-                    else:
-                        # Add control points to Nurbs and set knots
-                        order = 3
-                        curve  = BSpline.Curve()
-                        curve.degree = order - 1
-                        representpts = []
-                       
-                        for wp in attrs['trajectory']:
-                            representpts.append([wp[5], wp[6]])
-                        curve.ctrlpts = representpts
-                        # Compute and add knots based on number of control points and degree
-                        curve.knotvector = knotvector.generate(curve.degree, curve.ctrlpts_size)
-                        operations.refine_knotvector(curve, [1])
-                        
-                        '''
-                        if __debug__:
-                            curve.vis = VisMPL.VisCurve2D()
-                            curve.render()
-                            print("curve point:", curve.ctrlpts)
-                            print("curve knot:", curve.knotvector)
-                        '''
-                            
-                        nurbs = xosc.Nurbs(order=order) # Create Nurbs objects
-                        for cc in curve.ctrlpts:
-                            nurbs.add_control_point(xosc.ControlPoint(xosc.WorldPosition(x=cc[0], y=cc[1])))
-                        nurbs.add_knots(curve.knotvector)
-
-                        # Create Trajectory Object and assign nurbs
-                        traj = xosc.Trajectory("Agent_{}_trajectory".format(tid), False)
-                        traj.add_shape(nurbs)
-                        event.add_action(
-                            action_type,
-                            xosc.FollowTrajectoryAction(traj, following_mode="position")
-                        )
-
-                    valid_action = True                   
+                    event.add_action(action_name, action_obj)              
                 else:
                     print(action_type, 'is not valid')
                     continue
@@ -583,7 +602,6 @@ class FileGeneration:
         sb = sb.add_story(story)
         return sb
     
-
     
     def parse_scenario_description(self, agent_dict, interaction_dict, gt_trajectory_path, agent_categories, output_paths):
         #init/catalog

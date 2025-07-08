@@ -250,8 +250,8 @@ def generate_text_description(
     valid_maneuvers: list[dict]
 ) -> str:
     text_parts = ["Interpretation Rules for the Map Diagram:",
-                  "- To vehicles heading towards the intersection, they drive on the right side of the road.", 
-                  "- Colored zones represent drivable lanes of the surrounding roads of the intersection.",
+                  "- Colored zones represent drivable lanes of the surrounding roads of the intersection. The white zone in the middle represents the intersection.",
+                  "- Red lines on roads separate roads into two opposite directions, vehicles drive on the right side of the road.",
                   "- Red boxed numbers represent Road IDs.", 
                   "- Black boxed numbers represent lane ids.",
                   "- Lanes with ids closest to zero are the innermost lanes, vice versa.",
