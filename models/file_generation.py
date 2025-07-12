@@ -205,7 +205,6 @@ class FileGeneration:
 
         rules = {
             "lessThan": xosc.Rule.lessThan,
-            "equalTo": xosc.Rule.equalTo,
             "greaterThan": xosc.Rule.greaterThan
         }
 
@@ -213,9 +212,8 @@ class FileGeneration:
             a = interaction.get("agent")
             t = interaction.get("timestamp")
             if a == track_id and t == action_attrs["start_time"]:
-                e = interaction.get("details", {}).get("interacts_with")
-                r = interaction.get("details", {}).get("rule")
-                v = interaction.get("details", {}).get("speed")               
+                e = interaction.get("interacts_with")
+                r = interaction.get("rule")             
                 if interaction["trigger"] == "Time Headway Condition":
                     condition = xosc.TimeHeadwayCondition(
                         entity = f"Agent{e}",
@@ -227,12 +225,6 @@ class FileGeneration:
                         coordinate_system = xosc.CoordinateSystem.entity
                     )
                     return condition, "TimeHeadwayCondition"
-                elif interaction["trigger"] == "Speed Condition":
-                    condition = xosc.SpeedCondition(
-                        value = v, 
-                        rule = rules[r]
-                    )
-                    return condition, "SpeedCondition"
                 elif interaction["trigger"] == "Relative Speed Condition":
                     condition = xosc.RelativeSpeedCondition(
                         value = self.__relative_speed(raw_trajectory, a, e, t), 
@@ -384,10 +376,8 @@ class FileGeneration:
                 )
 
                 for action in agent["actions"]:
-
                     action_type = action["type"]
                     attrs = action["attributes"]
-
                     if(attrs["start_time"] == agent["enter_simulation_time"]):
                         action_name, action_obj = self.__build_action(tid, action_type, attrs)
                         if action_obj is not None:
@@ -480,6 +470,14 @@ class FileGeneration:
                                     entitycondition=condition,
                                     triggerentity=scenario.agentNames[i],
                                     triggeringrule="any"
+                                )
+                            )
+                            event.add_trigger(
+                                xosc.ValueTrigger(
+                                    name=condition_type,
+                                    delay=0,
+                                    conditionedge=xosc.ConditionEdge.rising,
+                                    valuecondition=xosc.SimulationTimeCondition(value=max(0.0, attrs["start_time"]), rule="greaterThan")
                                 )
                             )
                         valid_event = True
@@ -635,9 +633,7 @@ class FileGeneration:
         for path in output_paths:
             os.makedirs(os.path.dirname(path), exist_ok=True)
             scenario.write_xml(path)
-
         return
-    
     
     
     def parameterize(self,path_in, path_out):
