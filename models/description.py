@@ -128,30 +128,47 @@ class ScenarioDescriber:
         else:
             return "Significantly"
 
-    def _initial_description(self, ego_id):
-        ego = self._get_agent_by_id(ego_id)
-        t0 = ego["enter_simulation_time"]
-        road, lane = ego["initial_position"][:2]
-        agent_type = self.agent_dict[ego_id]["type"]
-        
-        # Get initial speed, convert to km/h, and add to sentence.
-        initial_speed_ms = ego.get("initial_speed", 0.0)
+    def _initial_description(self, agent_id):
+        agent = self._get_agent_by_id(agent_id)
+        t0 = agent["enter_simulation_time"]
+        road, lane = agent["initial_position"][:2]
+        agent_type = self.agent_dict[agent_id]["type"]
+
+        initial_speed_ms = agent.get("initial_speed", 0.0)
         initial_speed_kmh = self._ms_to_kmh(initial_speed_ms)
-        speed_phrase = f"at {initial_speed_kmh:.1f} km/h"
+        speed_phrase = f"{initial_speed_kmh:.1f} km/h"
 
-        # Use .lower() to match example output ("car 20:")
-        header = f"{agent_type.lower()} {ego_id}:"
-
+        # Determine if the agent is heading towards or away from the intersection
+        heading_phrase = ""
         if road in self.road_order:
-            return f"{header}\n- Enters the scenario at t={t0:.2f}, starting from road {road}, lane {lane} {speed_phrase}."
+            # If agent starts on a road and has a maneuver action, it must be heading towards the intersection
+            if self._get_route_action(agent):
+                heading_phrase = ", heading towards the intersection"
+            else:
+                heading_phrase = ", heading away from the intersection"
         else:
-            return f"{header}\n- Enters the scenario at t={t0:.2f}, starting inside the intersection {speed_phrase}."
+            heading_phrase = ""
 
-    def _timeline_description(self, ego_id, classification):
-        ego = self._get_agent_by_id(ego_id)
+        # Generate the header (this part is from the previous change)
+        if hasattr(self, 'main_ego_id') and agent_id == self.main_ego_id:
+            header = f"Ego ({agent_type.lower()} {agent_id}):"
+        else:
+            header = f"{agent_type.lower()} {agent_id}:"
+        
+        # 2. Reformat the sentence with the timestamp at the beginning
+        if road in self.road_order:
+            description_line = f"t={t0:.2f}: Enters the scenario from road {road}, lane {lane} at {speed_phrase}{heading_phrase}."
+        else:
+            description_line = f"t={t0:.2f}: Enters the scenario inside the intersection at {speed_phrase}{heading_phrase}."
+
+        return f"{header}\n{description_line}"
+
+    def _timeline_description(self, agent_id, classification):
+
+        agent = self._get_agent_by_id(agent_id)
         events = []
-        ego_actions = ego.get("actions", [])
-        route_action = self._get_route_action(ego)
+        agent_actions = agent.get("actions", [])
+        route_action = self._get_route_action(agent)
 
         if route_action:
             attr = route_action["attributes"]
@@ -159,83 +176,119 @@ class ScenarioDescriber:
             t_exit = attr["end_time"]
             if "trajectory" in attr:
                 entry_road, entry_lane = attr["trajectory"][0][:2]
-                exit_road, exit_lane = attr["trajectory"][-1][:2]     
+                exit_road, exit_lane = attr["trajectory"][-1][:2]
             else:
                 entry_road, entry_lane = attr["entry_point"][:2]
                 exit_road, exit_lane = attr["exit_point"][:2]
             movement = route_action["type"].replace("_", " ")
-            
+
+            # Intersection entry sentence
             if exit_road in self.road_order:
                 if entry_road in self.road_order:
-                    sentence = f"- Enters the intersection at t={t_entry:.2f}, {movement} from Road {entry_road}, Lane {entry_lane} towards Road {exit_road}, Lane {exit_lane}."
+                    sentence = f"t={t_entry:.2f}: Enters the intersection, {movement} from Road {entry_road}, Lane {entry_lane} towards Road {exit_road}."
                 else:
-                    sentence = f"- {movement} towards Road {exit_road}, Lane {exit_lane}."
+                    sentence = f"t={t_entry:.2f}: {movement.capitalize()} towards Road {exit_road}."
             else:
                 if entry_road in self.road_order:
                     entry_idx = self.road_order.index(entry_road)
                     offset = {"go straight": 2, "turn right": 1, "turn left": 3}.get(movement, 0)
                     dest_idx = (entry_idx + offset) % len(self.road_order)
                     estimated_exit_road = self.road_order[dest_idx]
-                    sentence = f"- Enters the intersection at t={t_entry:.2f}, {movement} from Road {entry_road}, Lane {entry_lane} towards Road {estimated_exit_road}."
+                    sentence = f"t={t_entry:.2f}: Enters the intersection, {movement} from Road {entry_road}, Lane {entry_lane} towards Road {estimated_exit_road}."
                 else:
-                    sentence = f"- {movement} inside the intersection"
+                    sentence = f"t={t_entry:.2f}: {movement.capitalize()} inside the intersection."
 
             events.append((t_entry, sentence))
-            if exit_road in self.road_order:
-                events.append((t_exit, f"- Leaves the intersection at t={t_exit:.2f}."))
 
-        for action in ego_actions:
+            # Intersection exit sentence
+            if exit_road in self.road_order:
+                events.append((t_exit, f"t={t_exit:.2f}: Leaves the intersection from Road {exit_road}, Lane {exit_lane}."))
+
+        for action in agent_actions:
             t_start = action["attributes"]["start_time"]
             act_type = action["type"]
 
             if act_type == "slow_down" or act_type == "speed_up":
-                # --- MODIFICATION START ---
                 acc = action["attributes"].get("acceleration", 0.0)
                 adverb = self._acceleration_magnitude(acc)
                 target_speed_ms = action["attributes"].get("target_speed")
                 duration = action["attributes"].get("duration")
 
-                # Build the time phrase first
-                if duration is not None:
+                # Build the time prefix (e.g., "t=1.23~4.56:")
+                if duration is not None and duration > 0:
                     t_end = t_start + duration
-                    time_phrase = f"from t={t_start:.2f} to t={t_end:.2f}"
+                    time_prefix = f"t={t_start:.2f}~{t_end:.2f}:"
                 else:
-                    time_phrase = f"at t={t_start:.2f}" # Fallback if no duration
+                    time_prefix = f"t={t_start:.2f}:"
 
-                speed_before_ms = self._get_speed_at_time(ego_id, t_start)
+                speed_before_ms = self._get_speed_at_time(agent_id, t_start)
                 verb = "slows down" if act_type == "slow_down" else "speeds up"
 
                 if speed_before_ms is None or target_speed_ms is None:
-                    # Fallback to a simpler description if speed data is incomplete
-                    line = f"- {adverb} {verb} {time_phrase}."
+                    line = f"{time_prefix} {adverb} {verb}."
                 else:
-                    # Build the full, detailed description
                     speed_before_kmh = self._ms_to_kmh(speed_before_ms)
                     speed_after_kmh = self._ms_to_kmh(target_speed_ms)
                     stop_phrase = " till stopped" if target_speed_ms < 0.5 else ""
-
-                    line = (f"- {adverb} {verb} {time_phrase}, from {speed_before_kmh:.1f} km/h "
+                    line = (f"{time_prefix} {adverb} {verb} from {speed_before_kmh:.1f} km/h "
                             f"to {speed_after_kmh:.1f} km/h{stop_phrase}.")
-                # --- MODIFICATION END ---
                 events.append((t_start, line))
 
             elif act_type == "lane_change":
                 direction = action["attributes"]["direction"]
-                line = f"- Changes lane to the {direction} at t={t_start:.2f}."
+                line = f"t={t_start:.2f}: Changes lane to the {direction}."
                 events.append((t_start, line))
 
-        exit_time = ego["exit_simulation_time"]
-        events.append((exit_time, f"- Exits the scenario at t={exit_time:.2f}."))
+        exit_time = agent["exit_simulation_time"]
+        events.append((exit_time, f"t={exit_time:.2f}: Exits the scenario."))
         sorted_lines = [line for _, line in sorted(events)]
         return sorted_lines
     
-    def generate_description(self, ego_id):
-        classification = self._classify_agents(ego_id)
-        self.agent_classifications[ego_id] = classification
+    def _generate_single_agent_description(self, agent_id):
+        """Generates the full text description for a single agent."""
+
+        classification = self._classify_agents(agent_id)
+        self.agent_classifications[agent_id] = classification
         
-        # _initial_description now returns the header and the first line
-        initial_lines = self._initial_description(ego_id).split('\n')
+        initial_lines = self._initial_description(agent_id).split('\n')
         
         lines = initial_lines
-        lines += self._timeline_description(ego_id, classification)
+        lines += self._timeline_description(agent_id, classification)
         return "\n".join(filter(None, lines))
+    
+    def generate_description(self, ego_id):
+        """
+        Generates a complete report for all relevant agents in the scenario,
+        with the specified ego agent listed first and given a special header.
+        """
+        # Store the main ego ID so other methods can identify it
+        self.main_ego_id = ego_id
+        all_descriptions = []
+        
+        # Identify all agents that need a description.
+        relevant_agent_ids = []
+        for agent in self.agents:
+            if agent["type"] == "pedestrian":
+                continue
+            if agent["initial_speed"] == 0.0 and agent["actions"] == []:
+                continue
+            relevant_agent_ids.append(agent["track_id"])
+
+        # Generate the description for the ego agent first.
+        if ego_id in relevant_agent_ids:
+            ego_desc = self._generate_single_agent_description(ego_id)
+            all_descriptions.append(ego_desc)
+        else:
+            print(f"Warning: Designated ego_id {ego_id} is not a relevant agent. It will not be described.")
+            
+        # Generate descriptions for all other relevant agents.
+        for agent_id in relevant_agent_ids:
+            if agent_id == ego_id:
+                continue      
+            other_desc = self._generate_single_agent_description(agent_id)
+            all_descriptions.append(other_desc)
+            
+        # Join all descriptions into a single string and return, clean up the stored ego ID as a good practice
+        del self.main_ego_id
+        return "\n\n".join(all_descriptions)
+    

@@ -71,7 +71,6 @@ def main(args):
         print(f"Error loading map info: {e}")
         return
     
-    '''
 
     # Step 1: Label individual agent actions using raw trajectory
     print("\n🔹 Step 1: Label individual actions")
@@ -87,32 +86,21 @@ def main(args):
 
 
     # Step 2: Create scenario descriptions for all relevant agents
-    scenario_yaml = yaml.safe_load(open(scenario_yaml_path))
-    all_agents = scenario_yaml["scenario"]["agents"]
-    descriptions = []
-
+    print("\n🔹 Step 2: Create natural language description for agent actions")
     describer = ScenarioDescriber(
-        scenario_yaml_path = scenario_yaml_path,
-        trajectory_csv_path = gt_trajectory_path,
-        map_yaml_path = map_intersection_path
+        scenario_yaml_path=scenario_yaml_path,
+        trajectory_csv_path=gt_trajectory_path,
+        map_yaml_path=map_intersection_path
     )
 
-    for agent in all_agents:
-        tid = agent["track_id"]
-        if agent["type"] == "pedestrian":
-            continue
-        if agent["initial_speed"] == 0.0 and agent["actions"] == []:
-            continue
-
-        description = describer.generate_description(ego_id=tid)
-        descriptions.append(description)
+    full_scenario_description = describer.generate_description(ego_id=args.ego_id)
 
     behavior_log_path = f"results/{args.dataset}/description/{full_id}.txt"
     os.makedirs(os.path.dirname(behavior_log_path), exist_ok=True)
     with open(behavior_log_path, "w") as f:
-        f.write("\n\n".join(descriptions))
+        f.write(full_scenario_description)
 
-
+    '''
 
     # Step 2.5: Use OpenAI API to acquire trigger conditions for actions
     #  Initialize the Interpreter Engine
@@ -161,8 +149,6 @@ def main(args):
         filegen_model.parameterize(op, op)
     print(f"✅ Initial OpenSCENARIO file generated\n")
 
-    '''
-    output_xosc_paths = [f"results/{args.dataset}/xosc/{full_id}_gen.xosc", f"esmini/resources/xosc/{args.dataset}/{full_id}_gen.xosc"]
 
     # Step 4: Scoring
     print("\n🔹 Step 4: Scoring")
@@ -191,6 +177,7 @@ def main(args):
         gen_csv_path=f"./results/{args.dataset}/trajectory/{full_id}_gen.csv"
     )
     vis.interactive_view()
+    '''
 
 
     '''
