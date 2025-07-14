@@ -2,6 +2,7 @@ import argparse
 import os
 import pandas as pd
 import yaml
+import subprocess
 
 from models.labeller import Labeller
 from models.description import ScenarioDescriber
@@ -20,12 +21,31 @@ def main(args):
     interact with GPT-4o using RAG, and generate scenario descriptions.
     """
 
+    full_id = f"{args.scenario_id}_{args.start_time}_{args.end_time}"
+
+    # Step 0: Preprocess and load data
+    subprocess.run([
+        "python", "scripts/drone_dataset_preprocess.py",
+        "-d", args.dataset,
+        "-s", args.scenario_id,
+        "-st", f"{args.start_time}",
+        "-et", f"{args.end_time}"
+    ], check=True)
+
     '''
-    Define input data paths and load
+    subprocess.run([
+        "python", "data/raw/drone-dataset-tools/src/record_segment.py",
+        "--dataset", args.dataset,
+        "--recording", args.scenario_id,
+        "--start_frame", f"{args.start_time}",
+        "--end_frame", f"{args.end_time}",
+        "--output_gif_path", f"data/processed/{args.dataset}/gif/{full_id}.gif",
+        "--playback_speed", "2"
+    ], check=True)
     '''
 
     # Load scenario metadata
-    metadata_path = f"data/processed/{args.dataset}/metadata/{args.scenario_id}.yaml"
+    metadata_path = f"data/processed/{args.dataset}/metadata/{full_id}.yaml"
     try:
         with open(metadata_path, "r") as f:
             metadata = yaml.safe_load(f)
@@ -34,7 +54,7 @@ def main(args):
         return
     
     # Load ground truth tracks
-    gt_trajectory_path = f"data/processed/{args.dataset}/trajectory/{args.scenario_id}.csv"
+    gt_trajectory_path = f"data/processed/{args.dataset}/trajectory/{full_id}.csv"
     try:
         gt_trajectory = pd.read_csv(gt_trajectory_path)
     except Exception as e:
@@ -54,7 +74,7 @@ def main(args):
 
     # Step 1: Label individual agent actions using raw trajectory
     print("\n🔹 Step 1: Label individual actions")
-    scenario_yaml_path = f"results/{args.dataset}/yaml/{args.scenario_id}.yaml"
+    scenario_yaml_path = f"results/{args.dataset}/yaml/{full_id}.yaml"
     labeller = Labeller(
         meta_path=metadata_path,
         map_yaml_path=map_intersection_path,
@@ -66,34 +86,22 @@ def main(args):
 
 
     # Step 2: Create scenario descriptions for all relevant agents
-    scenario_yaml = yaml.safe_load(open(scenario_yaml_path))
-    all_agents = scenario_yaml["scenario"]["agents"]
-    descriptions = []
-
+    print("\n🔹 Step 2: Create natural language description for agent actions")
     describer = ScenarioDescriber(
-        scenario_yaml_path = scenario_yaml_path,
-        trajectory_csv_path = gt_trajectory_path,
-        map_yaml_path = map_intersection_path
+        scenario_yaml_path=scenario_yaml_path,
+        trajectory_csv_path=gt_trajectory_path,
+        map_yaml_path=map_intersection_path
     )
 
-    for agent in all_agents:
-        tid = agent["track_id"]
-        if agent["type"] == "pedestrian":
-            continue
-        if agent["initial_speed"] == 0.0 and agent["actions"] == []:
-            continue
+    full_scenario_description = describer.generate_description(ego_id=args.ego_id)
 
-        description = describer.generate_description(ego_id=tid)
-        descriptions.append(description)
-
-    behavior_log_path = f"results/{args.dataset}/description/{args.scenario_id}.txt"
+    behavior_log_path = f"results/{args.dataset}/description/{full_id}.txt"
     os.makedirs(os.path.dirname(behavior_log_path), exist_ok=True)
     with open(behavior_log_path, "w") as f:
-        f.write("\n\n".join(descriptions))
+        f.write(full_scenario_description)
 
 
-
-    # Step 2.5: Use OpenAI API to acquire trigger conditions for actions
+    # Step 3: Use OpenAI API to acquire trigger conditions for actions
     #  Initialize the Interpreter Engine
     try:
         interpreter = SceneInterpretation(model="gpt-4o")
@@ -103,7 +111,7 @@ def main(args):
 
     # Run the End-to-End Pipeline
     # Call the main pipeline method on the instance
-    interactions_yaml_path = f"results/{args.dataset}/yaml/{args.scenario_id}_inter.yaml"
+    interactions_yaml_path = f"results/{args.dataset}/yaml/{full_id}_inter.yaml"
     success = interpreter.run_analysis_pipeline(
         map_location = loc,
         agent_actions_path=behavior_log_path,
@@ -119,12 +127,12 @@ def main(args):
     interpreter.cleanup_session(session_id=loc)
 
 
-    # interactions_yaml_path = f"results/{args.dataset}/yaml/{args.scenario_id}_inter.yaml"
+    # interactions_yaml_path = f"results/{args.dataset}/yaml/{full_id}_inter.yaml"
     
-    # Step 3: Generate initial OpenSCENARIO file
+    # Step 4: Generate initial OpenSCENARIO file
     print("\n🔹 Step 3: XOSC File Generation")
     filegen_model = FileGeneration()
-    output_xosc_paths = [f"results/{args.dataset}/xosc/{args.scenario_id}_gen.xosc", f"esmini/resources/xosc/{args.dataset}/{args.scenario_id}_gen.xosc"]
+    output_xosc_paths = [f"results/{args.dataset}/xosc/{full_id}_gen.xosc", f"esmini/resources/xosc/{args.dataset}/{full_id}_gen.xosc"]
     with open(scenario_yaml_path, "r") as f:
         agent_dict = yaml.safe_load(f)
     with open(interactions_yaml_path, "r") as f:
@@ -141,35 +149,31 @@ def main(args):
     print(f"✅ Initial OpenSCENARIO file generated\n")
 
 
-    # Step 4: Scoring
+    # Step 5: Scoring
     print("\n🔹 Step 4: Scoring")
     esminiRunner = EsminiSimulator()
     scorer = Scorer()
-
-    # Load UTM offset from recording metadata
-    x_offset = metadata.get("x_offset")
-    y_offset = metadata.get("y_offset")
 
     gt_ids = gt_trajectory["trackId"].unique().tolist()
     id_mapping = dict(zip(list(range(len(gt_ids))), gt_ids))
 
     esminiRunner.run(
         xosc_path = output_xosc_paths[1],
-        record_path = f"./results/{args.dataset}/trajectory/{args.scenario_id}_gen.dat",
-        x_offset = x_offset,
-        y_offset = y_offset,
+        record_path = f"./results/{args.dataset}/trajectory/{full_id}_gen.dat",
+        x_offset = metadata.get("x_offset"),
+        y_offset = metadata.get("y_offset"),
         track_id_mapping = id_mapping
     )
 
     fde_score = scorer.compute_fde(
-        gt_csv_path = f"./data/processed/{args.dataset}/trajectory/{args.scenario_id}.csv",
-        gen_csv_path = f"./results/{args.dataset}/trajectory/{args.scenario_id}_gen.csv"
+        gt_csv_path = f"./data/processed/{args.dataset}/trajectory/{full_id}.csv",
+        gen_csv_path = f"./results/{args.dataset}/trajectory/{full_id}_gen.csv"
     )
     print("FDE score:", fde_score)
 
     vis = Visualization(
-        gt_csv_path=f"./data/processed/{args.dataset}/trajectory/{args.scenario_id}.csv", 
-        gen_csv_path=f"./results/{args.dataset}/trajectory/{args.scenario_id}_gen.csv"
+        gt_csv_path=f"./data/processed/{args.dataset}/trajectory/{full_id}.csv", 
+        gen_csv_path=f"./results/{args.dataset}/trajectory/{full_id}_gen.csv"
     )
     vis.interactive_view()
 
@@ -230,8 +234,23 @@ if __name__ == "__main__":
         "--scenario_id", 
         "-s", 
         type=str, 
-        default="14_0_299", 
-        help="Scenario ID to process")
+        default="08", 
+        help="Scenario ID to process, e.g. 00, 01, etc."
+    )
+    parser.add_argument(
+        "--start_time", 
+        "-st", 
+        type=int, 
+        default=1250, 
+        help="Start timestamp of the interval"
+    )
+    parser.add_argument(
+        "--end_time", 
+        "-et", 
+        type=int, 
+        default=1600, 
+        help="End timestamp of the interval"
+    )
     parser.add_argument(
         "--ego_id", 
         "-e", 

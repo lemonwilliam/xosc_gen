@@ -145,14 +145,14 @@ if __name__ == "__main__":
         "--start_time", 
         "-st", 
         type=int, 
-        default="0", 
+        default=0, 
         help="Start timestamp of the interval"
     )
     parser.add_argument(
         "--end_time", 
         "-et", 
         type=int, 
-        default="300", 
+        default=300, 
         help="End timestamp of the interval"
     )
     args = parser.parse_args()

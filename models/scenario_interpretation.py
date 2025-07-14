@@ -186,9 +186,9 @@ class SceneInterpretation:
             print(f"\nCleaned up message history for session: {session_id}")
     
     # Verify_map_understanding
-    def verify_map_understanding(self, 
-                                 map_location: str,
-                                 max_retries_per_category: int = 2) -> Tuple[bool, Dict[str, int]]:
+    def verify_map_understanding_qa(self, 
+                                    map_location: str,
+                                    max_retries_per_category: int = 2) -> Tuple[bool, Dict[str, int]]:
         """
         Verifies LLM's understanding using image and optional text description.
         LLM answers ALL questions in a category. Retries on a per-category basis 
@@ -383,6 +383,99 @@ class SceneInterpretation:
         print("--------------------------------------------")
 
         return self.map_verified_successfully, self.verification_token_usage
+    
+
+    def verify_map_understanding_eg(self, map_location: str) -> Tuple[bool, Dict[str, int]]:
+        """
+        Verifies the LLM's understanding by tasking it to generate and reason about
+        hypothetical traffic scenarios in plain text.
+
+        Success is determined by checking if the LLM's response contains key concepts
+        like "yield" and "right-of-way".
+        """
+        self.map_verified_successfully = False
+        self.verification_token_usage = {'prompt_tokens': 0, 'completion_tokens': 0, 'total_tokens': 0}
+
+        # --- 1. Setup and Context Loading ---
+        map_image_path = f"./data/processed/inD/map/{map_location}_graph.jpeg"
+        map_description_path = f"./data/processed/inD/map/{map_location}_description.txt"
+
+        session_id = map_location
+        self.message_stores[session_id] = InMemoryChatMessageHistory()
+        
+        try:
+            self.current_map_image_base64 = self._encode_image_to_base64(map_image_path)
+        except IOError as e: 
+            print(f"Critical error loading image: {e}")
+            return False, self.verification_token_usage
+        
+        self.current_map_description = self._read_text_file(map_description_path, "Map description")
+
+        # --- 2. Initial Briefing ---
+        # This provides the LLM with all the necessary context for the task.
+        system_prompt = self._read_text_file("./memos/system_prompt.txt", "System prompt") or ""
+        initial_user_prompt_parts = [
+            {"type": "text", "text": "You will be given a map, its description, and common sense rules. Study them carefully to prepare for a reasoning task."},
+            {"type": "text", "text": f"\nCommon Sense:\n---\n{self.common_sense}\n---"},
+            {"type": "text", "text": f"\nMap Description:\n---\n{self.current_map_description}\n---"},
+            {"type": "image_url", "image_url": {"url": f"data:image/jpeg;base64,{self.current_map_image_base64}"}}
+        ]
+        initial_messages = [
+            SystemMessage(content=system_prompt),
+            HumanMessage(content=initial_user_prompt_parts),
+            AIMessage(content="Understood. I have analyzed the provided map, description, and rules. I am ready for the reasoning task.")
+        ]
+        self.message_stores[session_id].add_messages(initial_messages)
+
+        # --- 3. The Generative Verification Task ---
+        print("\n--- Requesting Scenario Generation for Verification ---")
+        verification_prompt_content = self._read_text_file('./memos/verification_prompt.txt', "Verification prompt")
+        if not verification_prompt_content:
+            print("❌ VERIFICATION FAILED: Could not load the verification prompt template.")
+            return False, self.verification_token_usage
+
+        raw_llm_response = ""
+        with get_openai_callback() as cb:
+            response = self.conversational_chain.invoke(
+                {"input": verification_prompt_content},
+                config={"configurable": {"session_id": session_id}}
+            )
+            raw_llm_response = response
+            self.verification_token_usage.update({
+                "prompt_tokens": cb.prompt_tokens,
+                "completion_tokens": cb.completion_tokens,
+                "total_tokens": cb.total_tokens
+            })
+            print(f"    Tokens for this call: {cb.total_tokens}")
+
+        # --- 4. Validate the LLM's Text Response ---
+        print("--- Validating Generated Scenario Text ---")
+        
+        # Check for a reasonably long, non-empty response
+        if not raw_llm_response or len(raw_llm_response.strip()) < 100:
+            print("❌ VERIFICATION FAILED: LLM returned a very short or empty response.")
+            print(f"--- LLM Raw Output ---\n{raw_llm_response}")
+            self.map_verified_successfully = False
+            return self.map_verified_successfully, self.verification_token_usage
+
+        # Check for essential keywords that indicate an on-topic, reasoned response.
+        response_lower = raw_llm_response.lower()
+        required_keywords = ["yield", "right-of-way", "non-conflicting", "scenario"]
+        
+        missing_keywords = [k for k in required_keywords if k not in response_lower]
+        
+        if not missing_keywords:
+            print("✅ Verification passed: LLM generated scenarios containing all required keywords.")
+            print("--- Generated Scenarios (for human review) ---")
+            print(raw_llm_response)
+            self.map_verified_successfully = True
+        else:
+            print(f"❌ VERIFICATION FAILED: LLM response was missing key concepts: {missing_keywords}")
+            print("--- LLM Raw Output ---")
+            print(raw_llm_response)
+            self.map_verified_successfully = False
+
+        return self.map_verified_successfully, self.verification_token_usage
 
 
     def analyze_vehicle_interactions(self, 
@@ -473,9 +566,15 @@ class SceneInterpretation:
         # --- 1. Verification Phase ---
         print(f"\n===== Starting Verification Phase =====")
         
-        is_understood, verification_tokens = self.verify_map_understanding(
-            map_location=map_location,
-            max_retries_per_category=2  
+        '''
+        is_understood, verification_tokens = self.verify_map_understanding_qa(
+            map_location=map_location
+            max_retries_per_category=2
+        )
+        '''
+
+        is_understood, verification_tokens = self.verify_map_understanding_eg(
+            map_location=map_location
         )
         
         print(f"\nVerification token usage: {verification_tokens['total_tokens']} tokens.")
@@ -485,6 +584,8 @@ class SceneInterpretation:
             return False
         
         print("\n✅ VERIFICATION SUCCESS: LLM map understanding verified.")
+
+        '''
 
         # --- 2. Analysis Phase ---
         print(f"\n===== Starting Analysis Phase =====")
@@ -524,6 +625,8 @@ class SceneInterpretation:
         except IOError as e:
             print(f"\n❌ FAILED TO SAVE: Could not write analysis to '{output_yaml_path}': {e}")
             return False
+
+        '''
         
         return True
 
