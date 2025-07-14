@@ -100,9 +100,8 @@ def main(args):
     with open(behavior_log_path, "w") as f:
         f.write(full_scenario_description)
 
-    '''
 
-    # Step 2.5: Use OpenAI API to acquire trigger conditions for actions
+    # Step 3: Use OpenAI API to acquire trigger conditions for actions
     #  Initialize the Interpreter Engine
     try:
         interpreter = SceneInterpretation(model="gpt-4o")
@@ -130,7 +129,7 @@ def main(args):
 
     # interactions_yaml_path = f"results/{args.dataset}/yaml/{full_id}_inter.yaml"
     
-    # Step 3: Generate initial OpenSCENARIO file
+    # Step 4: Generate initial OpenSCENARIO file
     print("\n🔹 Step 3: XOSC File Generation")
     filegen_model = FileGeneration()
     output_xosc_paths = [f"results/{args.dataset}/xosc/{full_id}_gen.xosc", f"esmini/resources/xosc/{args.dataset}/{full_id}_gen.xosc"]
@@ -150,7 +149,7 @@ def main(args):
     print(f"✅ Initial OpenSCENARIO file generated\n")
 
 
-    # Step 4: Scoring
+    # Step 5: Scoring
     print("\n🔹 Step 4: Scoring")
     esminiRunner = EsminiSimulator()
     scorer = Scorer()
@@ -177,7 +176,6 @@ def main(args):
         gen_csv_path=f"./results/{args.dataset}/trajectory/{full_id}_gen.csv"
     )
     vis.interactive_view()
-    '''
 
 
     '''
