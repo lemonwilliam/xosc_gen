@@ -27,7 +27,7 @@ def main(args):
     """
 
     full_id = f"{args.scenario_id}_{args.start_time}_{args.end_time}"
-
+    
     # Step 0: Preprocess and load data
     subprocess.run([
         "python", "scripts/drone_dataset_preprocess.py",
@@ -75,6 +75,7 @@ def main(args):
     except Exception as e:
         print(f"Error loading map info: {e}")
         return
+    
     
 
     # Step 1: Label individual agent actions using raw trajectory
@@ -182,6 +183,7 @@ def main(args):
     )
     vis.interactive_view()
 
+    '''
     app = QApplication(sys.argv)
     player = GifPlayer(
         f"./data/processed/{args.dataset}/gif/{full_id}.gif",
@@ -190,6 +192,7 @@ def main(args):
     )
     player.show()
     sys.exit(app.exec_())
+    '''
 
 
     '''
@@ -241,7 +244,7 @@ if __name__ == "__main__":
         "--dataset", 
         "-d", 
         type=str, 
-        default="ind", 
+        default="inD", 
         help="Dataset source name"
     )
     parser.add_argument(
