@@ -3,6 +3,10 @@ import os
 import pandas as pd
 import yaml
 import subprocess
+import sys
+from PyQt5.QtWidgets import (
+    QApplication
+)
 
 from models.labeller import Labeller
 from models.description import ScenarioDescriber
@@ -11,6 +15,7 @@ from models.file_generation import FileGeneration
 from scripts.esmini_process import EsminiSimulator
 from scripts.scoring import Scorer
 from scripts.visualization import Visualization
+from scripts.gif_play import GifPlayer
 
 from models.reflection import Reflection
 
@@ -177,6 +182,15 @@ def main(args):
     )
     vis.interactive_view()
 
+    app = QApplication(sys.argv)
+    player = GifPlayer(
+        "./test1.gif",
+        "./esmini/bin/esmini",
+        "./esmini/resources/xosc/inD/07_3100_3500_gen.xosc"
+    )
+    player.show()
+    sys.exit(app.exec_())
+
 
     '''
     # Step 5–7: Reflection loop for refinement
@@ -227,7 +241,7 @@ if __name__ == "__main__":
         "--dataset", 
         "-d", 
         type=str, 
-        default="inD", 
+        default="ind", 
         help="Dataset source name"
     )
     parser.add_argument(

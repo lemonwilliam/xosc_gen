@@ -219,9 +219,9 @@ class GifPlayer(QWidget):
 if __name__ == "__main__":
     app = QApplication(sys.argv)
     player = GifPlayer(
-        "../test1.gif",
-        "../esmini/bin/esmini.exe",
-        "../results/inD/xosc/25_1400_1700_gen.xosc"
+        "./test1.gif",
+        "./esmini/bin/esmini",
+        "./esmini/resources/xosc/ind/07_3100_3500_gen.xosc"
     )
     player.show()
     sys.exit(app.exec_())

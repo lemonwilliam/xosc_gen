@@ -208,9 +208,9 @@ class SceneInterpretation:
         # Reset token counter for this run
         self.verification_token_usage = {'prompt_tokens': 0, 'completion_tokens': 0, 'total_tokens': 0}
 
-        map_image_path = f"./data/processed/inD/map/{map_location}_graph.jpeg"
-        map_description_path = f"./data/processed/inD/map/{map_location}_description.txt"
-        qa_json_path = f"./data/processed/inD/map/{map_location}_questions.json"
+        map_image_path = f"./data/processed/ind/map/{map_location}_graph.jpeg"
+        map_description_path = f"./data/processed/ind/map/{map_location}_description.txt"
+        qa_json_path = f"./data/processed/ind/map/{map_location}_questions.json"
         print(f"Map Image: {map_image_path}")
         if map_description_path:
             print(f"Map Description: {map_description_path}")
@@ -406,8 +406,8 @@ class SceneInterpretation:
         self.verification_token_usage = {'prompt_tokens': 0, 'completion_tokens': 0, 'total_tokens': 0}
 
         # --- 1. Setup and Context Loading ---
-        map_image_path = f"./data/processed/inD/map/{map_location}_graph.jpeg"
-        map_description_path = f"./data/processed/inD/map/{map_location}_description.txt"
+        map_image_path = f"./data/processed/ind/map/{map_location}_graph.jpeg"
+        map_description_path = f"./data/processed/ind/map/{map_location}_description.txt"
 
         session_id = map_location
         self.message_stores[session_id] = InMemoryChatMessageHistory()
@@ -642,7 +642,7 @@ if __name__ == "__main__":
     # Define paths for all required input files.
     # This makes it easy to switch between different scenarios.
     MAP_LOCATION = "01_bendplatz"
-    AGENT_ACTIONS_FILE = "./results/inD/description/08_1250_1600.txt"
+    AGENT_ACTIONS_FILE = "./results/ind/description/08_1250_1600.txt"
     OUTPUT_YAML_FILE = "agent_interaction_analysis.yaml"
 
     # --- 1. Initialize the Interpreter Engine ---

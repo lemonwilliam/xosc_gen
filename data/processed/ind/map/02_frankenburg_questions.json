@@ -1,0 +1,36 @@
+{
+    "Road relations": [
+        {
+            "question": "If a vehicle enters the intersection from Road 5 then goes straight, what is the ID of the Road it arrives?",
+            "answer": "2"
+        },
+        {
+            "question": "If a vehicle enters the intersection from Road 5 then turns right, what is the ID of the Road it arrives?",
+            "answer": "0"
+        },
+        {
+            "question": "If a vehicle enters the intersection from Road 0 then goes straight, what is the ID of the Road it arrives?",
+            "answer": "6"
+        },
+        {
+            "question": "If a vehicle enters the intersection from Road 0 then turns right, what is the ID of the Road it arrives?",
+            "answer": "2"
+        },
+        {
+            "question": "If a vehicle enters the intersection from Road 2 then goes straight, what is the ID of the Road it arrives?",
+            "answer": "5"
+        },
+        {
+            "question": "If a vehicle enters the intersection from Road 2 then turns right, what is the ID of the Road it arrives?",
+            "answer": "6"
+        },
+        {
+            "question": "If a vehicle enters the intersection from Road 6 then goes straight, what is the ID of the Road it arrives?",
+            "answer": "0"
+        },
+        {
+            "question": "If a vehicle enters the intersection from Road 6 then turns right, what is the ID of the Road it arrives?",
+            "answer": "5"
+        }
+    ]
+}

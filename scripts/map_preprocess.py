@@ -333,7 +333,7 @@ def generate_questions_json(
 # --- Main Execution ---
 def main():
     parser = argparse.ArgumentParser(description="XODR Map Preprocessor")
-    parser.add_argument("--dataset", "-d", default="inD", help="Dataset name")
+    parser.add_argument("--dataset", "-d", default="ind", help="Dataset name")
     parser.add_argument("--map_id", "-m", default="01_bendplatz", help="Map ID")
     parser.add_argument("--junction", "-j", default=None, help="Target Junction ID")
     args = parser.parse_args()
