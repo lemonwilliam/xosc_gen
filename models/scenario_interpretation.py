@@ -8,6 +8,7 @@ from typing import List, Dict, Any, Optional, Tuple
 
 # --- LangChain Imports ---
 from langchain_openai import ChatOpenAI
+from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
 from langchain_core.output_parsers import StrOutputParser
 from langchain_core.chat_history import InMemoryChatMessageHistory
@@ -20,7 +21,7 @@ from langchain.callbacks import get_openai_callback
 class SceneInterpretation:
     def __init__(self, 
                  api_key: Optional[str] = None, 
-                 model: str = "gpt-4o"):
+                 model: str = "gemini-2.5-pro"):
         """
         Initializes the MapInterpretation class.
 
@@ -40,11 +41,19 @@ class SceneInterpretation:
         
         # --- LangChain Setup ---
         # 1. Initialize the LLM
-        self.llm = ChatOpenAI(
-            model=self.model_name, 
-            api_key=api_key or os.getenv("OPENAI_API_KEY"),
-            temperature=0.1 # Set a default temperature
-        )
+        if self.model_name == "gpt-4o":
+            self.llm = ChatOpenAI(
+                model=self.model_name, 
+                api_key=api_key or os.getenv("OPENAI_API_KEY"),
+                temperature=0.25 # Set a default temperature
+            )
+        elif self.model_name == "gemini-2.5-pro":
+            self.llm = ChatGoogleGenerativeAI(
+                model=self.model_name, 
+                google_api_key=api_key or os.getenv("GOOGLE_API_KEY"),
+                temperature=0.1,
+                convert_system_message_to_human=True # Helps with models that don't have a distinct system role
+            )
 
         # 2. Create a prompt template with a placeholder for history
         self.prompt_template = ChatPromptTemplate.from_messages([
@@ -585,7 +594,6 @@ class SceneInterpretation:
         
         print("\n✅ VERIFICATION SUCCESS: LLM map understanding verified.")
 
-        '''
 
         # --- 2. Analysis Phase ---
         print(f"\n===== Starting Analysis Phase =====")
@@ -625,8 +633,6 @@ class SceneInterpretation:
         except IOError as e:
             print(f"\n❌ FAILED TO SAVE: Could not write analysis to '{output_yaml_path}': {e}")
             return False
-
-        '''
         
         return True
 
@@ -641,7 +647,7 @@ if __name__ == "__main__":
 
     # --- 1. Initialize the Interpreter Engine ---
     try:
-        interpreter = SceneInterpretation(model="gpt-4o")
+        interpreter = SceneInterpretation(model="gemini-2.5-pro")
     except Exception as e:
         print(f"FATAL: Failed to initialize MapInterpretation engine: {e}")
         exit(1)
