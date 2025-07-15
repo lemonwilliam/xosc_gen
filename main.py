@@ -184,9 +184,9 @@ def main(args):
 
     app = QApplication(sys.argv)
     player = GifPlayer(
-        "./test1.gif",
+        f"./data/processed/{args.dataset}/gif/{full_id}.gif",
         "./esmini/bin/esmini",
-        "./esmini/resources/xosc/inD/07_3100_3500_gen.xosc"
+        output_xosc_paths[1]
     )
     player.show()
     sys.exit(app.exec_())
