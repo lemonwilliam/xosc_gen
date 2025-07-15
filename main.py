@@ -104,7 +104,7 @@ def main(args):
     # Step 3: Use OpenAI API to acquire trigger conditions for actions
     #  Initialize the Interpreter Engine
     try:
-        interpreter = SceneInterpretation(model="gpt-4o")
+        interpreter = SceneInterpretation(model="gemini-2.5-pro")
     except Exception as e:
         print(f"FATAL: Failed to initialize MapInterpretation engine: {e}")
         exit(1)

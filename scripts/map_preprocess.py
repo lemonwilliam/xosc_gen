@@ -281,7 +281,15 @@ def generate_text_description(
     for m in valid_maneuvers:
         key = (m["entry_road"], m["entry_lane"])
         if key not in perms_by_entry: perms_by_entry[key] = []
-        perms_by_entry[key].append(f"{m['turn_type']}")
+        turn_type_str = m['turn_type']
+        # Make the turn type a bit more descriptive if needed
+        if turn_type_str == "left" or turn_type_str == "right":
+             turn_action = f"{turn_type_str} turn"
+        else: # straight, U-turn
+             turn_action = turn_type_str
+        permission_string = f"{turn_action} to Road ID {m['exit_road']}"
+        perms_by_entry[key].append(permission_string)
+
     
     for (entry_r, entry_l), perm_list in sorted(perms_by_entry.items()):
         perm_list.sort()

@@ -2,15 +2,10 @@ import sys
 import subprocess
 import time
 import vlc
-import win32gui
-import win32con
-import win32process
-import win32api
 from PyQt5.QtWidgets import (
     QApplication, QWidget, QPushButton, QVBoxLayout, QHBoxLayout, QLabel, QFrame
 )
 from PyQt5.QtCore import QTimer, Qt
-from moviepy.editor import VideoFileClip
 
 
 class VLCPlayer(QWidget):
@@ -69,7 +64,7 @@ class VLCPlayer(QWidget):
         self.timer.timeout.connect(self.update_status)
 
         if sys.platform.startswith('linux'):
-            self.mediaplayer.set_xwindow(self.video_frame.winId())
+           self.mediaplayer.set_xwindow(int(self.video_frame.winId()))
         elif sys.platform == "win32":
             self.mediaplayer.set_hwnd(self.video_frame.winId())
         elif sys.platform == "darwin":
@@ -94,26 +89,6 @@ class VLCPlayer(QWidget):
             self.esmini_proc.terminate()
             self.esmini_proc = None
             
-    def esmini_space(self):
-        if self.esmini_proc:
-            # 找出 esmini 視窗
-            def enum_handler(hwnd, param):
-                if win32gui.IsWindowVisible(hwnd):
-                    title = win32gui.GetWindowText(hwnd)
-                    if "esmini" in title.lower():  # 根據視窗標題判斷
-                        param.append(hwnd)
-    
-            hwnds = []
-            win32gui.EnumWindows(enum_handler, hwnds)
-    
-            if hwnds:
-                hwnd = hwnds[0]
-                win32gui.SetForegroundWindow(hwnd)  # 切到 esmini 視窗
-                time.sleep(0.1)  # 稍微等待聚焦成功
-                
-                win32api.PostMessage(hwnd, win32con.WM_KEYDOWN, win32con.VK_SPACE, 0)
-                win32api.PostMessage(hwnd, win32con.WM_KEYUP, win32con.VK_SPACE, 0)
-
     def play(self):
         state = self.mediaplayer.get_state()
         if state == vlc.State.Paused:
@@ -143,7 +118,6 @@ class VLCPlayer(QWidget):
         self.timer.stop()
         self.close()
 
-
     def update_status(self):
         if not self.mediaplayer.is_playing():
             self.stop_esmini()
@@ -153,19 +127,10 @@ class VLCPlayer(QWidget):
     def closeEvent(self, event):
         self.stop()
         event.accept()
-
-def gif_to_mp4(gif_path: str, output_path: str = None, fps: int = 60):
-    
-    if output_path is None:
-        output_path = gif_path.rsplit(".", 1)[0] + ".mp4"
-
-    clip = VideoFileClip(gif_path)
-    clip.write_videofile(output_path, codec="libx264", fps=fps)
     
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)
-    gif_to_mp4("../test.gif", "../results/vedio/test.mp4")
-    player = VLCPlayer("../results/vedio/test.mp4", "../esmini/bin/esmini.exe", "../results/inD/xosc/25_1400_1700_gen.xosc" )
+    player = VLCPlayer("./test.mp4", "./esmini/bin/esmini", "./esmini/resources/xosc/ind/07_3100_3500_gen.xosc")
     player.show()
     sys.exit(app.exec_())
