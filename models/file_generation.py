@@ -1,4 +1,5 @@
 import yaml
+import re
 import os
 import numpy as np
 import pandas as pd
@@ -256,7 +257,7 @@ class FileGeneration:
     
     def __build_action(self, agent_id, action_type, attrs):
         if action_type in ["speed_up", "slow_down", "reverse"]:
-            dynamics = xosc.TransitionDynamics("linear", "time", attrs["duration"])
+            dynamics = xosc.TransitionDynamics("sinusoidal", "time", attrs["duration"])
             return action_type, xosc.AbsoluteSpeedAction(attrs["target_speed"], dynamics)
         
         elif action_type == "lane_change":
@@ -347,7 +348,7 @@ class FileGeneration:
             ## ➡️ First: Initialize agents that did not get teleported in Init
             if init_row.time != 0:
                 spawn_event = xosc.Event(
-                    f"Spawn_{scenario.agentNames[i]}",
+                    f"{scenario.agentNames[i]}_SpawnEvent",
                     xosc.Priority.parallel,
                     maxexecution=1
                 )
@@ -375,6 +376,7 @@ class FileGeneration:
                     )
                 )
 
+                # 3) Set actions that start immediately as the agent is spawned
                 for action in agent["actions"]:
                     action_type = action["type"]
                     attrs = action["attributes"]
@@ -383,7 +385,7 @@ class FileGeneration:
                         if action_obj is not None:
                             spawn_event.add_action(action_name, action_obj)
 
-                # 3) Finally, trigger the entire block at the right time
+                # 4) Finally, trigger the entire block at the right time
                 spawn_event.add_trigger(
                     xosc.ValueTrigger(
                         name="SpawnTrigger",
@@ -414,6 +416,9 @@ class FileGeneration:
                 action_name, action_obj = self.__build_action(tid, action_type, attrs)
                 if action_obj is not None:
                     valid_action = True
+                else:
+                    print(action_type, 'is not valid')
+                    continue
 
                 # Longitudinal action
                 if action_type in speed_ctrl:
@@ -444,9 +449,7 @@ class FileGeneration:
                     )
                     route_event_count += 1
                     event.add_action(action_name, action_obj)              
-                else:
-                    print(action_type, 'is not valid')
-                    continue
+                
 
                 if valid_action:
                     # Reach timestamp
@@ -472,14 +475,6 @@ class FileGeneration:
                                     triggeringrule="any"
                                 )
                             )
-                            event.add_trigger(
-                                xosc.ValueTrigger(
-                                    name=condition_type,
-                                    delay=0,
-                                    conditionedge=xosc.ConditionEdge.rising,
-                                    valuecondition=xosc.SimulationTimeCondition(value=max(0.0, attrs["start_time"]), rule="greaterThan")
-                                )
-                            )
                         valid_event = True
                     # Reach position
                     if action_type in road_ctrl:
@@ -500,36 +495,22 @@ class FileGeneration:
                                     triggeringrule="any"
                                 )
                             )   
-                                
+                            valid_event = True
                         else:
-                            assign_trajectory = True
-                            timeCondition = xosc.SimulationTimeCondition(
-                                value=attrs["start_time"],
-                                rule="greaterThan"
-                            )
-                            event.add_trigger(
-                                xosc.ValueTrigger(
-                                    name="SimulationTimeCondition",
-                                    delay=0,
-                                    conditionedge=xosc.ConditionEdge.none,
-                                    valuecondition=timeCondition
-                                )
-                            )
-                           
-                        
-                        valid_event = True
+                            assign_trajectory = True            
+                 
                     if valid_event:
                         maneuver.add_event(event)
                         valid_maneuver = True
             
             if assign_trajectory:
                 despawn_event = xosc.Event(
-                        f"Despawn_{scenario.agentNames[i]}_Event",
+                        f"{scenario.agentNames[i]}_DespawnEvent",
                         xosc.Priority.parallel,
                         maxexecution=1
                 )
                 despawn_event.add_action(
-                    f"Despawn_{scenario.agentNames[i]}_Action",
+                    f"Despawn_Action",
                     xosc.DeleteEntityAction(entityref = scenario.agentNames[i])
                 )
                 despawn_event.add_trigger(
@@ -548,9 +529,9 @@ class FileGeneration:
                 valid_maneuver = True
             elif end_row.time < duration:
                 despawn_event = xosc.Event(
-                        f"Despawn_{scenario.agentNames[i]}_Event",
-                        xosc.Priority.parallel,
-                        maxexecution=1
+                    f"Despawn_{scenario.agentNames[i]}_Event",
+                    xosc.Priority.parallel,
+                    maxexecution=1
                 )
                 despawn_event.add_action(
                     f"Despawn_{scenario.agentNames[i]}_Action",
@@ -636,7 +617,7 @@ class FileGeneration:
         return
     
     
-    def parameterize(self,path_in, path_out):
+    def parameterize(self, path_in, path_out, relevent_ids):
         
         tree = ET.parse(path_in)
         root = tree.getroot()
@@ -652,7 +633,10 @@ class FileGeneration:
 
         #event
         for event in root.findall(".//Event"):
-            agent_name = event.attrib.get("name", "UnknownAgent")
+            event_name = event.attrib.get("name", "UnknownAgent")
+            agent_id = int(re.search(r'Agent(\d+)', event_name).group(1))
+            if agent_id not in relevent_ids:
+                continue
             for action in event.findall(".//PrivateAction"):
                 action_type = "unknown"
                 if action.find(".//SpeedAction") is not None:
@@ -665,15 +649,15 @@ class FileGeneration:
                         if (dynval is None) or (atsval is None) or (float(dynval)==0):
                             continue
                         #duration
-                        param_name = f"{agent_name}Duration{param_counter[(agent_name, action_type)]}"
+                        param_name = f"{event_name}Duration{param_counter[(event_name, action_type)]}"
                         dyn.attrib["value"] = f"${param_name}"
                         param_map[param_name] = dynval
                         
                         #targetspeed
-                        param_name = f"{agent_name}TargetSpeed{param_counter[(agent_name, action_type)]}"
+                        param_name = f"{event_name}TargetSpeed{param_counter[(event_name, action_type)]}"
                         ats.attrib["value"] = f"${param_name}"
                         param_map[param_name] = atsval
-                        param_counter[(agent_name, action_type)] += 1
+                        param_counter[(event_name, action_type)] += 1
         
                 if action.find(".//LaneChangeAction") is not None:
                     action_type = "lanechangeaction"
@@ -683,10 +667,10 @@ class FileGeneration:
                         val = dyn.attrib.get("value")
                         if (val is None) or (float(val)==0):
                             continue
-                        param_name = f"{agent_name}Duration{param_counter[(agent_name, action_type)]}"
+                        param_name = f"{event_name}Duration{param_counter[(event_name, action_type)]}"
                         dyn.attrib["value"] = f"${param_name}"
                         param_map[param_name] = val
-                        param_counter[(agent_name, action_type)] += 1
+                        param_counter[(event_name, action_type)] += 1
            
         # Add parameters
         for name, val in param_map.items():

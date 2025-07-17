@@ -141,8 +141,8 @@ class Labeller:
             #   acc < -0.05 → slow_down
             #  -0.05 <= acc <= 0.05 → cruise
             conditions = [
-                acc >  0.02,
-                acc < -0.02
+                acc >  0.05,
+                acc < -0.05
             ]
             choices = ['speed_up', 'slow_down']
             labels = np.select(conditions, choices, default='cruise')

@@ -77,7 +77,6 @@ def main(args):
         return
     
     
-
     # Step 1: Label individual agent actions using raw trajectory
     print("\n🔹 Step 1: Label individual actions")
     scenario_yaml_path = f"results/{args.dataset}/yaml/{full_id}.yaml"
@@ -107,42 +106,48 @@ def main(args):
         f.write(full_scenario_description)
 
 
-    # Step 3: Use OpenAI API to acquire trigger conditions for actions
-    #  Initialize the Interpreter Engine
-    try:
-        interpreter = SceneInterpretation(model="gemini-2.5-pro")
-    except Exception as e:
-        print(f"FATAL: Failed to initialize MapInterpretation engine: {e}")
-        exit(1)
+    # # Step 3: Use LLM to acquire trigger conditions for actions
+    # print("\n🔹 Step 3: Use LLM to acquire trigger conditions for actions")
+    # #  Initialize the Interpreter Engine
+    # try:
+    #     interpreter = SceneInterpretation(model="gemini-2.5-pro")
+    # except Exception as e:
+    #     print(f"FATAL: Failed to initialize MapInterpretation engine: {e}")
+    #     exit(1)
 
-    # Run the End-to-End Pipeline
-    # Call the main pipeline method on the instance
-    interactions_yaml_path = f"results/{args.dataset}/yaml/{full_id}_inter.yaml"
-    success = interpreter.run_analysis_pipeline(
-        map_location = loc,
-        agent_actions_path=behavior_log_path,
-        output_yaml_path=interactions_yaml_path
-    )
-
-    # Report Final Status
-    if success:
-        print("\n✅ Pipeline completed successfully.")
-    else:
-        print("\n❌ Pipeline failed. Please check the logs above for errors.")
-
-    interpreter.cleanup_session(session_id=loc)
-
-
+    # # Run the End-to-End Pipeline
+    # # Call the main pipeline method on the instance
     # interactions_yaml_path = f"results/{args.dataset}/yaml/{full_id}_inter.yaml"
+    # success = interpreter.run_analysis_pipeline(
+    #     map_location = loc,
+    #     agent_actions_path=behavior_log_path,
+    #     output_yaml_path=interactions_yaml_path
+    # )
+
+    # # Report Final Status
+    # if success:
+    #     print("\n✅ Pipeline completed successfully.")
+    # else:
+    #     print("\n❌ Pipeline failed. Please check the logs above for errors.")
+
+    # interpreter.cleanup_session(session_id=loc)
+
+
+    interactions_yaml_path = f"results/{args.dataset}/yaml/{full_id}_inter.yaml"
     
     # Step 4: Generate initial OpenSCENARIO file
-    print("\n🔹 Step 3: XOSC File Generation")
+    print("\n🔹 Step 4: XOSC File Generation")
     filegen_model = FileGeneration()
     output_xosc_paths = [f"results/{args.dataset}/xosc/{full_id}_gen.xosc", f"esmini/resources/xosc/{args.dataset}/{full_id}_gen.xosc"]
     with open(scenario_yaml_path, "r") as f:
         agent_dict = yaml.safe_load(f)
     with open(interactions_yaml_path, "r") as f:
         interaction_dict = yaml.safe_load(f)
+        ids = set()
+        for interaction in interaction_dict.get("Interactions", []):
+            ids.add(interaction["agent"])
+            ids.add(interaction["interacts_with"])
+        relevent_agents = sorted(list(ids))
     filegen_model.parse_scenario_description(
         agent_dict = agent_dict,
         interaction_dict = interaction_dict,
@@ -151,12 +156,12 @@ def main(args):
         output_paths = output_xosc_paths
     )
     for op in output_xosc_paths:
-        filegen_model.parameterize(op, op)
+        filegen_model.parameterize(op, op, relevent_agents)
     print(f"✅ Initial OpenSCENARIO file generated\n")
 
 
     # Step 5: Scoring
-    print("\n🔹 Step 4: Scoring")
+    print("\n🔹 Step 5: Scoring")
     esminiRunner = EsminiSimulator()
     scorer = Scorer()
 
