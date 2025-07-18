@@ -513,10 +513,6 @@ class SceneInterpretation:
         full_analysis_prompt = prompt_template_content.format(
             agent_actions_log=agent_actions_content
         )
-        
-        analysis_prompt_parts_list = [
-             {"type": "text", "text": full_analysis_prompt}
-        ]
 
         print("\n--- Requesting Structured YAML Interaction Analysis via LangChain ---")
         analysis_result = None
@@ -524,7 +520,7 @@ class SceneInterpretation:
         
         with get_openai_callback() as cb:
             response = self.conversational_chain.invoke(
-                {"input": analysis_prompt_parts_list},
+                {"input": full_analysis_prompt},
                 config={"configurable": {"session_id": session_id}}
             )
             analysis_result = response
@@ -552,7 +548,59 @@ class SceneInterpretation:
         else:
             print("Failed to get interaction analysis from LLM.")
             return None
+    
+    def refine_with_human_feedback(self,
+                                   session_id: str,
+                                   initial_yaml_output: str,
+                                   feedback_text: str
+                                  ) -> Optional[Tuple[str, Dict[str, int]]]:
+        """
+        Takes an initial YAML analysis and human feedback, then asks the LLM
+        to generate a refined version.
+        """
+        print("\n--- Requesting Analysis Refinement Based on Human Feedback ---")
+
+        # --- 1. Construct the Refinement Prompt ---
+        refinement_prompt = (
+            "You are a senior analyst reviewing your own work based on expert feedback.\n\n"
+            "--- YOUR PREVIOUS ANALYSIS ---\n"
+            "You generated the following YAML output:\n"
+            "```yaml\n"
+            f"{initial_yaml_output}\n"
+            "```\n\n"
+            "--- EXPERT FEEDBACK FOR CORRECTION ---\n"
+            "A human expert has reviewed your work and provided these instructions:\n"
+            f'"{feedback_text}"\n\n'
+            "--- YOUR TASK ---\n"
+            "Your task is to regenerate the ENTIRE YAML output, fully incorporating all the corrections from the feedback. "
+            "Do not just output the changes or comment on the feedback. Provide the complete, final, and corrected YAML structure, "
+            "including both the `ego_perspective_summary` (if it needs changes) and the `Interactions` list."
+        )
+
+        # --- 2. Call the LLM with the new prompt ---
+        refined_result = None
+        refined_tokens = {}
         
+        with get_openai_callback() as cb:
+            # THIS IS THE CORRECTED PART: The prompt string is passed directly.
+            response = self.conversational_chain.invoke(
+                {"input": refinement_prompt},
+                config={"configurable": {"session_id": session_id}}
+            )
+            refined_result = response
+            refined_tokens = {
+                "prompt_tokens": cb.prompt_tokens,
+                "completion_tokens": cb.completion_tokens,
+                "total_tokens": cb.total_tokens,
+            }
+            print(f"Refinement Tokens: {refined_tokens['total_tokens']}")
+
+        if refined_result:
+            print("Successfully received refined analysis from LLM.")
+            return refined_result, refined_tokens
+        else:
+            print("Failed to get a refined analysis from LLM.")
+            return None
 
     def run_analysis_pipeline(self,
                               map_location: str,
@@ -634,6 +682,40 @@ class SceneInterpretation:
             print(f"\n❌ FAILED TO SAVE: Could not write analysis to '{output_yaml_path}': {e}")
             return False
         
+        # --- 4. Human-in-the-Loop Feedback Phase ---
+        print("\n===== Awaiting Human Feedback =====")
+        print(f"Please review the file: '{output_yaml_path}'")
+        feedback = input("Provide your feedback for corrections below. (Press Enter to skip and finalize):\n> ")
+
+        # --- 5. Refinement Phase (Optional) ---
+        if feedback.strip():
+            refined_result_tuple = self.refine_with_human_feedback(
+                session_id=session_id,
+                initial_yaml_output=clean_yaml, # Pass the clean YAML as context
+                feedback_text=feedback
+            )
+            
+            if not refined_result_tuple:
+                print("\n❌ REFINEMENT FAILED: Could not generate refined analysis. The initial file is preserved.")
+                return False # Or True, if you consider the initial analysis a success
+            
+            refined_yaml_string, refined_tokens = refined_result_tuple
+            
+            # Extract the clean YAML from the refined response
+            match = re.search(r"```yaml\s*([\s\S]*?)\s*```", refined_yaml_string)
+            refined_clean_yaml = match.group(1).strip() if match else refined_yaml_string.strip()
+            
+            # Save the *refined* analysis to a different file
+            try:
+                with open(output_yaml_path, "w", encoding="utf-8") as f:
+                    f.write(refined_clean_yaml)
+                print(f"\n✅ REFINEMENT SUCCESS: Full refined analysis saved to {output_yaml_path}")
+            except IOError as e:
+                print(f"\n❌ FAILED TO SAVE: Could not write refined analysis to '{output_yaml_path}': {e}")
+                return False
+        else:
+            print("\nNo feedback provided. The initial analysis is considered final.")
+        
         return True
 
 # --- Example Usage ---
@@ -642,7 +724,7 @@ if __name__ == "__main__":
     # Define paths for all required input files.
     # This makes it easy to switch between different scenarios.
     MAP_LOCATION = "01_bendplatz"
-    AGENT_ACTIONS_FILE = "./results/inD/description/08_9880_10080.txt"
+    AGENT_ACTIONS_FILE = "./results/inD/description/08_1250_1600.txt"
     OUTPUT_YAML_FILE = "agent_interaction_analysis.yaml"
 
     # --- 1. Initialize the Interpreter Engine ---
